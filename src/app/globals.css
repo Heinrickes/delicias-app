@@ -1,8 +1,35 @@
 @import "tailwindcss";
 
-@theme {
-  --color-brand-crema: #F5EBE0;
-  --color-brand-chocolate: #4E342E;
-  --color-brand-verde: #6B705C;
-  --color-brand-dorado: #C5A059;
+@theme inline {
+  --font-sans: 'Geist', 'Geist Fallback', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
+
+  /* Minimal color palette - warm neutrals with a single accent */
+  --color-background: #FAFAF9;
+  --color-foreground: #1C1917;
+  --color-muted: #78716C;
+  --color-muted-foreground: #A8A29E;
+  --color-border: #E7E5E4;
+  --color-card: #FFFFFF;
+  --color-accent: #92400E;
+  --color-accent-foreground: #FFFFFF;
+  --color-success: #15803D;
+  --color-danger: #DC2626;
+
+  /* Legacy colors for gradual migration */
+  --color-brand-crema: #FAFAF9;
+  --color-brand-chocolate: #1C1917;
+  --color-brand-verde: #15803D;
+  --color-brand-dorado: #92400E;
+
+  --radius: 0.75rem;
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
 }
