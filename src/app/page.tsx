@@ -1,9 +1,8 @@
-// IMPORTANTE: Asegúrate de agregar esta línea de importación bien arriba, justo debajo de 'import { ProductCard }...'
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { ProductForm } from "@/components/shared/ProductForm";
-
+import { ArrowRight, Package } from "lucide-react";
 
 type Producto = {
   id: string;
@@ -25,25 +24,94 @@ async function getProductos() {
 
 export default async function Home() {
   const productos = await getProductos();
+  const totalStock = productos.reduce((sum, p) => sum + p.stock, 0);
+  const lowStockCount = productos.filter((p) => p.stock < 10).length;
 
   return (
-    <main className="min-h-screen bg-brand-crema p-8">
-      <div className="max-w-4xl mx-auto">
-       {/* Reemplaza tu h1 actual por esto: */}
-       <div className="flex justify-between items-center mb-8 border-b-2 border-brand-dorado pb-4">
-          <h1 className="text-4xl font-bold text-brand-chocolate">
-            Inventario Delicias Caseras
-          </h1>
-          <Link href="/ventas" className="bg-brand-chocolate text-brand-crema px-6 py-3 rounded-lg font-bold shadow-md hover:opacity-90 transition-all">
-            Ver Libro de Ventas 📊
-          </Link>
+    <main className="min-h-screen px-4 py-8 md:px-8 lg:px-12">
+      <div className="mx-auto max-w-5xl">
+        {/* Header */}
+        <header className="mb-12">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10">
+                <Package className="h-5 w-5 text-accent" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                  Delicias Caseras
+                </h1>
+                <p className="text-sm text-muted">Inventario</p>
+              </div>
+            </div>
+            <Link
+              href="/ventas"
+              className="group inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
+            >
+              Ver historial de ventas
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
+        </header>
+
+        {/* Stats */}
+        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <div className="rounded-xl border bg-card p-4">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted">
+              Productos
+            </p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+              {productos.length}
+            </p>
+          </div>
+          <div className="rounded-xl border bg-card p-4">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted">
+              Stock Total
+            </p>
+            <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
+              {totalStock}
+            </p>
+          </div>
+          <div className="col-span-2 rounded-xl border bg-card p-4 sm:col-span-1">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted">
+              Stock Bajo
+            </p>
+            <p
+              className={`mt-1 text-2xl font-semibold tabular-nums ${
+                lowStockCount > 0 ? "text-danger" : "text-success"
+              }`}
+            >
+              {lowStockCount}
+            </p>
+          </div>
         </div>
+
+        {/* Add Product Form */}
         <ProductForm />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {productos.map((producto) => (
-            <ProductCard key={producto.id} producto={producto} />
-          ))}
-        </div>
+
+        {/* Products Grid */}
+        <section>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-muted">
+            Productos ({productos.length})
+          </h2>
+          {productos.length === 0 ? (
+            <div className="rounded-xl border border-dashed bg-card p-12 text-center">
+              <Package className="mx-auto h-10 w-10 text-muted-foreground" />
+              <p className="mt-4 text-sm text-muted">
+                No hay productos en el inventario
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Agrega tu primer producto usando el formulario de arriba
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {productos.map((producto) => (
+                <ProductCard key={producto.id} producto={producto} />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
