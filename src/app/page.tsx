@@ -3,6 +3,9 @@ import { supabase } from "@/lib/supabase";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { ProductForm } from "@/components/shared/ProductForm";
 import { ArrowRight, Package } from "lucide-react";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { UserNav } from "@/components/shared/UserNav";
 
 type Producto = {
   id: string;
@@ -23,6 +26,16 @@ async function getProductos() {
 }
 
 export default async function Home() {
+  const cookieStore = await cookies();
+  const supabaseServer = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll() } }
+  );
+  const {
+    data: { user },
+  } = await supabaseServer.auth.getUser();
+
   const productos = await getProductos();
   const totalStock = productos.reduce((sum, p) => sum + p.stock, 0);
   const lowStockCount = productos.filter((p) => p.stock < 10).length;
@@ -44,13 +57,16 @@ export default async function Home() {
                 <p className="text-sm text-muted">Inventario</p>
               </div>
             </div>
-            <Link
-              href="/ventas"
-              className="group inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
-            >
-              Ver historial de ventas
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/ventas"
+                className="group inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
+              >
+                Ver historial de ventas
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+              <UserNav email={user?.email} />
+            </div>
           </div>
         </header>
 
