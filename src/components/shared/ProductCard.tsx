@@ -12,11 +12,23 @@ type Producto = {
   stock: number;
 };
 
-export function ProductCard({ producto }: { producto: Producto }) {
+const productVisuals = [
+  "radial-gradient(circle at 35% 45%, #F3D9B8 0 10%, transparent 11%), radial-gradient(circle at 55% 50%, #F3D9B8 0 11%, transparent 12%), radial-gradient(circle at 72% 45%, #F3D9B8 0 10%, transparent 11%), linear-gradient(135deg, #D5B38D, #F2E5D1)",
+  "radial-gradient(circle at 42% 48%, #3C2117 0 12%, #8A5A3C 13% 16%, transparent 17%), radial-gradient(circle at 60% 44%, #3C2117 0 10%, #8A5A3C 11% 15%, transparent 16%), linear-gradient(135deg, #E7D6C4, #B98C65)",
+  "linear-gradient(90deg, transparent 0 12%, #E8D5B9 13% 22%, #4B2D1E 23% 31%, transparent 32% 36%, #E8D5B9 37% 47%, #4B2D1E 48% 58%, transparent 59%), linear-gradient(135deg, #D2B894, #F7E7CF)",
+  "radial-gradient(circle at 35% 40%, #6D4029 0 9%, transparent 10%), radial-gradient(circle at 55% 52%, #3B2118 0 11%, transparent 12%), radial-gradient(circle at 72% 42%, #8A5A3C 0 9%, transparent 10%), linear-gradient(135deg, #EFE1D2, #B58A68)",
+];
+
+export function ProductCard({
+  producto,
+  variant = 0,
+}: {
+  producto: Producto;
+  variant?: number;
+}) {
   const [stock, setStock] = useState(producto.stock);
   const [loading, setLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
   const [isEditing, setIsEditing] = useState(false);
   const [editNombre, setEditNombre] = useState(producto.nombre);
   const [editPrecio, setEditPrecio] = useState(producto.precio.toString());
@@ -56,7 +68,7 @@ export function ProductCard({ producto }: { producto: Producto }) {
 
   const handleBorrar = async () => {
     const confirmar = window.confirm(
-      `¿Seguro que deseas eliminar "${producto.nombre}"?`
+      `Seguro que deseas eliminar "${producto.nombre}"?`
     );
     if (!confirmar) return;
 
@@ -101,9 +113,13 @@ export function ProductCard({ producto }: { producto: Producto }) {
   };
 
   return (
-    <div className="group relative flex flex-col justify-between rounded-xl border bg-card p-5 transition-shadow hover:shadow-md">
-      {/* Action buttons */}
-      <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+    <div className="group relative overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-[0_18px_40px_rgba(75,45,30,0.10)]">
+      <div
+        className="h-36 border-b bg-cover bg-center"
+        style={{ background: productVisuals[variant % productVisuals.length] }}
+      />
+
+      <div className="absolute right-3 top-3 flex gap-1 rounded-md bg-card/80 p-1 opacity-0 shadow-sm backdrop-blur transition-opacity group-hover:opacity-100">
         <button
           onClick={() => setIsEditing(!isEditing)}
           title="Editar producto"
@@ -121,78 +137,82 @@ export function ProductCard({ producto }: { producto: Producto }) {
         </button>
       </div>
 
-      {isEditing ? (
-        <div className="space-y-3">
-          <input
-            type="text"
-            value={editNombre}
-            onChange={(e) => setEditNombre(e.target.value)}
-            className="w-full rounded-lg border bg-background px-3 py-2 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
-            placeholder="Nombre del producto"
-          />
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted">$</span>
+      <div className="p-4">
+        {isEditing ? (
+          <div className="space-y-3">
             <input
-              type="number"
-              value={editPrecio}
-              onChange={(e) => setEditPrecio(e.target.value)}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-accent"
-              placeholder="Precio"
+              type="text"
+              value={editNombre}
+              onChange={(e) => setEditNombre(e.target.value)}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
+              placeholder="Nombre del producto"
             />
-          </div>
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={handleGuardarEdicion}
-              disabled={isSaving}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              <Check className="h-4 w-4" />
-              {isSaving ? "Guardando..." : "Guardar"}
-            </button>
-            <button
-              onClick={cancelEdit}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted-foreground/10"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div>
-            <h3 className="pr-16 text-base font-medium leading-snug text-foreground">
-              {producto.nombre}
-            </h3>
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-lg font-semibold tabular-nums text-foreground">
-                ${producto.precio.toLocaleString("es-CL")}
-              </span>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  stock < 10
-                    ? "bg-danger/10 text-danger"
-                    : "bg-success/10 text-success"
-                }`}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted">$</span>
+              <input
+                type="number"
+                value={editPrecio}
+                onChange={(e) => setEditPrecio(e.target.value)}
+                className="w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-accent"
+                placeholder="Precio"
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={handleGuardarEdicion}
+                disabled={isSaving}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
               >
-                {stock} en stock
-              </span>
+                <Check className="h-4 w-4" />
+                {isSaving ? "Guardando..." : "Guardar"}
+              </button>
+              <button
+                onClick={cancelEdit}
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted-foreground/10"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           </div>
+        ) : (
+          <>
+            <div>
+              <h3 className="text-base font-serif leading-snug text-foreground">
+                {producto.nombre}
+              </h3>
+              <div className="mt-3 flex items-center justify-between">
+                <span className="text-sm font-semibold tabular-nums text-foreground">
+                  ${producto.precio.toLocaleString("es-CL")}
+                </span>
+                <span
+                  className={`text-xs font-medium ${
+                    stock < 10 ? "text-danger" : "text-muted"
+                  }`}
+                >
+                  Stock: {stock}
+                </span>
+              </div>
+            </div>
 
-          <button
-            onClick={handleVender}
-            disabled={loading || stock <= 0 || isEditing}
-            className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
-              stock <= 0
-                ? "cursor-not-allowed bg-muted-foreground/10 text-muted-foreground"
-                : "bg-foreground text-background hover:opacity-90 active:scale-[0.98]"
-            }`}
-          >
-            <ShoppingBag className="h-4 w-4" />
-            {loading ? "Procesando..." : stock <= 0 ? "Agotado" : "Registrar Venta"}
-          </button>
-        </>
-      )}
+            <button
+              onClick={handleVender}
+              disabled={loading || stock <= 0 || isEditing}
+              className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
+                stock <= 0
+                  ? "cursor-not-allowed bg-muted-foreground/10 text-muted-foreground"
+                  : "bg-accent text-accent-foreground hover:opacity-90 active:scale-[0.98]"
+              }`}
+            >
+              <ShoppingBag className="h-4 w-4" />
+              {loading
+                ? "Procesando..."
+                : stock <= 0
+                  ? "Agotado"
+                  : "Registrar venta"}
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
+import { AppShell } from "@/components/shared/AppShell";
 import { supabase } from "@/lib/supabase";
-import Link from "next/link";
-import { ArrowLeft, TrendingUp, Receipt, Calendar } from "lucide-react";
+import { TrendingUp, Receipt, Calendar, CreditCard } from "lucide-react";
 
 export const revalidate = 0;
 
@@ -27,68 +27,62 @@ export default async function VentasPage() {
   const ingresoHoy = ventasHoy.reduce((suma, venta) => suma + venta.total, 0);
 
   return (
-    <main className="min-h-screen px-4 py-8 md:px-8 lg:px-12">
-      <div className="mx-auto max-w-5xl">
-        {/* Header */}
-        <header className="mb-12">
-          <Link
-            href="/"
-            className="group mb-6 inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-            Volver al inventario
-          </Link>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Historial de Ventas
-          </h1>
-          <p className="mt-1 text-sm text-muted">
-            Registro completo de todas las transacciones
+    <AppShell>
+      <div className="space-y-8">
+        <header>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted">
+            Ventas
+          </p>
+          <h2 className="mt-1 font-serif text-3xl leading-tight text-foreground">
+            Historial de transacciones
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">
+            Registro completo de los movimientos comerciales del taller.
           </p>
         </header>
 
-        {/* Stats */}
-        <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <div className="rounded-xl border bg-card p-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-lg border bg-card p-5">
             <div className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-success" />
-              <p className="text-xs font-medium uppercase tracking-wider text-muted">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">
                 Total Recaudado
               </p>
             </div>
-            <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
+            <p className="mt-3 text-2xl font-semibold tabular-nums text-foreground">
               ${totalIngresos.toLocaleString("es-CL")}
             </p>
           </div>
-          <div className="rounded-xl border bg-card p-4">
+          <div className="rounded-lg border bg-card p-5">
             <div className="flex items-center gap-2">
-              <Receipt className="h-4 w-4 text-accent" />
-              <p className="text-xs font-medium uppercase tracking-wider text-muted">
+              <Receipt className="h-4 w-4 text-gold" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">
                 Unidades Vendidas
               </p>
             </div>
-            <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
+            <p className="mt-3 text-2xl font-semibold tabular-nums text-foreground">
               {totalVentas}
             </p>
           </div>
-          <div className="rounded-xl border bg-card p-4">
+          <div className="rounded-lg border bg-card p-5">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted" />
-              <p className="text-xs font-medium uppercase tracking-wider text-muted">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">
                 Ventas Hoy
               </p>
             </div>
-            <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
+            <p className="mt-3 text-2xl font-semibold tabular-nums text-foreground">
               {ventasHoy.length}
             </p>
           </div>
-          <div className="rounded-xl border bg-card p-4">
+          <div className="rounded-lg border bg-card p-5">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-success" />
-              <p className="text-xs font-medium uppercase tracking-wider text-muted">
+              <CreditCard className="h-4 w-4 text-accent" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">
                 Ingreso Hoy
               </p>
             </div>
-            <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
+            <p className="mt-3 text-2xl font-semibold tabular-nums text-foreground">
               ${ingresoHoy.toLocaleString("es-CL")}
             </p>
           </div>
@@ -96,12 +90,12 @@ export default async function VentasPage() {
 
         {/* Sales Table */}
         <section>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-wider text-muted">
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted">
             Transacciones ({ventas.length})
-          </h2>
+          </h3>
 
           {ventas.length === 0 ? (
-            <div className="rounded-xl border border-dashed bg-card p-12 text-center">
+            <div className="rounded-lg border border-dashed bg-card p-12 text-center">
               <Receipt className="mx-auto h-10 w-10 text-muted-foreground" />
               <p className="mt-4 text-sm text-muted">
                 No hay ventas registradas
@@ -112,21 +106,21 @@ export default async function VentasPage() {
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border bg-card">
+            <div className="overflow-hidden rounded-lg border bg-card">
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b bg-background/50">
-                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-muted">
+                    <tr className="border-b bg-background/60">
+                      <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-muted">
                         Fecha
                       </th>
-                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-muted">
+                      <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-muted">
                         Producto
                       </th>
-                      <th className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted">
+                      <th className="px-5 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">
                         Cant.
                       </th>
-                      <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted">
+                      <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">
                         Total
                       </th>
                     </tr>
@@ -163,6 +157,6 @@ export default async function VentasPage() {
           )}
         </section>
       </div>
-    </main>
+    </AppShell>
   );
 }

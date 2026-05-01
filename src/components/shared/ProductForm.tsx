@@ -42,7 +42,7 @@ export function ProductForm() {
   };
 
   return (
-    <div className="mb-8 rounded-xl border bg-card">
+    <div className="mb-8 rounded-lg border bg-card">
       {/* Toggle Header */}
       <button
         type="button"
@@ -50,7 +50,7 @@ export function ProductForm() {
         className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-background/50"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/15">
             <Plus className="h-4 w-4 text-accent" />
           </div>
           <span className="text-sm font-medium text-foreground">

@@ -10,7 +10,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const router = useRouter();
 
   const supabase = createBrowserClient(
@@ -39,22 +39,22 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md rounded-2xl border bg-card p-8 shadow-sm">
-        
-        {/* Cabecera */}
+      <div className="w-full max-w-md rounded-lg border bg-card p-8 shadow-[0_18px_60px_rgba(81,51,35,0.08)]">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent/10">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gold/15">
             <Lock className="h-6 w-6 text-accent" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Delicias Caseras
+          <h1 className="font-serif text-3xl leading-tight text-foreground">
+            Delicias
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-muted">
+            Caseras
+          </p>
+          <p className="mt-4 text-sm text-muted-foreground">
             Ingresa tus credenciales para acceder al inventario
           </p>
         </div>
 
-        {/* Mensaje de Error */}
         {error && (
           <div className="mb-6 flex items-center gap-2 rounded-lg bg-danger/10 p-4 text-sm font-medium text-danger">
             <AlertCircle className="h-4 w-4" />
@@ -62,11 +62,10 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Formulario */}
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
             <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">
-              Correo Electrónico
+              Correo electrónico
             </label>
             <div className="relative">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -105,7 +104,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-foreground px-4 py-3 text-sm font-medium text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-3 text-sm font-medium text-accent-foreground transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
           >
             {loading ? (
               "Verificando..."

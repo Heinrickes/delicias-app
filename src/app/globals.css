@@ -2,27 +2,32 @@
 
 @theme inline {
   --font-sans: 'Geist', 'Geist Fallback', system-ui, sans-serif;
+  --font-serif: Georgia, 'Times New Roman', serif;
   --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
 
-  /* Minimal color palette - warm neutrals with a single accent */
-  --color-background: #FAFAF9;
-  --color-foreground: #1C1917;
-  --color-muted: #78716C;
-  --color-muted-foreground: #A8A29E;
-  --color-border: #E7E5E4;
-  --color-card: #FFFFFF;
-  --color-accent: #92400E;
+  /* Delicias Caseras - warm premium operations palette */
+  --color-background: #EFE8DF;
+  --color-surface: #FFFDF8;
+  --color-foreground: #2F251F;
+  --color-muted: #78685D;
+  --color-muted-foreground: #A99B8F;
+  --color-border: #E8DCCF;
+  --color-card: #FFFDF8;
+  --color-accent: #4B2D1E;
   --color-accent-foreground: #FFFFFF;
-  --color-success: #15803D;
-  --color-danger: #DC2626;
+  --color-olive: #6B705C;
+  --color-olive-foreground: #FFFFFF;
+  --color-gold: #B89B63;
+  --color-success: #5F7A4E;
+  --color-danger: #B64032;
 
   /* Legacy colors for gradual migration */
-  --color-brand-crema: #FAFAF9;
-  --color-brand-chocolate: #1C1917;
-  --color-brand-verde: #15803D;
-  --color-brand-dorado: #92400E;
+  --color-brand-crema: #F7EFE4;
+  --color-brand-chocolate: #513323;
+  --color-brand-verde: #6B705C;
+  --color-brand-dorado: #B89B63;
 
-  --radius: 0.75rem;
+  --radius: 0.5rem;
 }
 
 * {
@@ -30,6 +35,16 @@
 }
 
 body {
-  background-color: var(--color-background);
+  background:
+    radial-gradient(circle at top left, rgba(255, 253, 248, 0.95), transparent 34rem),
+    var(--color-background);
   color: var(--color-foreground);
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  outline-color: var(--color-gold);
 }

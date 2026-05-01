@@ -13,21 +13,25 @@ export function UserNav({ email }: { email: string | undefined }) {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    router.refresh(); // Esto activará el middleware y te mandará al login
+    router.refresh();
   };
 
   return (
-    <div className="flex items-center gap-4 border-l pl-4">
-      <div className="flex flex-col items-end">
-        <p className="text-xs font-medium text-foreground">{email}</p>
-        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Administrador</p>
+    <div className="flex items-center gap-2">
+      <div className="hidden flex-col items-end sm:flex">
+        <p className="max-w-32 truncate text-xs font-medium text-foreground">
+          {email}
+        </p>
+        <p className="text-[9px] uppercase tracking-widest text-muted-foreground">
+          Administrador
+        </p>
       </div>
       <button
         onClick={handleSignOut}
-        className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:bg-danger/10 hover:text-danger"
-        title="Cerrar sesión"
+        className="flex h-9 w-9 items-center justify-center rounded-full border bg-[#EADBCD] text-accent transition-colors hover:bg-danger/10 hover:text-danger"
+        title="Cerrar sesion"
       >
-        <LogOut className="h-4 w-4" />
+        <LogOut className="h-3.5 w-3.5" />
       </button>
     </div>
   );
