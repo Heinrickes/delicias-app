@@ -1,15 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { Pencil, Trash2, X, Check, ShoppingBag } from "lucide-react";
+import { toast } from "sonner";
+import {
+  actualizarProducto,
+  eliminarProducto,
+  venderProducto,
+} from "@/lib/actions/productos";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { formatMoneda, LABELS, STOCK_BAJO_UMBRAL } from "@/lib/constants";
 
 type Producto = {
   id: string;
   nombre: string;
   precio: number;
+  costo: number;
   stock: number;
+  categoria: string | null;
 };
 
 const productVisuals = [
@@ -27,189 +48,205 @@ export function ProductCard({
   variant?: number;
 }) {
   const [stock, setStock] = useState(producto.stock);
-  const [loading, setLoading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editNombre, setEditNombre] = useState(producto.nombre);
   const [editPrecio, setEditPrecio] = useState(producto.precio.toString());
-  const [isSaving, setIsSaving] = useState(false);
+  const [editCosto, setEditCosto] = useState(producto.costo.toString());
+  const [selling, startSelling] = useTransition();
+  const [saving, startSaving] = useTransition();
+  const [deleting, startDeleting] = useTransition();
 
-  const router = useRouter();
+  const margen = producto.precio - producto.costo;
+  const margenPct =
+    producto.precio > 0 ? Math.round((margen / producto.precio) * 100) : 0;
+  const stockBajo = stock < STOCK_BAJO_UMBRAL;
 
-  const handleVender = async () => {
+  const handleVender = () => {
     if (stock <= 0) return;
-    setLoading(true);
-
-    const nuevoStock = stock - 1;
-
-    const { error: updateError } = await supabase
-      .from("productos")
-      .update({ stock: nuevoStock })
-      .eq("id", producto.id);
-
-    if (!updateError) {
-      const { error: insertError } = await supabase.from("ventas").insert([
-        {
-          producto_id: producto.id,
-          nombre_producto: producto.nombre,
-          cantidad: 1,
-          total: producto.precio,
-        },
-      ]);
-
-      if (!insertError) {
-        setStock(nuevoStock);
-      } else {
-        console.error("Error guardando historial:", insertError);
+    startSelling(async () => {
+      const result = await venderProducto(producto.id);
+      if (result.ok && result.data) {
+        setStock(result.data.stock);
+        toast.success(`Venta registrada: ${producto.nombre}`);
+      } else if (!result.ok) {
+        toast.error(result.error);
       }
-    }
-    setLoading(false);
+    });
   };
 
-  const handleBorrar = async () => {
-    const confirmar = window.confirm(
-      `Seguro que deseas eliminar "${producto.nombre}"?`
-    );
-    if (!confirmar) return;
-
-    setIsDeleting(true);
-    const { error } = await supabase
-      .from("productos")
-      .update({ activo: false })
-      .eq("id", producto.id);
-
-    if (!error) {
-      router.refresh();
-    } else {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleGuardarEdicion = async () => {
-    setIsSaving(true);
-
-    const { error } = await supabase
-      .from("productos")
-      .update({
+  const handleGuardarEdicion = () => {
+    startSaving(async () => {
+      const result = await actualizarProducto(producto.id, {
         nombre: editNombre,
-        precio: parseInt(editPrecio),
-      })
-      .eq("id", producto.id);
+        precio: parseInt(editPrecio) || 0,
+        costo: parseInt(editCosto) || 0,
+      });
+      if (result.ok) {
+        toast.success("Producto actualizado");
+        setIsEditing(false);
+      } else {
+        toast.error(result.error);
+      }
+    });
+  };
 
-    if (!error) {
-      setIsEditing(false);
-      router.refresh();
-    } else {
-      console.error("Error al editar:", error);
-      alert("No se pudo actualizar el producto.");
-    }
-    setIsSaving(false);
+  const handleBorrar = () => {
+    startDeleting(async () => {
+      const result = await eliminarProducto(producto.id);
+      if (result.ok) {
+        toast.success("Producto eliminado");
+      } else {
+        toast.error(result.error);
+      }
+    });
   };
 
   const cancelEdit = () => {
     setIsEditing(false);
     setEditNombre(producto.nombre);
     setEditPrecio(producto.precio.toString());
+    setEditCosto(producto.costo.toString());
   };
 
   return (
-    <div className="group relative overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-[0_18px_40px_rgba(75,45,30,0.10)]">
+    <div className="group relative overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 transition-shadow hover:shadow-[0_18px_40px_rgba(75,45,30,0.10)]">
       <div
-        className="h-36 border-b bg-cover bg-center"
+        className="relative h-32 border-b bg-cover bg-center"
         style={{ background: productVisuals[variant % productVisuals.length] }}
-      />
+      >
+        {producto.categoria && (
+          <Badge className="absolute left-3 top-3 bg-card/85 text-foreground backdrop-blur">
+            {producto.categoria}
+          </Badge>
+        )}
+      </div>
 
       <div className="absolute right-3 top-3 flex gap-1 rounded-md bg-card/80 p-1 opacity-0 shadow-sm backdrop-blur transition-opacity group-hover:opacity-100">
-        <button
-          onClick={() => setIsEditing(!isEditing)}
-          title="Editar producto"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-background hover:text-foreground"
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => setIsEditing((v) => !v)}
+          title={LABELS.editar}
         >
           <Pencil className="h-4 w-4" />
-        </button>
-        <button
-          onClick={handleBorrar}
-          disabled={isDeleting}
-          title="Eliminar producto"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-danger/10 hover:text-danger"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                disabled={deleting}
+                title={LABELS.eliminar}
+                className="hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            }
+          />
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se ocultará &quot;{producto.nombre}&quot; del inventario. El
+                historial de ventas se conserva.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{LABELS.cancelar}</AlertDialogCancel>
+              <AlertDialogAction onClick={handleBorrar}>
+                {LABELS.eliminar}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       <div className="p-4">
         {isEditing ? (
           <div className="space-y-3">
-            <input
-              type="text"
+            <Input
               value={editNombre}
               onChange={(e) => setEditNombre(e.target.value)}
-              className="w-full rounded-lg border bg-background px-3 py-2 text-sm font-medium text-foreground outline-none transition-colors focus:border-accent"
               placeholder="Nombre del producto"
             />
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted">$</span>
-              <input
-                type="number"
-                value={editPrecio}
-                onChange={(e) => setEditPrecio(e.target.value)}
-                className="w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors focus:border-accent"
-                placeholder="Precio"
-              />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <span className="text-xs text-muted-foreground">
+                  {LABELS.precio}
+                </span>
+                <Input
+                  type="number"
+                  value={editPrecio}
+                  onChange={(e) => setEditPrecio(e.target.value)}
+                  placeholder="Precio"
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="text-xs text-muted-foreground">
+                  {LABELS.costo}
+                </span>
+                <Input
+                  type="number"
+                  value={editCosto}
+                  onChange={(e) => setEditCosto(e.target.value)}
+                  placeholder="Costo"
+                />
+              </div>
             </div>
-            <div className="flex gap-2 pt-2">
-              <button
+            <div className="flex gap-2 pt-1">
+              <Button
+                className="flex-1"
                 onClick={handleGuardarEdicion}
-                disabled={isSaving}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                disabled={saving}
               >
                 <Check className="h-4 w-4" />
-                {isSaving ? "Guardando..." : "Guardar"}
-              </button>
-              <button
-                onClick={cancelEdit}
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted-foreground/10"
-              >
+                {saving ? LABELS.guardando : LABELS.guardar}
+              </Button>
+              <Button variant="outline" size="icon" onClick={cancelEdit}>
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
           <>
-            <div>
-              <h3 className="text-base font-serif leading-snug text-foreground">
-                {producto.nombre}
-              </h3>
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-sm font-semibold tabular-nums text-foreground">
-                  ${producto.precio.toLocaleString("es-CL")}
-                </span>
-                <span
-                  className={`text-xs font-medium ${
-                    stock < 10 ? "text-danger" : "text-muted"
-                  }`}
-                >
-                  Stock: {stock}
-                </span>
-              </div>
+            <h3 className="font-serif text-base leading-snug text-foreground">
+              {producto.nombre}
+            </h3>
+
+            <div className="mt-3 flex items-center justify-between">
+              <span className="text-lg font-semibold tabular-nums text-foreground">
+                {formatMoneda(producto.precio)}
+              </span>
+              <span
+                className={`text-xs font-medium ${stockBajo ? "text-danger" : "text-muted-foreground"}`}
+              >
+                {LABELS.stock}: {stock}
+              </span>
             </div>
 
-            <button
+            <div className="mt-2 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                {LABELS.costo}: {formatMoneda(producto.costo)}
+              </span>
+              <span className="font-medium text-success">
+                {LABELS.margen}: {formatMoneda(margen)} ({margenPct}%)
+              </span>
+            </div>
+
+            <Button
+              className="mt-4 w-full"
               onClick={handleVender}
-              disabled={loading || stock <= 0 || isEditing}
-              className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                stock <= 0
-                  ? "cursor-not-allowed bg-muted-foreground/10 text-muted-foreground"
-                  : "bg-accent text-accent-foreground hover:opacity-90 active:scale-[0.98]"
-              }`}
+              disabled={selling || stock <= 0}
+              variant={stock <= 0 ? "secondary" : "default"}
             >
               <ShoppingBag className="h-4 w-4" />
-              {loading
-                ? "Procesando..."
+              {selling
+                ? LABELS.procesando
                 : stock <= 0
-                  ? "Agotado"
-                  : "Registrar venta"}
-            </button>
+                  ? LABELS.agotado
+                  : LABELS.registrarVenta}
+            </Button>
           </>
         )}
       </div>

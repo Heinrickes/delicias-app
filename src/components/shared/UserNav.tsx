@@ -1,15 +1,12 @@
 "use client";
 
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 
 export function UserNav({ email }: { email: string | undefined }) {
   const router = useRouter();
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = createClient();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -28,7 +25,7 @@ export function UserNav({ email }: { email: string | undefined }) {
       </div>
       <button
         onClick={handleSignOut}
-        className="flex h-9 w-9 items-center justify-center rounded-full border bg-[#EADBCD] text-accent transition-colors hover:bg-danger/10 hover:text-danger"
+        className="flex h-9 w-9 items-center justify-center rounded-full border bg-secondary text-primary transition-colors hover:bg-danger/10 hover:text-danger"
         title="Cerrar sesion"
       >
         <LogOut className="h-3.5 w-3.5" />

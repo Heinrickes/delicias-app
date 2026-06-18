@@ -1,139 +1,143 @@
 "use client";
 
-import { useState } from "react";
-import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { toast } from "sonner";
+import { crearProducto } from "@/lib/actions/productos";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { LABELS } from "@/lib/constants";
+
+const EMPTY = { nombre: "", categoria: "", precio: "", costo: "", stock: "", unidad: "" };
 
 export function ProductForm() {
-  const [nombre, setNombre] = useState("");
-  const [precio, setPrecio] = useState("");
-  const [stock, setStock] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState(EMPTY);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  const router = useRouter();
+  const set = (campo: keyof typeof EMPTY, valor: string) =>
+    setForm((f) => ({ ...f, [campo]: valor }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    startTransition(async () => {
+      const result = await crearProducto({
+        nombre: form.nombre,
+        precio: parseInt(form.precio) || 0,
+        costo: parseInt(form.costo) || 0,
+        stock: parseInt(form.stock) || 0,
+        categoria: form.categoria,
+        unidad: form.unidad,
+      });
 
-    const { error } = await supabase.from("productos").insert([
-      {
-        nombre: nombre,
-        precio: parseInt(precio),
-        stock: parseInt(stock),
-        categoria: "Nuevo Ingreso",
-      },
-    ]);
-
-    if (!error) {
-      setNombre("");
-      setPrecio("");
-      setStock("");
-      setIsExpanded(false);
-      router.refresh();
-    } else {
-      console.error("Error al crear producto:", error);
-      alert("Hubo un error al guardar el producto.");
-    }
-
-    setLoading(false);
+      if (result.ok) {
+        toast.success("Producto agregado");
+        setForm(EMPTY);
+        setIsExpanded(false);
+      } else {
+        toast.error(result.error || LABELS.errorGuardar);
+      }
+    });
   };
 
   return (
-    <div className="mb-8 rounded-lg border bg-card">
-      {/* Toggle Header */}
+    <div className="mb-8 overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
       <button
         type="button"
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-background/50"
+        onClick={() => setIsExpanded((v) => !v)}
+        className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-muted/50"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/15">
-            <Plus className="h-4 w-4 text-accent" />
-          </div>
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <Plus className="h-4 w-4 text-primary" />
+          </span>
           <span className="text-sm font-medium text-foreground">
             Agregar nuevo producto
           </span>
         </div>
         {isExpanded ? (
-          <ChevronUp className="h-4 w-4 text-muted" />
+          <ChevronUp className="h-4 w-4 text-muted-foreground" />
         ) : (
-          <ChevronDown className="h-4 w-4 text-muted" />
+          <ChevronDown className="h-4 w-4 text-muted-foreground" />
         )}
       </button>
 
-      {/* Expandable Form */}
       {isExpanded && (
         <form onSubmit={handleSubmit} className="border-t px-5 py-5">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">
-                Nombre del producto
-              </label>
-              <input
-                type="text"
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="nombre">{LABELS.nombre} del producto</Label>
+              <Input
+                id="nombre"
                 required
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
+                value={form.nombre}
+                onChange={(e) => set("nombre", e.target.value)}
                 placeholder="Ej: Alfajor de Nuez"
               />
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">
-                Precio
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
-                  $
-                </span>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  value={precio}
-                  onChange={(e) => setPrecio(e.target.value)}
-                  className="w-full rounded-lg border bg-background py-2.5 pl-7 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
-                  placeholder="1500"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="categoria">Categoría</Label>
+              <Input
+                id="categoria"
+                value={form.categoria}
+                onChange={(e) => set("categoria", e.target.value)}
+                placeholder="Ej: Alfajores"
+              />
             </div>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">
-                Stock inicial
-              </label>
-              <input
+            <div className="space-y-1.5">
+              <Label htmlFor="precio">{LABELS.precio} de venta</Label>
+              <Input
+                id="precio"
                 type="number"
                 required
                 min="0"
-                value={stock}
-                onChange={(e) => setStock(e.target.value)}
-                className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-accent"
+                value={form.precio}
+                onChange={(e) => set("precio", e.target.value)}
+                placeholder="1500"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="costo">{LABELS.costo} de producción</Label>
+              <Input
+                id="costo"
+                type="number"
+                min="0"
+                value={form.costo}
+                onChange={(e) => set("costo", e.target.value)}
+                placeholder="600"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="stock">{LABELS.stockInicial}</Label>
+              <Input
+                id="stock"
+                type="number"
+                required
+                min="0"
+                value={form.stock}
+                onChange={(e) => set("stock", e.target.value)}
                 placeholder="12"
               />
             </div>
           </div>
 
           <div className="mt-5 flex items-center justify-end gap-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setIsExpanded(false)}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-muted transition-colors hover:text-foreground"
             >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
+              {LABELS.cancelar}
+            </Button>
+            <Button type="submit" disabled={isPending}>
               <Plus className="h-4 w-4" />
-              {loading ? "Guardando..." : "Agregar producto"}
-            </button>
+              {isPending ? LABELS.guardando : "Agregar producto"}
+            </Button>
           </div>
         </form>
       )}

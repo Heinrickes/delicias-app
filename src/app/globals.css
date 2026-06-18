@@ -1,50 +1,185 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Delicias Caseras — sistema de diseño
+  Estética: minimalista y elegante. Crema/blush de fondo, chocolate para texto
+  fuerte y primario, terracota/rust de acento, dorado y oliva como secundarios.
+  Tipografías: Vidaloka (serif display) + Montserrat (sans).
+*/
+
+:root {
+  --radius: 0.625rem;
+
+  /* Lienzo y texto */
+  --background: #f6efe5;
+  --foreground: #33271f;
+
+  /* Superficies */
+  --card: #fffdf9;
+  --card-foreground: #33271f;
+  --popover: #fffdf9;
+  --popover-foreground: #33271f;
+
+  /* Primario (chocolate) */
+  --primary: #4b2d1e;
+  --primary-foreground: #fbf6ee;
+
+  /* Secundario (arena clara) */
+  --secondary: #efe3d3;
+  --secondary-foreground: #4b2d1e;
+
+  /* Apagados */
+  --muted: #efe6d9;
+  --muted-foreground: #7c6b5d;
+
+  /* Acento (terracota suave para hovers/realces) */
+  --accent: #e7d3c2;
+  --accent-foreground: #4b2d1e;
+
+  /* Estados */
+  --destructive: #b64032;
+
+  /* Bordes / inputs / foco */
+  --border: #e7dacb;
+  --input: #e7dacb;
+  --ring: #b89b63;
+
+  /* Colores de marca extra (utilidades directas) */
+  --surface: #fffdf9;
+  --terracotta: #c0714a;
+  --rust: #a6522f;
+  --gold: #b89b63;
+  --olive: #6b705c;
+  --olive-foreground: #ffffff;
+  --success: #5f7a4e;
+  --danger: #b64032;
+
+  /* Gráficos (Recharts) */
+  --chart-1: #c0714a;
+  --chart-2: #b89b63;
+  --chart-3: #6b705c;
+  --chart-4: #7a4a30;
+  --chart-5: #d9a88c;
+
+  /* Sidebar */
+  --sidebar: #fffdf9;
+  --sidebar-foreground: #33271f;
+  --sidebar-primary: #4b2d1e;
+  --sidebar-primary-foreground: #fbf6ee;
+  --sidebar-accent: #efe6d9;
+  --sidebar-accent-foreground: #4b2d1e;
+  --sidebar-border: #e7dacb;
+  --sidebar-ring: #b89b63;
+}
+
+.dark {
+  --background: #241a14;
+  --foreground: #f4ece1;
+  --card: #2e221a;
+  --card-foreground: #f4ece1;
+  --popover: #2e221a;
+  --popover-foreground: #f4ece1;
+  --primary: #e7d3c2;
+  --primary-foreground: #2e221a;
+  --secondary: #3a2c22;
+  --secondary-foreground: #f4ece1;
+  --muted: #3a2c22;
+  --muted-foreground: #c2b2a3;
+  --accent: #4b2d1e;
+  --accent-foreground: #f4ece1;
+  --destructive: #d4685a;
+  --border: #ffffff1a;
+  --input: #ffffff26;
+  --ring: #b89b63;
+  --surface: #2e221a;
+  --sidebar: #2e221a;
+  --sidebar-foreground: #f4ece1;
+  --sidebar-primary: #e7d3c2;
+  --sidebar-primary-foreground: #2e221a;
+  --sidebar-accent: #3a2c22;
+  --sidebar-accent-foreground: #f4ece1;
+  --sidebar-border: #ffffff1a;
+  --sidebar-ring: #b89b63;
+}
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback', system-ui, sans-serif;
-  --font-serif: Georgia, 'Times New Roman', serif;
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
+  /* Tipografías */
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-vidaloka), Georgia, "Times New Roman", serif;
+  --font-heading: var(--font-vidaloka), Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Delicias Caseras - warm premium operations palette */
-  --color-background: #EFE8DF;
-  --color-surface: #FFFDF8;
-  --color-foreground: #2F251F;
-  --color-muted: #78685D;
-  --color-muted-foreground: #A99B8F;
-  --color-border: #E8DCCF;
-  --color-card: #FFFDF8;
-  --color-accent: #4B2D1E;
-  --color-accent-foreground: #FFFFFF;
-  --color-olive: #6B705C;
-  --color-olive-foreground: #FFFFFF;
-  --color-gold: #B89B63;
-  --color-success: #5F7A4E;
-  --color-danger: #B64032;
+  /* Tokens semánticos shadcn */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 
-  /* Legacy colors for gradual migration */
-  --color-brand-crema: #F7EFE4;
-  --color-brand-chocolate: #513323;
-  --color-brand-verde: #6B705C;
-  --color-brand-dorado: #B89B63;
+  /* Colores de marca extra */
+  --color-surface: var(--surface);
+  --color-terracotta: var(--terracotta);
+  --color-rust: var(--rust);
+  --color-gold: var(--gold);
+  --color-olive: var(--olive);
+  --color-olive-foreground: var(--olive-foreground);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
 
-  --radius: 0.5rem;
+  /* Gráficos */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sidebar */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radios */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
 }
 
-* {
-  border-color: var(--color-border);
-}
-
-body {
-  background:
-    radial-gradient(circle at top left, rgba(255, 253, 248, 0.95), transparent 34rem),
-    var(--color-background);
-  color: var(--color-foreground);
-}
-
-button,
-a,
-input,
-select,
-textarea {
-  outline-color: var(--color-gold);
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans antialiased;
+  }
+  body {
+    color: var(--color-foreground);
+    background:
+      radial-gradient(circle at top left, rgba(255, 253, 248, 0.9), transparent 34rem),
+      var(--color-background);
+  }
 }

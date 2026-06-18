@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/shared/AppShell";
 import { ProductCard } from "@/components/shared/ProductCard";
@@ -11,12 +11,15 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
+import { BotanicalAccent } from "@/components/shared/BotanicalAccent";
 
 type Producto = {
   id: string;
   nombre: string;
   precio: number;
+  costo: number;
   stock: number;
+  categoria: string | null;
 };
 
 type Venta = {
@@ -28,9 +31,10 @@ type Venta = {
 };
 
 async function getProductos() {
+  const supabase = await createClient();
   const { data: productos, error } = await supabase
     .from("productos")
-    .select("id, nombre, precio, stock")
+    .select("id, nombre, precio, costo, stock, categoria")
     .eq("activo", true)
     .order("nombre");
 
@@ -38,7 +42,8 @@ async function getProductos() {
   return (productos ?? []) as Producto[];
 }
 
-async function getVentas() {
+async function getVentasRecientes() {
+  const supabase = await createClient();
   const { data: ventas, error } = await supabase
     .from("ventas")
     .select("id, nombre_producto, cantidad, total, fecha")
@@ -49,16 +54,68 @@ async function getVentas() {
   return (ventas ?? []) as Venta[];
 }
 
+async function getResumen() {
+  const supabase = await createClient();
+
+  const inicioHoy = new Date();
+  inicioHoy.setHours(0, 0, 0, 0);
+  const inicioAyer = new Date(inicioHoy);
+  inicioAyer.setDate(inicioHoy.getDate() - 1);
+
+  const [ventasRes, pedidosRes] = await Promise.all([
+    supabase
+      .from("ventas")
+      .select("total, cantidad, fecha")
+      .gte("fecha", inicioAyer.toISOString()),
+    supabase
+      .from("pedidos")
+      .select("estado")
+      .in("estado", ["pendiente", "en_proceso", "listo"]),
+  ]);
+
+  const ventas = ventasRes.data ?? [];
+  const esHoy = (f: string) => new Date(f) >= inicioHoy;
+
+  const ingresoHoy = ventas
+    .filter((v) => esHoy(v.fecha))
+    .reduce((s, v) => s + v.total, 0);
+  const unidadesHoy = ventas
+    .filter((v) => esHoy(v.fecha))
+    .reduce((s, v) => s + v.cantidad, 0);
+  const ingresoAyer = ventas
+    .filter((v) => !esHoy(v.fecha))
+    .reduce((s, v) => s + v.total, 0);
+
+  return {
+    ingresoHoy,
+    unidadesHoy,
+    ingresoAyer,
+    pedidosActivos: pedidosRes.data?.length ?? 0,
+  };
+}
+
 export default async function Home() {
-  const [productos, ventas] = await Promise.all([getProductos(), getVentas()]);
+  const [productos, ventas, resumen] = await Promise.all([
+    getProductos(),
+    getVentasRecientes(),
+    getResumen(),
+  ]);
+  const { ingresoHoy, ingresoAyer, pedidosActivos } = resumen;
   const totalStock = productos.reduce((sum, p) => sum + p.stock, 0);
   const lowStockProducts = productos.filter((p) => p.stock < 10);
-  const today = new Date().toDateString();
-  const ventasHoy = ventas.filter(
-    (venta) => new Date(venta.fecha).toDateString() === today
-  );
-  const ingresoHoy = ventasHoy.reduce((sum, venta) => sum + venta.total, 0);
-  const unidadesHoy = ventasHoy.reduce((sum, venta) => sum + venta.cantidad, 0);
+  const categorias = new Set(
+    productos.map((p) => p.categoria).filter(Boolean)
+  ).size;
+
+  const deltaHelper =
+    ingresoAyer > 0
+      ? `${ingresoHoy - ingresoAyer >= 0 ? "+" : ""}${Math.round(
+          ((ingresoHoy - ingresoAyer) / ingresoAyer) * 100
+        )}% vs ayer`
+      : ingresoHoy > 0
+        ? "Primeras ventas del día"
+        : "Sin ventas aún";
+
   const productoMasVendido = ventas.reduce<Record<string, number>>(
     (acc, venta) => {
       acc[venta.nombre_producto] =
@@ -74,23 +131,32 @@ export default async function Home() {
   return (
     <AppShell>
       <div className="space-y-7">
+        <header>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            Panel
+          </p>
+          <h2 className="mt-1 font-serif text-3xl leading-tight text-foreground">
+            Resumen de tu taller
+          </h2>
+        </header>
+
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard
             label="Ventas hoy"
             value={`$${ingresoHoy.toLocaleString("es-CL")}`}
-            helper="+12% vs ayer"
+            helper={deltaHelper}
             icon={<TrendingUp className="h-4 w-4" />}
           />
           <MetricCard
-            label="Pedidos"
-            value={unidadesHoy.toString()}
-            helper="+2 vs ayer"
+            label="Pedidos activos"
+            value={pedidosActivos.toString()}
+            helper="por entregar"
             icon={<Receipt className="h-4 w-4" />}
           />
           <MetricCard
             label="Productos"
             value={productos.length.toString()}
-            helper="+1 nuevo"
+            helper={`${categorias} ${categorias === 1 ? "categoría" : "categorías"}`}
             icon={<Package className="h-4 w-4" />}
           />
           <MetricCard
@@ -108,12 +174,12 @@ export default async function Home() {
               <h3 className="font-serif text-lg text-foreground">
                 Ventas recientes
               </h3>
-              <span className="rounded-md border bg-surface px-2.5 py-1 text-[11px] font-medium text-muted">
+              <span className="rounded-md border bg-surface px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
                 Ver todas
               </span>
             </div>
             {ventas.length === 0 ? (
-              <div className="px-5 py-10 text-sm text-muted">
+              <div className="px-5 py-10 text-sm text-muted-foreground">
                 Aun no hay ventas registradas.
               </div>
             ) : (
@@ -124,14 +190,14 @@ export default async function Home() {
                     className="flex items-center justify-between gap-4 px-5 py-4"
                   >
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background text-muted">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-background text-muted-foreground">
                         <Receipt className="h-3.5 w-3.5" />
                       </span>
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-foreground">
                           {venta.nombre_producto}
                         </p>
-                        <p className="mt-1 text-xs text-muted">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           {new Date(venta.fecha).toLocaleDateString("es-CL", {
                             day: "2-digit",
                             month: "short",
@@ -151,28 +217,29 @@ export default async function Home() {
             )}
           </div>
 
-          <div className="relative overflow-hidden rounded-lg border bg-accent p-5 text-accent-foreground shadow-[0_14px_34px_rgba(75,45,30,0.08)]">
+          <div className="relative overflow-hidden rounded-lg border bg-primary p-5 text-primary-foreground shadow-[0_14px_34px_rgba(75,45,30,0.08)]">
             <div className="absolute inset-0 opacity-60 [background:radial-gradient(circle_at_75%_55%,#CDAE86_0_8%,transparent_9%_14%,#7A4A30_15%_28%,transparent_29%),radial-gradient(circle_at_88%_22%,#B8865A_0_7%,transparent_8%),linear-gradient(135deg,#4B2D1E,#7A4A30_55%,#2E1C14)]" />
             <div className="relative max-w-[12rem]">
               <Sparkles className="h-5 w-5 text-gold" />
-              <p className="mt-8 text-xs font-semibold text-accent-foreground/75">
+              <p className="mt-8 text-xs font-semibold text-primary-foreground/75">
                 Producto destacado
               </p>
               <h3 className="mt-2 font-serif text-2xl leading-tight">
                 {topProducto ? topProducto[0] : "Trufas artesanales"}
               </h3>
-              <p className="mt-4 text-sm leading-6 text-accent-foreground/80">
+              <p className="mt-4 text-sm leading-6 text-primary-foreground/80">
                 {topProducto
                   ? `${topProducto[1]} unidades en los ultimos movimientos.`
                   : "Nuestro producto mas vendido aparecera aqui cuando registres ventas."}
               </p>
             </div>
-            <ChartNoAxesCombined className="absolute bottom-4 right-4 h-24 w-24 text-accent-foreground/10" />
+            <ChartNoAxesCombined className="absolute bottom-4 right-4 h-24 w-24 text-primary-foreground/10" />
           </div>
         </section>
 
-        <section className="rounded-lg border bg-card p-5 shadow-[0_14px_34px_rgba(75,45,30,0.04)]">
-          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+        <section className="relative overflow-hidden rounded-lg border bg-card p-5 shadow-[0_14px_34px_rgba(75,45,30,0.04)]">
+          <BotanicalAccent className="pointer-events-none absolute -right-4 -top-10 h-44 w-28 rotate-6 text-gold/15" />
+          <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="max-w-md">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold">
                 Taller artesanal
@@ -181,7 +248,7 @@ export default async function Home() {
                 Cada receta cuenta una historia, cada bocado crea un momento.
               </p>
             </div>
-            <p className="font-serif text-lg italic text-muted">
+            <p className="font-serif text-lg italic text-muted-foreground">
               Delicias Caseras
             </p>
           </div>
@@ -193,11 +260,11 @@ export default async function Home() {
               <h2 className="font-serif text-2xl text-foreground">
                 Productos
               </h2>
-              <p className="mt-1 text-xs text-muted">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Mostrando {productos.length} productos activos
               </p>
             </div>
-            <p className="text-sm text-muted">
+            <p className="text-sm text-muted-foreground">
               Gestiona altas, precios y ventas rapidas.
             </p>
           </div>
@@ -207,7 +274,7 @@ export default async function Home() {
           {productos.length === 0 ? (
             <div className="rounded-lg border border-dashed bg-card p-12 text-center">
               <Package className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="mt-4 text-sm text-muted">
+              <p className="mt-4 text-sm text-muted-foreground">
                 No hay productos en el inventario
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
@@ -247,7 +314,7 @@ function MetricCard({
   return (
     <div className="rounded-lg border bg-card p-5 shadow-[0_14px_34px_rgba(75,45,30,0.04)]">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-semibold text-muted">{label}</p>
+        <p className="text-xs font-semibold text-muted-foreground">{label}</p>
         <span
           className={`flex h-8 w-8 items-center justify-center rounded-md ${
             danger
@@ -265,7 +332,7 @@ function MetricCard({
       >
         {value}
       </p>
-      <p className={`mt-2 text-xs ${danger ? "text-muted" : "text-success"}`}>
+      <p className={`mt-2 text-xs ${danger ? "text-muted-foreground" : "text-success"}`}>
         {helper}
       </p>
     </div>

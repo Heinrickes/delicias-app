@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, Key, LogIn, AlertCircle } from "lucide-react";
+import { BotanicalAccent } from "@/components/shared/BotanicalAccent";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -13,10 +14,7 @@ export default function LoginPage() {
 
   const router = useRouter();
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = createClient();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,15 +37,16 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md rounded-lg border bg-card p-8 shadow-[0_18px_60px_rgba(81,51,35,0.08)]">
+      <div className="relative w-full max-w-md overflow-hidden rounded-lg border bg-card p-8 shadow-[0_18px_60px_rgba(81,51,35,0.08)]">
+        <BotanicalAccent className="pointer-events-none absolute -right-6 -top-8 h-40 w-28 rotate-12 text-gold/20" />
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gold/15">
-            <Lock className="h-6 w-6 text-accent" />
+            <Lock className="h-6 w-6 text-primary" />
           </div>
           <h1 className="font-serif text-3xl leading-tight text-foreground">
             Delicias
           </h1>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-muted">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-muted-foreground">
             Caseras
           </p>
           <p className="mt-4 text-sm text-muted-foreground">
@@ -64,7 +63,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Correo electrónico
             </label>
             <div className="relative">
@@ -83,7 +82,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted">
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Contraseña
             </label>
             <div className="relative">
@@ -104,7 +103,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-3 text-sm font-medium text-accent-foreground transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
           >
             {loading ? (
               "Verificando..."
