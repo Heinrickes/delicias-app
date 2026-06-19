@@ -79,6 +79,42 @@ export type Database = {
           },
         ]
       }
+      pack_items: {
+        Row: {
+          cantidad: number
+          id: string
+          pack_id: string
+          producto_id: string
+        }
+        Insert: {
+          cantidad?: number
+          id?: string
+          pack_id: string
+          producto_id: string
+        }
+        Update: {
+          cantidad?: number
+          id?: string
+          pack_id?: string
+          producto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pack_items_pack_id_fkey"
+            columns: ["pack_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pack_items_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedido_items: {
         Row: {
           cantidad: number
@@ -175,28 +211,31 @@ export type Database = {
           nombre: string
           precio: number
           stock: number
+          tipo: string
           unidad: string
         }
         Insert: {
           activo?: boolean | null
           categoria?: string | null
           costo?: number
-          creado_en?: string | null
+          creado_en?: string
           id?: string
           nombre: string
           precio: number
-          stock?: number | null
+          stock?: number
+          tipo?: string
           unidad?: string
         }
         Update: {
           activo?: boolean | null
           categoria?: string | null
           costo?: number
-          creado_en?: string | null
+          creado_en?: string
           id?: string
           nombre?: string
           precio?: number
-          stock?: number | null
+          stock?: number
+          tipo?: string
           unidad?: string
         }
         Relationships: []
@@ -214,10 +253,10 @@ export type Database = {
           total: number
         }
         Insert: {
-          cantidad?: number | null
+          cantidad?: number
           cliente_id?: string | null
           costo_total?: number
-          fecha?: string | null
+          fecha?: string
           id?: string
           nombre_producto: string
           pedido_id?: string | null
@@ -225,10 +264,10 @@ export type Database = {
           total: number
         }
         Update: {
-          cantidad?: number | null
+          cantidad?: number
           cliente_id?: string | null
           costo_total?: number
-          fecha?: string | null
+          fecha?: string
           id?: string
           nombre_producto?: string
           pedido_id?: string | null

@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/shared/AppShell";
-import { ProductCard } from "@/components/shared/ProductCard";
-import { ProductForm } from "@/components/shared/ProductForm";
+import { getProductosEnriquecidos } from "@/lib/productos-data";
+import { STOCK_BAJO_UMBRAL } from "@/lib/constants";
 import {
   AlertTriangle,
   ChartNoAxesCombined,
@@ -13,15 +13,6 @@ import {
 } from "lucide-react";
 import { BotanicalAccent } from "@/components/shared/BotanicalAccent";
 
-type Producto = {
-  id: string;
-  nombre: string;
-  precio: number;
-  costo: number;
-  stock: number;
-  categoria: string | null;
-};
-
 type Venta = {
   id: string;
   nombre_producto: string;
@@ -29,18 +20,6 @@ type Venta = {
   total: number;
   fecha: string;
 };
-
-async function getProductos() {
-  const supabase = await createClient();
-  const { data: productos, error } = await supabase
-    .from("productos")
-    .select("id, nombre, precio, costo, stock, categoria")
-    .eq("activo", true)
-    .order("nombre");
-
-  if (error) console.error("Error trayendo productos:", error);
-  return (productos ?? []) as Producto[];
-}
 
 async function getVentasRecientes() {
   const supabase = await createClient();
@@ -96,13 +75,14 @@ async function getResumen() {
 
 export default async function Home() {
   const [productos, ventas, resumen] = await Promise.all([
-    getProductos(),
+    getProductosEnriquecidos(),
     getVentasRecientes(),
     getResumen(),
   ]);
   const { ingresoHoy, ingresoAyer, pedidosActivos } = resumen;
-  const totalStock = productos.reduce((sum, p) => sum + p.stock, 0);
-  const lowStockProducts = productos.filter((p) => p.stock < 10);
+  const simples = productos.filter((p) => p.tipo === "simple");
+  const totalStock = simples.reduce((sum, p) => sum + p.stock, 0);
+  const lowStockProducts = simples.filter((p) => p.stock < STOCK_BAJO_UMBRAL);
   const categorias = new Set(
     productos.map((p) => p.categoria).filter(Boolean)
   ).size;
@@ -252,46 +232,6 @@ export default async function Home() {
               Delicias Caseras
             </p>
           </div>
-        </section>
-
-        <section id="productos" className="scroll-mt-6">
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="font-serif text-2xl text-foreground">
-                Productos
-              </h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Mostrando {productos.length} productos activos
-              </p>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Gestiona altas, precios y ventas rapidas.
-            </p>
-          </div>
-
-          <ProductForm />
-
-          {productos.length === 0 ? (
-            <div className="rounded-lg border border-dashed bg-card p-12 text-center">
-              <Package className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="mt-4 text-sm text-muted-foreground">
-                No hay productos en el inventario
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Agrega tu primer producto usando el formulario de arriba
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
-              {productos.map((producto, index) => (
-                <ProductCard
-                  key={producto.id}
-                  producto={producto}
-                  variant={index % 4}
-                />
-              ))}
-            </div>
-          )}
         </section>
       </div>
     </AppShell>

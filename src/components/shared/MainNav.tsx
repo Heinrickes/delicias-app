@@ -15,7 +15,7 @@ import { clsx } from "clsx";
 
 const primaryItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/#productos", label: "Productos", icon: Package },
+  { href: "/productos", label: "Productos", icon: Package },
   { href: "/stock", label: "Stock", icon: Boxes },
   { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
   { href: "/clientes", label: "Clientes", icon: Users },

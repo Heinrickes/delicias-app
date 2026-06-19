@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/lib/actions/types";
 import type { EstadoPedido } from "@/lib/constants";
+import { aplicarSalidaStock } from "@/lib/ventas-helpers";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -97,19 +98,15 @@ export async function cambiarEstadoPedido(
         .eq("pedido_id", id);
 
       for (const item of items ?? []) {
-        let costoUnit = 0;
-        let stockActual: number | null = null;
-
+        let costoTotal = 0;
         if (item.producto_id) {
-          const { data: prod } = await supabase
-            .from("productos")
-            .select("costo, stock")
-            .eq("id", item.producto_id)
-            .single();
-          if (prod) {
-            costoUnit = prod.costo;
-            stockActual = prod.stock;
-          }
+          // Descuenta stock (componentes del base si es pack) y devuelve el costo.
+          costoTotal = await aplicarSalidaStock(
+            supabase,
+            item.producto_id,
+            item.cantidad,
+            "Entrega de pedido"
+          );
         }
 
         await supabase.from("ventas").insert({
@@ -117,23 +114,10 @@ export async function cambiarEstadoPedido(
           nombre_producto: item.nombre_producto,
           cantidad: item.cantidad,
           total: item.precio_unitario * item.cantidad,
-          costo_total: costoUnit * item.cantidad,
+          costo_total: costoTotal,
           cliente_id: pedido.cliente_id,
           pedido_id: id,
         });
-
-        if (item.producto_id && stockActual !== null) {
-          await supabase
-            .from("productos")
-            .update({ stock: stockActual - item.cantidad })
-            .eq("id", item.producto_id);
-          await supabase.from("movimientos_stock").insert({
-            producto_id: item.producto_id,
-            tipo: "venta",
-            cantidad: -item.cantidad,
-            nota: "Entrega de pedido",
-          });
-        }
       }
 
       revalidatePath("/");

@@ -31,6 +31,8 @@ type Producto = {
   costo: number;
   stock: number;
   categoria: string | null;
+  tipo?: "simple" | "pack";
+  componentes?: { nombre: string; cantidad: number }[];
 };
 
 const productVisuals = [
@@ -56,6 +58,7 @@ export function ProductCard({
   const [saving, startSaving] = useTransition();
   const [deleting, startDeleting] = useTransition();
 
+  const esPack = producto.tipo === "pack";
   const margen = producto.precio - producto.costo;
   const margenPct =
     producto.precio > 0 ? Math.round((margen / producto.precio) * 100) : 0;
@@ -79,7 +82,7 @@ export function ProductCard({
       const result = await actualizarProducto(producto.id, {
         nombre: editNombre,
         precio: parseInt(editPrecio) || 0,
-        costo: parseInt(editCosto) || 0,
+        costo: esPack ? 0 : parseInt(editCosto) || 0,
       });
       if (result.ok) {
         toast.success("Producto actualizado");
@@ -114,11 +117,16 @@ export function ProductCard({
         className="relative h-32 border-b bg-cover bg-center"
         style={{ background: productVisuals[variant % productVisuals.length] }}
       >
-        {producto.categoria && (
-          <Badge className="absolute left-3 top-3 bg-card/85 text-foreground backdrop-blur">
-            {producto.categoria}
-          </Badge>
-        )}
+        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+          {esPack && (
+            <Badge className="bg-primary text-primary-foreground">Pack</Badge>
+          )}
+          {producto.categoria && (
+            <Badge className="bg-card/85 text-foreground backdrop-blur">
+              {producto.categoria}
+            </Badge>
+          )}
+        </div>
       </div>
 
       <div className="absolute right-3 top-3 flex gap-1 rounded-md bg-card/80 p-1 opacity-0 shadow-sm backdrop-blur transition-opacity group-hover:opacity-100">
@@ -170,7 +178,7 @@ export function ProductCard({
               onChange={(e) => setEditNombre(e.target.value)}
               placeholder="Nombre del producto"
             />
-            <div className="grid grid-cols-2 gap-2">
+            <div className={`grid gap-2 ${esPack ? "grid-cols-1" : "grid-cols-2"}`}>
               <div className="space-y-1">
                 <span className="text-xs text-muted-foreground">
                   {LABELS.precio}
@@ -182,17 +190,19 @@ export function ProductCard({
                   placeholder="Precio"
                 />
               </div>
-              <div className="space-y-1">
-                <span className="text-xs text-muted-foreground">
-                  {LABELS.costo}
-                </span>
-                <Input
-                  type="number"
-                  value={editCosto}
-                  onChange={(e) => setEditCosto(e.target.value)}
-                  placeholder="Costo"
-                />
-              </div>
+              {!esPack && (
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">
+                    {LABELS.costo}
+                  </span>
+                  <Input
+                    type="number"
+                    value={editCosto}
+                    onChange={(e) => setEditCosto(e.target.value)}
+                    placeholder="Costo"
+                  />
+                </div>
+              )}
             </div>
             <div className="flex gap-2 pt-1">
               <Button
@@ -224,6 +234,15 @@ export function ProductCard({
                 {LABELS.stock}: {stock}
               </span>
             </div>
+
+            {esPack && producto.componentes && producto.componentes.length > 0 && (
+              <p className="mt-2 truncate text-xs text-muted-foreground">
+                Incluye:{" "}
+                {producto.componentes
+                  .map((c) => `${c.cantidad}× ${c.nombre}`)
+                  .join(", ")}
+              </p>
+            )}
 
             <div className="mt-2 flex items-center justify-between text-xs">
               <span className="text-muted-foreground">

@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
 import { toast } from "sonner";
 import {
   actualizarCliente,
@@ -18,7 +24,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { LABELS } from "@/lib/constants";
 
@@ -89,7 +94,11 @@ export function ClienteFormDialog({
         if (!o && esEdicion) resetParaEdicion();
       }}
     >
-      <DialogTrigger render={trigger as React.ReactElement} />
+      {isValidElement(trigger)
+        ? cloneElement(trigger as React.ReactElement<{ onClick?: () => void }>, {
+            onClick: () => setOpen(true),
+          })
+        : trigger}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>

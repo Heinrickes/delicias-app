@@ -19,7 +19,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { LABELS } from "@/lib/constants";
@@ -101,14 +100,10 @@ export function StockMovimientoDialog({
         if (!o) reset();
       }}
     >
-      <DialogTrigger
-        render={
-          <Button variant="outline" size="sm">
-            <PackagePlus className="h-4 w-4" />
-            Movimiento
-          </Button>
-        }
-      />
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <PackagePlus className="h-4 w-4" />
+        Movimiento
+      </Button>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{producto.nombre}</DialogTitle>
