@@ -3,6 +3,7 @@ import { PedidoCard } from "@/components/shared/PedidoCard";
 import { PedidoFormDialog } from "@/components/shared/PedidoFormDialog";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
+import { formatMoneda } from "@/lib/constants";
 import { ClipboardList, Plus } from "lucide-react";
 
 export const revalidate = 0;
@@ -10,6 +11,7 @@ export const revalidate = 0;
 type PedidoRow = {
   id: string;
   fecha_entrega: string | null;
+  fecha_estimada_pago: string | null;
   estado: string;
   total: number;
   notas: string | null;
@@ -21,7 +23,7 @@ type PedidoRow = {
   }[];
 };
 
-const ACTIVOS = ["pendiente", "en_proceso", "listo"];
+const ACTIVOS = ["pendiente", "por_cobrar"];
 
 async function getData() {
   const supabase = await createClient();
@@ -30,7 +32,7 @@ async function getData() {
     supabase
       .from("pedidos")
       .select(
-        "id, fecha_entrega, estado, total, notas, clientes(nombre), pedido_items(nombre_producto, cantidad, subtotal)"
+        "id, fecha_entrega, fecha_estimada_pago, estado, total, notas, clientes(nombre), pedido_items(nombre_producto, cantidad, subtotal)"
       )
       .order("fecha_entrega", { ascending: true, nullsFirst: false }),
     supabase.from("clientes").select("id, nombre").order("nombre"),
@@ -52,6 +54,7 @@ function toCardProps(p: PedidoRow) {
   return {
     id: p.id,
     fecha_entrega: p.fecha_entrega,
+    fecha_estimada_pago: p.fecha_estimada_pago,
     estado: p.estado,
     total: p.total,
     notas: p.notas,
@@ -68,6 +71,9 @@ export default async function PedidosPage() {
 
   const cuenta = (estado: string) =>
     pedidos.filter((p) => p.estado === estado).length;
+  const totalPorCobrar = pedidos
+    .filter((p) => p.estado === "por_cobrar")
+    .reduce((s, p) => s + p.total, 0);
 
   return (
     <AppShell>
@@ -81,8 +87,9 @@ export default async function PedidosPage() {
               Pedidos
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Gestiona encargos por fecha de entrega. Al marcar un pedido como
-              entregado se genera la venta y se descuenta el stock.
+              Encargos por fecha de entrega. Al entregar se genera la venta y se
+              descuenta el stock; puedes entregar cobrando o dejar el pago
+              pendiente.
             </p>
           </div>
           <PedidoFormDialog
@@ -99,9 +106,9 @@ export default async function PedidosPage() {
 
         <section className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <Metric label="Pendientes" value={cuenta("pendiente")} />
-          <Metric label="En proceso" value={cuenta("en_proceso")} />
-          <Metric label="Listos" value={cuenta("listo")} />
-          <Metric label="Entregados" value={cuenta("entregado")} />
+          <Metric label="Por cobrar" value={cuenta("por_cobrar")} />
+          <Metric label="Total por cobrar" value={formatMoneda(totalPorCobrar)} />
+          <Metric label="Pagados" value={cuenta("entregado")} />
         </section>
 
         <section>
@@ -144,7 +151,13 @@ export default async function PedidosPage() {
   );
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) {
   return (
     <div className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
       <p className="text-xs font-semibold text-muted-foreground">{label}</p>

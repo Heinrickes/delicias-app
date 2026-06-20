@@ -166,6 +166,7 @@ export type Database = {
           creado_en: string
           estado: string
           fecha_entrega: string | null
+          fecha_estimada_pago: string | null
           fecha_pedido: string
           id: string
           notas: string | null
@@ -176,6 +177,7 @@ export type Database = {
           creado_en?: string
           estado?: string
           fecha_entrega?: string | null
+          fecha_estimada_pago?: string | null
           fecha_pedido?: string
           id?: string
           notas?: string | null
@@ -186,6 +188,7 @@ export type Database = {
           creado_en?: string
           estado?: string
           fecha_entrega?: string | null
+          fecha_estimada_pago?: string | null
           fecha_pedido?: string
           id?: string
           notas?: string | null

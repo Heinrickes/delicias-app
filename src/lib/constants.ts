@@ -22,9 +22,8 @@ export const NAV = {
 
 export const ESTADOS_PEDIDO = {
   pendiente: "Pendiente",
-  en_proceso: "En proceso",
-  listo: "Listo",
-  entregado: "Entregado",
+  por_cobrar: "Por cobrar",
+  entregado: "Pagado",
   cancelado: "Cancelado",
 } as const;
 

@@ -74,9 +74,13 @@ export async function crearPedido(input: PedidoInput): Promise<ActionResult> {
   }
 }
 
+// Estados que implican que el pedido ya fue entregado físicamente.
+const ESTADOS_ENTREGADOS = ["entregado", "por_cobrar"];
+
 export async function cambiarEstadoPedido(
   id: string,
-  estado: EstadoPedido
+  estado: EstadoPedido,
+  fechaEstimadaPago?: string | null
 ): Promise<ActionResult> {
   try {
     const supabase = await requireUser();
@@ -90,8 +94,10 @@ export async function cambiarEstadoPedido(
       return { ok: false, error: error?.message ?? "Pedido no encontrado" };
     }
 
-    // Al entregar (solo la primera vez): genera ventas y descuenta stock.
-    if (estado === "entregado" && pedido.estado !== "entregado") {
+    // Al entregar por primera vez (pagado o por cobrar): genera ventas y descuenta stock.
+    const seraEntregado = ESTADOS_ENTREGADOS.includes(estado);
+    const eraEntregado = ESTADOS_ENTREGADOS.includes(pedido.estado);
+    if (seraEntregado && !eraEntregado) {
       const { data: items } = await supabase
         .from("pedido_items")
         .select("producto_id, nombre_producto, cantidad, precio_unitario")
@@ -125,11 +131,20 @@ export async function cambiarEstadoPedido(
       revalidatePath("/stock");
     }
 
+    const cambios: { estado: EstadoPedido; fecha_estimada_pago?: string | null } = {
+      estado,
+    };
+    if (estado === "por_cobrar") {
+      cambios.fecha_estimada_pago = fechaEstimadaPago ?? null;
+    }
+
     const { error: updErr } = await supabase
       .from("pedidos")
-      .update({ estado })
+      .update(cambios)
       .eq("id", id);
     if (updErr) return { ok: false, error: updErr.message };
+
+    revalidatePath("/por-cobrar");
 
     revalidatePath("/pedidos");
     revalidatePath("/clientes");
