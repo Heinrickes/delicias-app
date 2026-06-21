@@ -1,24 +1,19 @@
 import { AppShell } from "@/components/shared/AppShell";
-import { StockMovimientoDialog } from "@/components/shared/StockMovimientoDialog";
+import {
+  InventarioTabla,
+  type ProductoInventario,
+} from "@/components/shared/InventarioTabla";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import {
+  formatMoneda,
   LOCALE,
-  STOCK_BAJO_UMBRAL,
   TIPOS_MOVIMIENTO,
   type TipoMovimiento,
 } from "@/lib/constants";
-import { Boxes, PackageCheck, AlertTriangle, Factory } from "lucide-react";
+import { Coins, PackageCheck, AlertTriangle, Factory } from "lucide-react";
 
 export const revalidate = 0;
-
-type ProductoStock = {
-  id: string;
-  nombre: string;
-  categoria: string | null;
-  stock: number;
-  unidad: string;
-};
 
 type Movimiento = {
   id: string;
@@ -39,7 +34,7 @@ async function getData() {
   const [productosRes, movimientosRes, produccionRes] = await Promise.all([
     supabase
       .from("productos")
-      .select("id, nombre, categoria, stock, unidad")
+      .select("id, nombre, categoria, stock, stock_minimo, costo, unidad")
       .eq("activo", true)
       .order("nombre"),
     supabase
@@ -60,7 +55,7 @@ async function getData() {
   );
 
   return {
-    productos: (productosRes.data ?? []) as ProductoStock[],
+    productos: (productosRes.data ?? []) as ProductoInventario[],
     movimientos: (movimientosRes.data ?? []) as Movimiento[],
     produccionMes,
   };
@@ -77,34 +72,35 @@ export default async function StockPage() {
   const { productos, movimientos, produccionMes } = await getData();
 
   const totalUnidades = productos.reduce((s, p) => s + p.stock, 0);
-  const stockBajo = productos.filter((p) => p.stock < STOCK_BAJO_UMBRAL);
+  const valorInventario = productos.reduce((s, p) => s + p.costo * p.stock, 0);
+  const stockBajo = productos.filter((p) => p.stock < p.stock_minimo);
 
   return (
     <AppShell>
       <div className="space-y-8">
         <header>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-            Inventario
+            Existencias
           </p>
           <h2 className="mt-1 font-serif text-3xl leading-tight text-foreground">
-            Stock y producción
+            Inventario
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Controla las existencias, registra la producción de cada lote y
-            revisa el historial de movimientos.
+            Controla existencias y su valor, registra producción y mermas, y
+            define el umbral de aviso de cada producto.
           </p>
         </header>
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Metric
-            label="Productos activos"
-            value={productos.length.toString()}
-            icon={<Boxes className="h-4 w-4" />}
-          />
+        <section className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <Metric
             label="Unidades en stock"
             value={totalUnidades.toString()}
             icon={<PackageCheck className="h-4 w-4" />}
+          />
+          <Metric
+            label="Valor del inventario"
+            value={formatMoneda(valorInventario)}
+            icon={<Coins className="h-4 w-4" />}
           />
           <Metric
             label="Producción del mes"
@@ -120,74 +116,11 @@ export default async function StockPage() {
         </section>
 
         {/* Inventario */}
-        <section>
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Inventario ({productos.length})
-          </h3>
-          {productos.length === 0 ? (
-            <EmptyState texto="No hay productos. Agrega productos desde el Dashboard." />
-          ) : (
-            <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b bg-background/40 text-xs uppercase tracking-wider text-muted-foreground">
-                      <th className="px-5 py-3 font-semibold">Producto</th>
-                      <th className="px-5 py-3 font-semibold">Categoría</th>
-                      <th className="px-5 py-3 text-center font-semibold">
-                        Stock
-                      </th>
-                      <th className="px-5 py-3 text-center font-semibold">
-                        Estado
-                      </th>
-                      <th className="px-5 py-3 text-right font-semibold">
-                        Acción
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {productos.map((p) => {
-                      const agotado = p.stock <= 0;
-                      const bajo = p.stock < STOCK_BAJO_UMBRAL;
-                      return (
-                        <tr key={p.id} className="hover:bg-background/30">
-                          <td className="px-5 py-3 font-medium text-foreground">
-                            {p.nombre}
-                          </td>
-                          <td className="px-5 py-3 text-muted-foreground">
-                            {p.categoria ?? "—"}
-                          </td>
-                          <td className="px-5 py-3 text-center tabular-nums">
-                            {p.stock}{" "}
-                            <span className="text-xs text-muted-foreground">
-                              {p.unidad}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3 text-center">
-                            <Badge
-                              className={
-                                agotado
-                                  ? "bg-danger/15 text-danger"
-                                  : bajo
-                                    ? "bg-gold/15 text-gold"
-                                    : "bg-success/15 text-success"
-                              }
-                            >
-                              {agotado ? "Agotado" : bajo ? "Bajo" : "OK"}
-                            </Badge>
-                          </td>
-                          <td className="px-5 py-3 text-right">
-                            <StockMovimientoDialog producto={p} />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </section>
+        {productos.length === 0 ? (
+          <EmptyState texto="No hay productos. Agrega productos desde Productos." />
+        ) : (
+          <InventarioTabla productos={productos} />
+        )}
 
         {/* Movimientos */}
         <section>

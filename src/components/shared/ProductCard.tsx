@@ -1,13 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Pencil, Trash2, X, Check, ShoppingBag } from "lucide-react";
+import { Pencil, Trash2, X, Check } from "lucide-react";
 import { toast } from "sonner";
-import {
-  actualizarProducto,
-  eliminarProducto,
-  venderProducto,
-} from "@/lib/actions/productos";
+import { actualizarProducto, eliminarProducto } from "@/lib/actions/productos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -49,33 +45,19 @@ export function ProductCard({
   producto: Producto;
   variant?: number;
 }) {
-  const [stock, setStock] = useState(producto.stock);
   const [isEditing, setIsEditing] = useState(false);
   const [editNombre, setEditNombre] = useState(producto.nombre);
   const [editPrecio, setEditPrecio] = useState(producto.precio.toString());
   const [editCosto, setEditCosto] = useState(producto.costo.toString());
-  const [selling, startSelling] = useTransition();
   const [saving, startSaving] = useTransition();
   const [deleting, startDeleting] = useTransition();
 
+  const stock = producto.stock;
   const esPack = producto.tipo === "pack";
   const margen = producto.precio - producto.costo;
   const margenPct =
     producto.precio > 0 ? Math.round((margen / producto.precio) * 100) : 0;
   const stockBajo = stock < STOCK_BAJO_UMBRAL;
-
-  const handleVender = () => {
-    if (stock <= 0) return;
-    startSelling(async () => {
-      const result = await venderProducto(producto.id);
-      if (result.ok && result.data) {
-        setStock(result.data.stock);
-        toast.success(`Venta registrada: ${producto.nombre}`);
-      } else if (!result.ok) {
-        toast.error(result.error);
-      }
-    });
-  };
 
   const handleGuardarEdicion = () => {
     startSaving(async () => {
@@ -252,20 +234,6 @@ export function ProductCard({
                 {LABELS.margen}: {formatMoneda(margen)} ({margenPct}%)
               </span>
             </div>
-
-            <Button
-              className="mt-4 w-full"
-              onClick={handleVender}
-              disabled={selling || stock <= 0}
-              variant={stock <= 0 ? "secondary" : "default"}
-            >
-              <ShoppingBag className="h-4 w-4" />
-              {selling
-                ? LABELS.procesando
-                : stock <= 0
-                  ? LABELS.agotado
-                  : LABELS.registrarVenta}
-            </Button>
           </>
         )}
       </div>

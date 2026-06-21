@@ -8,6 +8,7 @@ export type ProductoEnriquecido = {
   precio: number;
   costo: number; // efectivo (packs: suma de componentes)
   stock: number; // efectivo (packs: packs armables)
+  stock_minimo: number;
   categoria: string | null;
   tipo: "simple" | "pack";
   componentes: ComponentePack[];
@@ -22,7 +23,7 @@ export async function getProductosEnriquecidos(): Promise<ProductoEnriquecido[]>
 
   const { data: productos } = await supabase
     .from("productos")
-    .select("id, nombre, precio, costo, stock, categoria, tipo")
+    .select("id, nombre, precio, costo, stock, stock_minimo, categoria, tipo")
     .eq("activo", true)
     .order("nombre");
 
@@ -73,6 +74,7 @@ export async function getProductosEnriquecidos(): Promise<ProductoEnriquecido[]>
         precio: p.precio,
         costo,
         stock,
+        stock_minimo: p.stock_minimo,
         categoria: p.categoria,
         tipo: "pack",
         componentes: comps.map((c) => ({ nombre: c.nombre, cantidad: c.cantidad })),
@@ -84,6 +86,7 @@ export async function getProductosEnriquecidos(): Promise<ProductoEnriquecido[]>
       precio: p.precio,
       costo: p.costo,
       stock: p.stock,
+      stock_minimo: p.stock_minimo,
       categoria: p.categoria,
       tipo: "simple",
       componentes: [],

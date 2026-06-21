@@ -31,14 +31,20 @@ function normaliza(input: ClienteInput) {
   };
 }
 
-export async function crearCliente(input: ClienteInput): Promise<ActionResult> {
+export async function crearCliente(
+  input: ClienteInput
+): Promise<ActionResult<{ id: string }>> {
   try {
     if (!input.nombre.trim()) return { ok: false, error: "El nombre es obligatorio" };
     const supabase = await requireUser();
-    const { error } = await supabase.from("clientes").insert(normaliza(input));
-    if (error) return { ok: false, error: error.message };
+    const { data, error } = await supabase
+      .from("clientes")
+      .insert(normaliza(input))
+      .select("id")
+      .single();
+    if (error || !data) return { ok: false, error: error?.message ?? "Error" };
     revalidatePath("/clientes");
-    return { ok: true };
+    return { ok: true, data: { id: data.id } };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error" };
   }

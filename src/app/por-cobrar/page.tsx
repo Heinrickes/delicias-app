@@ -1,7 +1,7 @@
 import { AppShell } from "@/components/shared/AppShell";
 import { PedidoCard } from "@/components/shared/PedidoCard";
 import { createClient } from "@/lib/supabase/server";
-import { formatMoneda, LOCALE } from "@/lib/constants";
+import { formatMoneda } from "@/lib/constants";
 import { Coins, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 export const revalidate = 0;

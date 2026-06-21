@@ -1,12 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { AppShell } from "@/components/shared/AppShell";
 import { getProductosEnriquecidos } from "@/lib/productos-data";
-import { STOCK_BAJO_UMBRAL } from "@/lib/constants";
+import { formatMoneda } from "@/lib/constants";
 import {
   AlertTriangle,
+  CalendarClock,
   ChartNoAxesCombined,
-  Package,
+  Coins,
   Receipt,
   Sparkles,
   TrendingUp,
@@ -40,6 +42,9 @@ async function getResumen() {
   inicioHoy.setHours(0, 0, 0, 0);
   const inicioAyer = new Date(inicioHoy);
   inicioAyer.setDate(inicioHoy.getDate() - 1);
+  const hoyISO = `${inicioHoy.getFullYear()}-${String(
+    inicioHoy.getMonth() + 1
+  ).padStart(2, "0")}-${String(inicioHoy.getDate()).padStart(2, "0")}`;
 
   const [ventasRes, pedidosRes] = await Promise.all([
     supabase
@@ -48,29 +53,29 @@ async function getResumen() {
       .gte("fecha", inicioAyer.toISOString()),
     supabase
       .from("pedidos")
-      .select("estado")
-      .in("estado", ["pendiente", "en_proceso", "listo"]),
+      .select("estado, fecha_entrega, total")
+      .in("estado", ["pendiente", "por_cobrar"]),
   ]);
 
   const ventas = ventasRes.data ?? [];
+  const pedidos = pedidosRes.data ?? [];
   const esHoy = (f: string) => new Date(f) >= inicioHoy;
 
   const ingresoHoy = ventas
     .filter((v) => esHoy(v.fecha))
     .reduce((s, v) => s + v.total, 0);
-  const unidadesHoy = ventas
-    .filter((v) => esHoy(v.fecha))
-    .reduce((s, v) => s + v.cantidad, 0);
   const ingresoAyer = ventas
     .filter((v) => !esHoy(v.fecha))
     .reduce((s, v) => s + v.total, 0);
 
-  return {
-    ingresoHoy,
-    unidadesHoy,
-    ingresoAyer,
-    pedidosActivos: pedidosRes.data?.length ?? 0,
-  };
+  const entregasHoy = pedidos.filter(
+    (p) => p.estado === "pendiente" && p.fecha_entrega === hoyISO
+  ).length;
+  const totalPorCobrar = pedidos
+    .filter((p) => p.estado === "por_cobrar")
+    .reduce((s, p) => s + p.total, 0);
+
+  return { ingresoHoy, ingresoAyer, entregasHoy, totalPorCobrar };
 }
 
 export default async function Home() {
@@ -79,13 +84,9 @@ export default async function Home() {
     getVentasRecientes(),
     getResumen(),
   ]);
-  const { ingresoHoy, ingresoAyer, pedidosActivos } = resumen;
+  const { ingresoHoy, ingresoAyer, entregasHoy, totalPorCobrar } = resumen;
   const simples = productos.filter((p) => p.tipo === "simple");
-  const totalStock = simples.reduce((sum, p) => sum + p.stock, 0);
-  const lowStockProducts = simples.filter((p) => p.stock < STOCK_BAJO_UMBRAL);
-  const categorias = new Set(
-    productos.map((p) => p.categoria).filter(Boolean)
-  ).size;
+  const lowStockProducts = simples.filter((p) => p.stock < p.stock_minimo);
 
   const deltaHelper =
     ingresoAyer > 0
@@ -120,30 +121,36 @@ export default async function Home() {
           </h2>
         </header>
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-2 gap-4 xl:grid-cols-4">
           <MetricCard
             label="Ventas hoy"
-            value={`$${ingresoHoy.toLocaleString("es-CL")}`}
+            value={formatMoneda(ingresoHoy)}
             helper={deltaHelper}
+            href="/ventas"
             icon={<TrendingUp className="h-4 w-4" />}
           />
           <MetricCard
-            label="Pedidos activos"
-            value={pedidosActivos.toString()}
-            helper="por entregar"
-            icon={<Receipt className="h-4 w-4" />}
+            label="Entregas hoy"
+            value={entregasHoy.toString()}
+            helper={entregasHoy === 1 ? "pedido por entregar" : "pedidos por entregar"}
+            href="/pedidos"
+            icon={<CalendarClock className="h-4 w-4" />}
           />
           <MetricCard
-            label="Productos"
-            value={productos.length.toString()}
-            helper={`${categorias} ${categorias === 1 ? "categoría" : "categorías"}`}
-            icon={<Package className="h-4 w-4" />}
+            label="Por cobrar"
+            value={formatMoneda(totalPorCobrar)}
+            helper="cuentas pendientes"
+            href="/por-cobrar"
+            icon={<Coins className="h-4 w-4" />}
           />
           <MetricCard
             label="Stock bajo"
             value={lowStockProducts.length.toString()}
-            helper={`${totalStock} unidades totales`}
+            helper={
+              lowStockProducts.length > 0 ? "revisar inventario" : "todo en orden"
+            }
             danger={lowStockProducts.length > 0}
+            href="/stock"
             icon={<AlertTriangle className="h-4 w-4" />}
           />
         </section>
@@ -154,9 +161,12 @@ export default async function Home() {
               <h3 className="font-serif text-lg text-foreground">
                 Ventas recientes
               </h3>
-              <span className="rounded-md border bg-surface px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+              <Link
+                href="/reportes"
+                className="rounded-md border bg-surface px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+              >
                 Ver todas
-              </span>
+              </Link>
             </div>
             {ventas.length === 0 ? (
               <div className="px-5 py-10 text-sm text-muted-foreground">
@@ -243,23 +253,23 @@ function MetricCard({
   value,
   helper,
   icon,
+  href,
   danger = false,
 }: {
   label: string;
   value: string;
   helper: string;
   icon: ReactNode;
+  href?: string;
   danger?: boolean;
 }) {
-  return (
-    <div className="rounded-lg border bg-card p-5 shadow-[0_14px_34px_rgba(75,45,30,0.04)]">
+  const inner = (
+    <>
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs font-semibold text-muted-foreground">{label}</p>
         <span
           className={`flex h-8 w-8 items-center justify-center rounded-md ${
-            danger
-              ? "bg-danger/10 text-danger"
-              : "bg-background text-gold"
+            danger ? "bg-danger/10 text-danger" : "bg-background text-gold"
           }`}
         >
           {icon}
@@ -272,9 +282,26 @@ function MetricCard({
       >
         {value}
       </p>
-      <p className={`mt-2 text-xs ${danger ? "text-muted-foreground" : "text-success"}`}>
+      <p
+        className={`mt-2 text-xs ${danger ? "text-muted-foreground" : "text-success"}`}
+      >
         {helper}
       </p>
-    </div>
+    </>
   );
+
+  const className =
+    "block rounded-lg border bg-card p-5 shadow-[0_14px_34px_rgba(75,45,30,0.04)]";
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={`${className} transition-shadow hover:shadow-[0_18px_40px_rgba(75,45,30,0.10)]`}
+      >
+        {inner}
+      </Link>
+    );
+  }
+  return <div className={className}>{inner}</div>;
 }

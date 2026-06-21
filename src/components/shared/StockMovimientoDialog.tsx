@@ -5,6 +5,7 @@ import { PackagePlus } from "lucide-react";
 import { toast } from "sonner";
 import {
   ajustarStock,
+  definirStockMinimo,
   registrarMerma,
   registrarProduccion,
 } from "@/lib/actions/stock";
@@ -23,12 +24,13 @@ import {
 import { cn } from "@/lib/utils";
 import { LABELS } from "@/lib/constants";
 
-type Tipo = "produccion" | "merma" | "ajuste";
+type Tipo = "produccion" | "merma" | "ajuste" | "umbral";
 
 const TABS: { tipo: Tipo; label: string }[] = [
   { tipo: "produccion", label: "Producción" },
   { tipo: "merma", label: "Merma" },
   { tipo: "ajuste", label: "Ajuste" },
+  { tipo: "umbral", label: "Umbral" },
 ];
 
 const CONFIG: Record<Tipo, { titulo: string; campo: string; placeholder: string }> = {
@@ -47,12 +49,17 @@ const CONFIG: Record<Tipo, { titulo: string; campo: string; placeholder: string 
     campo: "Stock real (conteo)",
     placeholder: "10",
   },
+  umbral: {
+    titulo: "Umbral de stock bajo",
+    campo: "Avisar cuando el stock baje de",
+    placeholder: "10",
+  },
 };
 
 export function StockMovimientoDialog({
   producto,
 }: {
-  producto: { id: string; nombre: string; stock: number };
+  producto: { id: string; nombre: string; stock: number; stock_minimo?: number };
 }) {
   const [open, setOpen] = useState(false);
   const [tipo, setTipo] = useState<Tipo>("produccion");
@@ -80,7 +87,9 @@ export function StockMovimientoDialog({
           ? await registrarProduccion(producto.id, num, nota)
           : tipo === "merma"
             ? await registrarMerma(producto.id, num, nota)
-            : await ajustarStock(producto.id, num, nota);
+            : tipo === "ajuste"
+              ? await ajustarStock(producto.id, num, nota)
+              : await definirStockMinimo(producto.id, num);
 
       if (result.ok) {
         toast.success(`${CONFIG[tipo].titulo}: ${producto.nombre}`);
@@ -113,12 +122,19 @@ export function StockMovimientoDialog({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+          <div className="grid grid-cols-4 gap-1 rounded-lg bg-muted p-1">
             {TABS.map((t) => (
               <button
                 key={t.tipo}
                 type="button"
-                onClick={() => setTipo(t.tipo)}
+                onClick={() => {
+                  setTipo(t.tipo);
+                  setValor(
+                    t.tipo === "umbral"
+                      ? String(producto.stock_minimo ?? "")
+                      : ""
+                  );
+                }}
                 className={cn(
                   "rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
                   tipo === t.tipo
@@ -136,7 +152,7 @@ export function StockMovimientoDialog({
             <Input
               id="valor"
               type="number"
-              min={tipo === "ajuste" ? "0" : "1"}
+              min={tipo === "ajuste" || tipo === "umbral" ? "0" : "1"}
               required
               value={valor}
               onChange={(e) => setValor(e.target.value)}
@@ -145,16 +161,18 @@ export function StockMovimientoDialog({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="nota">{LABELS.notas} (opcional)</Label>
-            <Textarea
-              id="nota"
-              value={nota}
-              onChange={(e) => setNota(e.target.value)}
-              placeholder="Ej: Lote del día, ingredientes frescos…"
-              rows={2}
-            />
-          </div>
+          {tipo !== "umbral" && (
+            <div className="space-y-1.5">
+              <Label htmlFor="nota">{LABELS.notas} (opcional)</Label>
+              <Textarea
+                id="nota"
+                value={nota}
+                onChange={(e) => setNota(e.target.value)}
+                placeholder="Ej: Lote del día, ingredientes frescos…"
+                rows={2}
+              />
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="submit" disabled={isPending}>

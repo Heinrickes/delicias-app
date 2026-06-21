@@ -214,6 +214,7 @@ export type Database = {
           nombre: string
           precio: number
           stock: number
+          stock_minimo: number
           tipo: string
           unidad: string
         }
@@ -226,6 +227,7 @@ export type Database = {
           nombre: string
           precio: number
           stock?: number
+          stock_minimo?: number
           tipo?: string
           unidad?: string
         }
@@ -238,6 +240,7 @@ export type Database = {
           nombre?: string
           precio?: number
           stock?: number
+          stock_minimo?: number
           tipo?: string
           unidad?: string
         }
@@ -306,7 +309,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      _descontar_stock: {
+        Args: { p_cantidad: number; p_nota: string; p_producto_id: string }
+        Returns: number
+      }
+      _reponer_stock: {
+        Args: { p_cantidad: number; p_nota: string; p_producto_id: string }
+        Returns: undefined
+      }
+      cambiar_estado_pedido: {
+        Args: { p_estado: string; p_fecha_pago: string; p_id: string }
+        Returns: undefined
+      }
+      crear_venta: {
+        Args: {
+          p_cliente_id: string
+          p_estado: string
+          p_fecha_entrega: string
+          p_fecha_pago: string
+          p_items: Json
+          p_notas: string
+        }
+        Returns: string
+      }
+      eliminar_pedido: { Args: { p_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

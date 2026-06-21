@@ -12,7 +12,13 @@ export default async function ProductosPage() {
   const productos = await getProductosEnriquecidos();
   const productosSimples = productos
     .filter((p) => p.tipo === "simple")
-    .map((p) => ({ id: p.id, nombre: p.nombre, precio: p.precio }));
+    .map((p) => ({
+      id: p.id,
+      nombre: p.nombre,
+      precio: p.precio,
+      costo: p.costo,
+      stock: p.stock,
+    }));
 
   return (
     <AppShell>
@@ -26,7 +32,8 @@ export default async function ProductosPage() {
               Productos
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Gestiona productos, packs, precios, costos y ventas rápidas.
+              Tu catálogo: productos, packs, precios y costos. Para vender, ve a
+              Ventas.
             </p>
           </div>
           <PackFormDialog

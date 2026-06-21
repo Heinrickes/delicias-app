@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { MainNav } from "@/components/shared/MainNav";
+import { MobileNav } from "@/components/shared/MobileNav";
 import { UserNav } from "@/components/shared/UserNav";
 
 async function getUserEmail() {
@@ -19,7 +20,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
     <main className="min-h-screen bg-background p-2 text-foreground md:p-3">
       <div className="mx-auto flex max-w-[1540px] flex-col overflow-hidden rounded-xl border bg-surface shadow-[0_24px_80px_rgba(75,45,30,0.10)] lg:min-h-[calc(100vh-1.5rem)] lg:flex-row">
         <aside className="border-b bg-surface px-5 py-5 lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r">
-          <div className="mb-8 flex items-center justify-between gap-4 lg:block">
+          <div className="flex items-center justify-between gap-4 lg:mb-8 lg:block">
             <div>
               <p className="font-serif text-[1.7rem] leading-none text-primary">
                 Delicias
@@ -42,7 +43,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
           </div>
         </aside>
 
-        <section className="min-w-0 flex-1 bg-surface px-5 py-6 md:px-8 lg:px-10">
+        <section className="min-w-0 flex-1 bg-surface px-5 pb-24 pt-6 md:px-8 lg:px-10 lg:pb-10">
           <div className="mb-6 flex items-center justify-end">
             <UserNav email={email} />
           </div>
@@ -50,6 +51,8 @@ export async function AppShell({ children }: { children: ReactNode }) {
           {children}
         </section>
       </div>
+
+      <MobileNav />
     </main>
   );
 }

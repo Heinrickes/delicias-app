@@ -4,10 +4,23 @@ import {
   TopProductosChart,
   VentasChart,
 } from "@/components/shared/ReportesCharts";
+import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoneda, LOCALE } from "@/lib/constants";
+import { Receipt } from "lucide-react";
 
 export const revalidate = 0;
+
+type Transaccion = {
+  id: string;
+  nombre_producto: string;
+  cantidad: number;
+  total: number;
+  costo_total: number;
+  fecha: string;
+  pedido_id: string | null;
+  clientes: { nombre: string } | null;
+};
 
 function claveDia(fechaISO: string) {
   return new Date(fechaISO).toLocaleDateString("en-CA"); // YYYY-MM-DD local
@@ -34,7 +47,7 @@ async function getData() {
   desde.setDate(desde.getDate() - 30);
   desde.setHours(0, 0, 0, 0);
 
-  const [ventasRes, produccionRes] = await Promise.all([
+  const [ventasRes, produccionRes, transaccionesRes] = await Promise.all([
     supabase
       .from("ventas")
       .select("fecha, total, costo_total, nombre_producto, cantidad")
@@ -44,10 +57,18 @@ async function getData() {
       .select("fecha, cantidad")
       .eq("tipo", "produccion")
       .gte("fecha", desde.toISOString()),
+    supabase
+      .from("ventas")
+      .select(
+        "id, nombre_producto, cantidad, total, costo_total, fecha, pedido_id, clientes(nombre)"
+      )
+      .order("fecha", { ascending: false })
+      .limit(50),
   ]);
 
   const ventas = ventasRes.data ?? [];
   const produccion = produccionRes.data ?? [];
+  const transacciones = (transaccionesRes.data ?? []) as Transaccion[];
 
   const dias = ultimosDias(14);
 
@@ -99,6 +120,7 @@ async function getData() {
     ventasPorDia,
     produccionPorDia,
     topProductos,
+    transacciones,
     resumen: {
       ingresos,
       costos,
@@ -111,7 +133,7 @@ async function getData() {
 }
 
 export default async function ReportesPage() {
-  const { ventasPorDia, produccionPorDia, topProductos, resumen } =
+  const { ventasPorDia, produccionPorDia, topProductos, transacciones, resumen } =
     await getData();
 
   return (
@@ -162,6 +184,76 @@ export default async function ReportesPage() {
         <ChartCard titulo="Producción de stock" subtitulo="Últimos 14 días">
           <ProduccionChart data={produccionPorDia} />
         </ChartCard>
+
+        <section>
+          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Historial de transacciones ({transacciones.length})
+          </h3>
+          {transacciones.length === 0 ? (
+            <div className="rounded-xl border border-dashed bg-card p-12 text-center">
+              <Receipt className="mx-auto h-10 w-10 text-muted-foreground" />
+              <p className="mt-4 text-sm text-muted-foreground">
+                No hay ventas registradas
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b bg-background/40 text-xs uppercase tracking-wider text-muted-foreground">
+                      <th className="px-5 py-3 font-semibold">Fecha</th>
+                      <th className="px-5 py-3 font-semibold">Producto</th>
+                      <th className="px-5 py-3 font-semibold">Cliente</th>
+                      <th className="px-5 py-3 text-center font-semibold">Cant.</th>
+                      <th className="px-5 py-3 text-right font-semibold">Total</th>
+                      <th className="px-5 py-3 text-right font-semibold">Margen</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {transacciones.map((v) => {
+                      const m = v.total - v.costo_total;
+                      return (
+                        <tr key={v.id} className="hover:bg-background/30">
+                          <td className="whitespace-nowrap px-5 py-3 tabular-nums text-muted-foreground">
+                            {new Date(v.fecha).toLocaleDateString(LOCALE, {
+                              day: "2-digit",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </td>
+                          <td className="px-5 py-3 font-medium text-foreground">
+                            <span className="flex items-center gap-2">
+                              {v.nombre_producto}
+                              {v.pedido_id && (
+                                <Badge className="bg-primary/10 text-primary">
+                                  Pedido
+                                </Badge>
+                              )}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-muted-foreground">
+                            {v.clientes?.nombre ?? "—"}
+                          </td>
+                          <td className="px-5 py-3 text-center tabular-nums text-muted-foreground">
+                            {v.cantidad}
+                          </td>
+                          <td className="px-5 py-3 text-right font-medium tabular-nums text-foreground">
+                            {formatMoneda(v.total)}
+                          </td>
+                          <td className="px-5 py-3 text-right tabular-nums text-success">
+                            {formatMoneda(m)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     </AppShell>
   );

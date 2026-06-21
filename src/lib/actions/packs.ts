@@ -34,6 +34,22 @@ export async function crearPack(input: PackInput): Promise<ActionResult> {
 
     const supabase = await requireUser();
 
+    // Un pack solo puede componerse de productos simples (no de otros packs).
+    const { data: componentes, error: compErr } = await supabase
+      .from("productos")
+      .select("id, tipo")
+      .in(
+        "id",
+        items.map((i) => i.producto_id)
+      );
+    if (compErr) return { ok: false, error: compErr.message };
+    if ((componentes ?? []).some((c) => c.tipo === "pack")) {
+      return {
+        ok: false,
+        error: "Un pack no puede contener otros packs, solo productos simples",
+      };
+    }
+
     const { data: pack, error } = await supabase
       .from("productos")
       .insert({

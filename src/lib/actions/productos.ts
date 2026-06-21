@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/lib/actions/types";
-import { aplicarSalidaStock, disponibilidad } from "@/lib/ventas-helpers";
 
 /** Devuelve el cliente autenticado o lanza si no hay sesión. */
 async function requireUser() {
@@ -96,51 +95,6 @@ export async function eliminarProducto(id: string): Promise<ActionResult> {
     revalidatePath("/");
     revalidatePath("/productos");
     return { ok: true };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Error" };
-  }
-}
-
-/** Registra una venta rápida de 1 unidad/pack: descuenta stock (base si es pack), crea la venta y el movimiento. */
-export async function venderProducto(
-  id: string
-): Promise<ActionResult<{ stock: number }>> {
-  try {
-    const supabase = await requireUser();
-
-    const { data: producto, error: fetchError } = await supabase
-      .from("productos")
-      .select("id, nombre, precio")
-      .eq("id", id)
-      .single();
-
-    if (fetchError || !producto) {
-      return { ok: false, error: fetchError?.message ?? "Producto no encontrado" };
-    }
-
-    const disp = await disponibilidad(supabase, id);
-    if (disp <= 0) {
-      return { ok: false, error: "Sin stock disponible" };
-    }
-
-    const costoTotal = await aplicarSalidaStock(supabase, id, 1, "Venta rápida");
-
-    const { error: ventaError } = await supabase.from("ventas").insert({
-      producto_id: producto.id,
-      nombre_producto: producto.nombre,
-      cantidad: 1,
-      total: producto.precio,
-      costo_total: costoTotal,
-    });
-    if (ventaError) return { ok: false, error: ventaError.message };
-
-    const nuevoStock = await disponibilidad(supabase, id);
-
-    revalidatePath("/");
-    revalidatePath("/productos");
-    revalidatePath("/ventas");
-    revalidatePath("/stock");
-    return { ok: true, data: { stock: nuevoStock } };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error" };
   }

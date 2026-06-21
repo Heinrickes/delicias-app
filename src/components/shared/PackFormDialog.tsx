@@ -23,8 +23,21 @@ import {
 } from "@/components/ui/dialog";
 import { formatMoneda, LABELS } from "@/lib/constants";
 
-type ProductoBase = { id: string; nombre: string; precio: number };
-type Item = { producto_id: string; nombre: string; precio: number; cantidad: number };
+type ProductoBase = {
+  id: string;
+  nombre: string;
+  precio: number;
+  costo: number;
+  stock: number;
+};
+type Item = {
+  producto_id: string;
+  nombre: string;
+  precio: number;
+  costo: number;
+  stock: number;
+  cantidad: number;
+};
 
 const selectClass =
   "h-9 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
@@ -48,6 +61,14 @@ export function PackFormDialog({
   const suelto = items.reduce((s, i) => s + i.precio * i.cantidad, 0);
   const precioNum = parseInt(precio) || 0;
   const ahorro = suelto > 0 ? suelto - precioNum : 0;
+  const ahorroPct = suelto > 0 ? Math.round((ahorro / suelto) * 100) : 0;
+  const costoComponentes = items.reduce((s, i) => s + i.costo * i.cantidad, 0);
+  const margen = precioNum - costoComponentes;
+  const margenPct = precioNum > 0 ? Math.round((margen / precioNum) * 100) : 0;
+  const disponibles =
+    items.length > 0
+      ? Math.min(...items.map((i) => Math.floor(i.stock / i.cantidad)))
+      : 0;
 
   const reset = () => {
     setNombre("");
@@ -72,7 +93,14 @@ export function PackFormDialog({
       }
       return [
         ...prev,
-        { producto_id: prod.id, nombre: prod.nombre, precio: prod.precio, cantidad: cant },
+        {
+          producto_id: prod.id,
+          nombre: prod.nombre,
+          precio: prod.precio,
+          costo: prod.costo,
+          stock: prod.stock,
+          cantidad: cant,
+        },
       ];
     });
     setProdSel("");
@@ -220,15 +248,28 @@ export function PackFormDialog({
             )}
 
             {items.length > 0 && (
-              <div className="flex items-center justify-between px-1 pt-1 text-xs">
-                <span className="text-muted-foreground">
-                  Por separado: {formatMoneda(suelto)}
-                </span>
-                {ahorro > 0 && precioNum > 0 && (
-                  <span className="font-medium text-success">
-                    Ahorro: {formatMoneda(ahorro)}
+              <div className="space-y-1 px-1 pt-1 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">
+                    Por separado: {formatMoneda(suelto)}
                   </span>
-                )}
+                  {ahorro > 0 && precioNum > 0 && (
+                    <span className="font-medium text-success">
+                      Ahorro: {formatMoneda(ahorro)} ({ahorroPct}%)
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">
+                    Se pueden armar: {disponibles}{" "}
+                    {disponibles === 1 ? "pack" : "packs"}
+                  </span>
+                  {precioNum > 0 && (
+                    <span className="font-medium text-success">
+                      Margen: {formatMoneda(margen)} ({margenPct}%)
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>

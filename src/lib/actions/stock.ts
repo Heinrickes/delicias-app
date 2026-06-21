@@ -103,6 +103,28 @@ export async function registrarMerma(
   }
 }
 
+/** Define el umbral de stock bajo para un producto (no genera movimiento). */
+export async function definirStockMinimo(
+  productoId: string,
+  stockMinimo: number
+): Promise<ActionResult> {
+  try {
+    if (!Number.isFinite(stockMinimo) || stockMinimo < 0) {
+      return { ok: false, error: "El umbral no puede ser negativo" };
+    }
+    const supabase = await requireUser();
+    const { error } = await supabase
+      .from("productos")
+      .update({ stock_minimo: stockMinimo })
+      .eq("id", productoId);
+    if (error) return { ok: false, error: error.message };
+    revalidateStock();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Error" };
+  }
+}
+
 /** Ajusta el stock a un valor exacto y registra la diferencia. */
 export async function ajustarStock(
   productoId: string,
