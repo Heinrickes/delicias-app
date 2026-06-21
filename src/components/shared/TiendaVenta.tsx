@@ -113,6 +113,8 @@ export function TiendaVenta({
         },
       ];
     });
+    setFase("bolsa");
+    setDrawerOpen(true);
     toast.success(`Agregado: ${prod.nombre}`);
   };
 
@@ -269,11 +271,11 @@ export function TiendaVenta({
         </div>
       )}
 
-      {/* Backdrop */}
+      {/* Backdrop: solo en móvil; en desktop el catálogo sigue clickeable */}
       <div
         onClick={() => setDrawerOpen(false)}
         className={cn(
-          "fixed inset-0 z-40 bg-foreground/40 transition-opacity",
+          "fixed inset-0 z-40 bg-foreground/40 transition-opacity lg:hidden",
           drawerOpen ? "opacity-100" : "pointer-events-none opacity-0"
         )}
       />
@@ -345,9 +347,20 @@ export function TiendaVenta({
                       >
                         <Minus className="h-3.5 w-3.5" />
                       </button>
-                      <span className="w-8 text-center text-sm tabular-nums">
-                        {i.cantidad}
-                      </span>
+                      <input
+                        type="number"
+                        min="1"
+                        value={i.cantidad}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "") return;
+                          const n = parseInt(v, 10);
+                          if (Number.isFinite(n))
+                            setCantidad(i.producto_id!, n);
+                        }}
+                        className="h-8 w-12 border-x bg-transparent text-center text-sm tabular-nums outline-none focus:bg-background/60 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        aria-label="Cantidad"
+                      />
                       <button
                         type="button"
                         onClick={() => setCantidad(i.producto_id!, i.cantidad + 1)}
