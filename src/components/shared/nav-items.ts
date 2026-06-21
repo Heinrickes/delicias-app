@@ -16,10 +16,10 @@ export type NavItem = { href: string; label: string; icon: LucideIcon };
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/ventas", label: "Ventas", icon: Receipt },
-  { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
-  { href: "/por-cobrar", label: "Por cobrar", icon: Coins },
   { href: "/productos", label: "Productos", icon: Package },
   { href: "/stock", label: "Inventario", icon: Boxes },
+  { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
+  { href: "/por-cobrar", label: "Por cobrar", icon: Coins },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/reportes", label: "Reportes", icon: BarChart3 },
 ];

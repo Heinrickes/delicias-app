@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Pencil, Trash2, X, Check } from "lucide-react";
+import { Pencil, Trash2, X, Check, PackagePlus } from "lucide-react";
 import { toast } from "sonner";
 import { actualizarProducto, eliminarProducto } from "@/lib/actions/productos";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { StockMovimientoDialog } from "@/components/shared/StockMovimientoDialog";
 import { formatMoneda, LABELS, STOCK_BAJO_UMBRAL } from "@/lib/constants";
 
 type Producto = {
@@ -26,6 +27,7 @@ type Producto = {
   precio: number;
   costo: number;
   stock: number;
+  stock_minimo?: number;
   categoria: string | null;
   tipo?: "simple" | "pack";
   componentes?: { nombre: string; cantidad: number }[];
@@ -57,7 +59,8 @@ export function ProductCard({
   const margen = producto.precio - producto.costo;
   const margenPct =
     producto.precio > 0 ? Math.round((margen / producto.precio) * 100) : 0;
-  const stockBajo = stock < STOCK_BAJO_UMBRAL;
+  const umbral = producto.stock_minimo ?? STOCK_BAJO_UMBRAL;
+  const stockBajo = stock < umbral;
 
   const handleGuardarEdicion = () => {
     startSaving(async () => {
@@ -234,6 +237,29 @@ export function ProductCard({
                 {LABELS.margen}: {formatMoneda(margen)} ({margenPct}%)
               </span>
             </div>
+
+            {!esPack && (
+              <div className="mt-4 border-t pt-3">
+                <StockMovimientoDialog
+                  producto={{
+                    id: producto.id,
+                    nombre: producto.nombre,
+                    stock: producto.stock,
+                    stock_minimo: producto.stock_minimo,
+                  }}
+                  trigger={
+                    <Button
+                      variant={stockBajo ? "default" : "outline"}
+                      size="sm"
+                      className="w-full"
+                    >
+                      <PackagePlus className="h-4 w-4" />
+                      {stockBajo ? "Reponer stock" : "Gestionar stock"}
+                    </Button>
+                  }
+                />
+              </div>
+            )}
           </>
         )}
       </div>

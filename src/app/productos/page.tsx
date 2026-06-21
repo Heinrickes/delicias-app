@@ -32,8 +32,8 @@ export default async function ProductosPage() {
               Productos
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Tu catálogo: productos, packs, precios y costos. Para vender, ve a
-              Ventas.
+              Tu catálogo: productos, packs, precios y costos. Repón el stock
+              de cada producto desde su tarjeta cuando se acabe.
             </p>
           </div>
           <PackFormDialog

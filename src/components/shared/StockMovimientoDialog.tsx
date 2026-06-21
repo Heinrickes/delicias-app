@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react";
 import { PackagePlus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -58,8 +64,10 @@ const CONFIG: Record<Tipo, { titulo: string; campo: string; placeholder: string 
 
 export function StockMovimientoDialog({
   producto,
+  trigger,
 }: {
   producto: { id: string; nombre: string; stock: number; stock_minimo?: number };
+  trigger?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [tipo, setTipo] = useState<Tipo>("produccion");
@@ -109,10 +117,16 @@ export function StockMovimientoDialog({
         if (!o) reset();
       }}
     >
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <PackagePlus className="h-4 w-4" />
-        Movimiento
-      </Button>
+      {isValidElement(trigger) ? (
+        cloneElement(trigger as React.ReactElement<{ onClick?: () => void }>, {
+          onClick: () => setOpen(true),
+        })
+      ) : (
+        <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+          <PackagePlus className="h-4 w-4" />
+          Movimiento
+        </Button>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{producto.nombre}</DialogTitle>
