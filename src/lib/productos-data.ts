@@ -1,6 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 
-export type ComponentePack = { nombre: string; cantidad: number };
+export type ComponentePack = {
+  producto_id: string;
+  nombre: string;
+  cantidad: number;
+};
 
 export type ProductoEnriquecido = {
   id: string;
@@ -35,14 +39,20 @@ export async function getProductosEnriquecidos(): Promise<ProductoEnriquecido[]>
 
   const itemsPorDelicia = new Map<
     string,
-    { cantidad: number; nombre: string; costo: number; stock: number }[]
+    {
+      producto_id: string;
+      cantidad: number;
+      nombre: string;
+      costo: number;
+      stock: number;
+    }[]
   >();
 
   if (deliciaIds.length > 0) {
     const { data: items } = await supabase
       .from("pack_items")
       .select(
-        "pack_id, cantidad, productos!pack_items_producto_id_fkey(nombre, costo, stock)"
+        "pack_id, producto_id, cantidad, productos!pack_items_producto_id_fkey(nombre, costo, stock)"
       )
       .in("pack_id", deliciaIds);
 
@@ -54,6 +64,7 @@ export async function getProductosEnriquecidos(): Promise<ProductoEnriquecido[]>
       } | null;
       const arr = itemsPorDelicia.get(it.pack_id) ?? [];
       arr.push({
+        producto_id: it.producto_id,
         cantidad: it.cantidad,
         nombre: base?.nombre ?? "—",
         costo: base?.costo ?? 0,
@@ -81,7 +92,11 @@ export async function getProductosEnriquecidos(): Promise<ProductoEnriquecido[]>
         categoria: p.categoria,
         categoria_id: p.categoria_id,
         tipo: "delicia",
-        componentes: comps.map((c) => ({ nombre: c.nombre, cantidad: c.cantidad })),
+        componentes: comps.map((c) => ({
+          producto_id: c.producto_id,
+          nombre: c.nombre,
+          cantidad: c.cantidad,
+        })),
       };
     }
     return {

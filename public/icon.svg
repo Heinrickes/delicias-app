@@ -1,11 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Delicias Caseras">
-  <rect width="512" height="512" rx="112" fill="#3b2a20" />
-  <g fill="none" stroke="#b8734d" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M256 150 C340 215 340 330 256 408 C172 330 172 215 256 150 Z" />
-    <path d="M256 178 V382" />
-    <path d="M206 214 C230 272 230 330 210 378" />
-    <path d="M306 214 C282 272 282 330 302 378" />
-    <path d="M256 150 C256 116 282 96 322 96" />
-    <path d="M322 96 C292 72 262 88 262 128" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="512" height="512" role="img" aria-label="Delicias Caseras">
+  <rect width="48" height="48" rx="11" fill="#3b2a20" />
+  <g fill="none" stroke="#b8734d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 1)">
+    <path d="M24 40 C 13 33 11 21 15.5 10 C 20.5 19 23 31 24 40 Z" />
+    <path d="M16.5 14 C 19.5 22 22 31 24 39" />
+    <path d="M24 40 C 35 33 37 21 32.5 10 C 27.5 19 25 31 24 40 Z" />
+    <path d="M31.5 14 C 28.5 22 26 31 24 39" />
+    <path d="M24 40 C 24 42 24 43 24 44" />
   </g>
 </svg>

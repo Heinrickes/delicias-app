@@ -194,7 +194,7 @@ export default async function Home({
         <section className="space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h3 className="font-serif text-xl leading-tight text-foreground">
+              <h3 className="text-lg font-semibold leading-tight text-foreground">
                 Resumen del mes
               </h3>
               <p className="text-xs text-muted-foreground">
@@ -229,7 +229,7 @@ export default async function Home({
             {/* Top productos más vendidos */}
             <div className="rounded-lg border bg-card shadow-[0_14px_34px_rgba(75,45,30,0.04)]">
               <div className="flex items-center justify-between border-b px-5 py-4">
-                <h3 className="font-serif text-lg text-foreground">
+                <h3 className="text-base font-semibold text-foreground">
                   Top productos más vendidos
                 </h3>
                 <Link
@@ -285,7 +285,7 @@ export default async function Home({
                 <p className="mt-8 text-xs font-semibold text-primary-foreground/75">
                   Producto del mes
                 </p>
-                <h3 className="mt-2 font-serif text-2xl leading-tight">
+                <h3 className="mt-2 text-xl font-semibold leading-tight">
                   {topProducto ? topProducto.nombre : "Sin ventas aún"}
                 </h3>
                 <p className="mt-4 text-sm leading-6 text-primary-foreground/80">

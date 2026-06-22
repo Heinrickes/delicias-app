@@ -25,7 +25,7 @@ export function SeccionReporte({
     <div className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-serif text-lg text-foreground">{titulo}</h3>
+          <h3 className="text-base font-semibold text-foreground">{titulo}</h3>
           <p className="text-xs text-muted-foreground">{subtitulo}</p>
         </div>
         <div className="flex shrink-0 items-center gap-0.5 rounded-lg bg-muted p-0.5">

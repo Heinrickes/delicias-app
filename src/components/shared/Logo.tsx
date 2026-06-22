@@ -1,4 +1,7 @@
-/** Marca de Delicias Caseras: cápsula de cacao (line-art). Usa currentColor. */
+/**
+ * Marca de Delicias Caseras: dos cápsulas/hojas de cacao abiertas en V
+ * (line-art, como el manual). Usa currentColor.
+ */
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg
@@ -9,16 +12,18 @@ export function LogoMark({ className }: { className?: string }) {
     >
       <g
         stroke="currentColor"
-        strokeWidth={2}
+        strokeWidth={1.6}
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <path d="M24 9 C32 15 32 30 24 40 C16 30 16 15 24 9 Z" />
-        <path d="M24 13 V37" />
-        <path d="M19 17 C21.5 23 21.5 31 19.5 35" />
-        <path d="M29 17 C26.5 23 26.5 31 28.5 35" />
-        <path d="M24 9 C24 6 26 4 29 4" />
-        <path d="M29 4 C26.5 2.2 24.5 3.4 24.5 6" />
+        {/* Hoja/cápsula izquierda */}
+        <path d="M24 40 C 13 33 11 21 15.5 10 C 20.5 19 23 31 24 40 Z" />
+        <path d="M16.5 14 C 19.5 22 22 31 24 39" />
+        {/* Hoja/cápsula derecha */}
+        <path d="M24 40 C 35 33 37 21 32.5 10 C 27.5 19 25 31 24 40 Z" />
+        <path d="M31.5 14 C 28.5 22 26 31 24 39" />
+        {/* Tallito inferior */}
+        <path d="M24 40 C 24 42 24 43 24 44" />
       </g>
     </svg>
   );

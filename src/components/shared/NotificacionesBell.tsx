@@ -52,7 +52,7 @@ export function NotificacionesBell({ avisos }: { avisos: Aviso[] }) {
       {open && (
         <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border bg-card shadow-2xl">
           <div className="flex items-center justify-between border-b px-4 py-3">
-            <p className="font-serif text-base text-foreground">Avisos</p>
+            <p className="text-base font-semibold text-foreground">Avisos</p>
             <Link
               href="/ajustes"
               onClick={() => setOpen(false)}

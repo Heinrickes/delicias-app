@@ -231,7 +231,7 @@ export function ProductCard({
           </div>
         ) : (
           <>
-            <h3 className="line-clamp-2 font-serif text-sm leading-snug text-foreground">
+            <h3 className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
               {producto.nombre}
             </h3>
 

@@ -23,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatMoneda, LABELS } from "@/lib/constants";
 
+type ComponenteItem = { producto_id: string; nombre: string; cantidad: number };
 type ProductoTienda = {
   id: string;
   nombre: string;
@@ -30,6 +31,7 @@ type ProductoTienda = {
   stock: number;
   categoria: string | null;
   tipo: "simple" | "delicia";
+  componentes: ComponenteItem[];
 };
 type ClienteOpt = { id: string; nombre: string };
 
@@ -72,11 +74,60 @@ export function TiendaVenta({
   const [notas, setNotas] = useState("");
   const [isPending, startTransition] = useTransition();
 
-  const stockDe = (id: string) => productos.find((p) => p.id === id)?.stock ?? 0;
+  const prodById = (id: string) => productos.find((p) => p.id === id);
   const enCarrito = (id: string) =>
     items.find((i) => i.producto_id === id)?.cantidad ?? 0;
   const totalUnidades = items.reduce((s, i) => s + i.cantidad, 0);
   const subtotal = items.reduce((s, i) => s + i.precio_unitario * i.cantidad, 0);
+
+  // Stock real del producto base (los simples llevan su stock; las delicias no).
+  const stockBase = (id: string) => prodById(id)?.stock ?? 0;
+
+  /**
+   * Consumo proyectado de cada producto base por el carrito: un simple consume su
+   * propio stock; una delicia consume el de cada componente (cantidad × unidades).
+   * Permite simular agregar `extraQty` de `extraId` para validar antes de sumar.
+   */
+  const consumoBase = (extraId?: string, extraQty = 0) => {
+    const m = new Map<string, number>();
+    const add = (baseId: string, qty: number) =>
+      m.set(baseId, (m.get(baseId) ?? 0) + qty);
+    const procesar = (prodId: string, qty: number) => {
+      const p = prodById(prodId);
+      if (!p) return;
+      if (p.tipo === "delicia") {
+        for (const c of p.componentes) add(c.producto_id, c.cantidad * qty);
+      } else {
+        add(p.id, qty);
+      }
+    };
+    for (const it of items) if (it.producto_id) procesar(it.producto_id, it.cantidad);
+    if (extraId) procesar(extraId, extraQty);
+    return m;
+  };
+
+  /** Devuelve el nombre del producto base que se agotaría, o null si hay stock. */
+  const baseQueExcede = (extraId: string, extraQty: number): string | null => {
+    for (const [baseId, qty] of consumoBase(extraId, extraQty)) {
+      if (qty > stockBase(baseId)) return prodById(baseId)?.nombre ?? "stock";
+    }
+    return null;
+  };
+
+  /** Cuántas unidades más de `p` se pueden agregar según el stock base disponible. */
+  const restanteAgregar = (p: ProductoTienda): number => {
+    const consumido = consumoBase();
+    const libre = (baseId: string) =>
+      stockBase(baseId) - (consumido.get(baseId) ?? 0);
+    if (p.tipo === "delicia") {
+      if (p.componentes.length === 0) return 0;
+      return Math.max(
+        0,
+        Math.min(...p.componentes.map((c) => Math.floor(libre(c.producto_id) / c.cantidad)))
+      );
+    }
+    return Math.max(0, libre(p.id));
+  };
 
   const reset = () => {
     setItems([]);
@@ -91,9 +142,9 @@ export function TiendaVenta({
   };
 
   const agregar = (prod: ProductoTienda) => {
-    const disponible = prod.stock - enCarrito(prod.id);
-    if (disponible <= 0) {
-      toast.error(`Sin stock disponible de ${prod.nombre}`);
+    const exceso = baseQueExcede(prod.id, 1);
+    if (exceso) {
+      toast.error(`Sin stock suficiente de ${exceso}`);
       return;
     }
     setItems((prev) => {
@@ -123,10 +174,13 @@ export function TiendaVenta({
       setItems((prev) => prev.filter((i) => i.producto_id !== id));
       return;
     }
-    const max = stockDe(id);
-    if (next > max) {
-      toast.error(`Solo hay ${max} disponibles`);
-      return;
+    const delta = next - enCarrito(id);
+    if (delta > 0) {
+      const exceso = baseQueExcede(id, delta);
+      if (exceso) {
+        toast.error(`Sin stock suficiente de ${exceso}`);
+        return;
+      }
     }
     setItems((prev) =>
       prev.map((i) => (i.producto_id === id ? { ...i, cantidad: next } : i))
@@ -202,7 +256,7 @@ export function TiendaVenta({
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
           {productos.map((p, idx) => {
-            const restante = p.stock - enCarrito(p.id);
+            const restante = restanteAgregar(p);
             const agotado = p.stock <= 0;
             const sinMas = restante <= 0;
             return (
@@ -244,7 +298,7 @@ export function TiendaVenta({
                       {p.categoria}
                     </span>
                   )}
-                  <h3 className="mt-0.5 line-clamp-2 font-serif text-[13px] leading-snug text-foreground">
+                  <h3 className="mt-0.5 line-clamp-2 text-[13px] font-medium leading-snug text-foreground">
                     {p.nombre}
                   </h3>
                   <div className="mt-1.5 flex items-center justify-between">
@@ -299,7 +353,7 @@ export function TiendaVenta({
                 <ArrowLeft className="h-5 w-5" />
               </button>
             )}
-            <h2 className="font-serif text-xl text-foreground">
+            <h2 className="text-lg font-semibold text-foreground">
               {fase === "bolsa" ? "Tu bolsa" : "Cerrar venta"}
             </h2>
             {fase === "bolsa" && totalUnidades > 0 && (

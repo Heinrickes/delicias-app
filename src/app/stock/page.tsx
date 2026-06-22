@@ -178,7 +178,7 @@ export default async function StockPage({
                 <TrendingUp className="h-4 w-4" />
               </span>
               <div>
-                <h3 className="font-serif text-lg leading-tight text-foreground">
+                <h3 className="text-base font-semibold leading-tight text-foreground">
                   Más rotación
                 </h3>
                 <p className="text-xs text-muted-foreground">
@@ -234,7 +234,7 @@ export default async function StockPage({
                 <AlertTriangle className="h-4 w-4" />
               </span>
               <div>
-                <h3 className="font-serif text-lg leading-tight text-foreground">
+                <h3 className="text-base font-semibold leading-tight text-foreground">
                   Stock bajo
                 </h3>
                 <p className="text-xs text-muted-foreground">

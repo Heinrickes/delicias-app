@@ -188,7 +188,7 @@ export function Calendario({
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <h3 className="min-w-[10rem] text-center font-serif text-lg capitalize text-foreground">
+            <h3 className="min-w-[10rem] text-center text-base font-semibold capitalize text-foreground">
               {nombreMes}
             </h3>
             <Button
@@ -280,7 +280,7 @@ export function Calendario({
       <div className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
         <div className="mb-3 flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-gold" />
-          <h3 className="font-serif text-lg text-foreground">
+          <h3 className="text-base font-semibold text-foreground">
             {diaSel
               ? new Date(diaSel + "T00:00:00").toLocaleDateString(LOCALE, {
                   weekday: "long",

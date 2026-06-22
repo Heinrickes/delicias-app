@@ -21,6 +21,7 @@ async function getCatalogo() {
       stock: p.stock,
       categoria: p.categoria,
       tipo: p.tipo,
+      componentes: p.componentes,
     })),
     clientes: clientesRes.data ?? [],
   };

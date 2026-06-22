@@ -98,11 +98,11 @@ export function ClienteCard({
       </div>
 
       <div className="flex items-center gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 font-serif text-base text-primary">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-semibold text-primary">
           {iniciales || "?"}
         </span>
         <div className="min-w-0">
-          <h3 className="truncate font-serif text-lg text-foreground">
+          <h3 className="truncate text-base font-semibold text-foreground">
             {cliente.nombre}
           </h3>
           {cliente.notas && (

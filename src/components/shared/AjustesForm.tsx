@@ -94,7 +94,7 @@ export function AjustesForm({ inicial }: { inicial: Ajustes }) {
       <section className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
         <div className="mb-4 flex items-center gap-2">
           <Bell className="h-4 w-4 text-gold" />
-          <h3 className="font-serif text-lg text-foreground">Avisos</h3>
+          <h3 className="text-base font-semibold text-foreground">Avisos</h3>
         </div>
 
         <ul className="divide-y">
@@ -146,7 +146,7 @@ export function AjustesForm({ inicial }: { inicial: Ajustes }) {
       <section className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
         <div className="mb-2 flex items-center gap-2">
           <BellRing className="h-4 w-4 text-gold" />
-          <h3 className="font-serif text-lg text-foreground">
+          <h3 className="text-base font-semibold text-foreground">
             Notificaciones del dispositivo
           </h3>
         </div>
