@@ -14,16 +14,33 @@ async function requireUser() {
   return supabase;
 }
 
+type DB = Awaited<ReturnType<typeof requireUser>>;
+
+/** Resuelve el nombre de una categoría para guardarlo denormalizado. */
+async function nombreCategoria(
+  supabase: DB,
+  categoriaId: string | null | undefined
+): Promise<string | null> {
+  if (!categoriaId) return null;
+  const { data } = await supabase
+    .from("categorias")
+    .select("nombre")
+    .eq("id", categoriaId)
+    .single();
+  return data?.nombre ?? null;
+}
+
 export async function crearProducto(input: {
   nombre: string;
   precio: number;
   costo: number;
   stock: number;
-  categoria?: string;
+  categoria_id?: string | null;
   unidad?: string;
 }): Promise<ActionResult> {
   try {
     const supabase = await requireUser();
+    const categoria = await nombreCategoria(supabase, input.categoria_id);
 
     const { data: producto, error } = await supabase
       .from("productos")
@@ -32,7 +49,8 @@ export async function crearProducto(input: {
         precio: input.precio,
         costo: input.costo,
         stock: input.stock,
-        categoria: input.categoria?.trim() || "General",
+        categoria_id: input.categoria_id || null,
+        categoria,
         unidad: input.unidad?.trim() || "unidad",
       })
       .select("id")
@@ -60,16 +78,24 @@ export async function crearProducto(input: {
 
 export async function actualizarProducto(
   id: string,
-  input: { nombre: string; precio: number; costo: number }
+  input: {
+    nombre: string;
+    precio: number;
+    costo: number;
+    categoria_id?: string | null;
+  }
 ): Promise<ActionResult> {
   try {
     const supabase = await requireUser();
+    const categoria = await nombreCategoria(supabase, input.categoria_id);
     const { error } = await supabase
       .from("productos")
       .update({
         nombre: input.nombre.trim(),
         precio: input.precio,
         costo: input.costo,
+        categoria_id: input.categoria_id || null,
+        categoria,
       })
       .eq("id", id);
 

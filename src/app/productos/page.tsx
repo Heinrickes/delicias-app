@@ -1,15 +1,26 @@
 import { AppShell } from "@/components/shared/AppShell";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { ProductForm } from "@/components/shared/ProductForm";
-import { PackFormDialog } from "@/components/shared/PackFormDialog";
+import { DeliciaFormDialog } from "@/components/shared/DeliciaFormDialog";
+import { CategoriasManager } from "@/components/shared/CategoriasManager";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
 import { getProductosEnriquecidos } from "@/lib/productos-data";
-import { Package, PackagePlus } from "lucide-react";
+import { Package, PackagePlus, Tags } from "lucide-react";
 
 export const revalidate = 0;
 
+async function getData() {
+  const supabase = await createClient();
+  const [productos, categoriasRes] = await Promise.all([
+    getProductosEnriquecidos(),
+    supabase.from("categorias").select("id, nombre").order("nombre"),
+  ]);
+  return { productos, categorias: categoriasRes.data ?? [] };
+}
+
 export default async function ProductosPage() {
-  const productos = await getProductosEnriquecidos();
+  const { productos, categorias } = await getData();
   const productosSimples = productos
     .filter((p) => p.tipo === "simple")
     .map((p) => ({
@@ -32,22 +43,34 @@ export default async function ProductosPage() {
               Productos
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Tu catálogo: productos, packs, precios y costos. Repón el stock
-              de cada producto desde su tarjeta cuando se acabe.
+              Tu catálogo: productos, delicias, categorías, precios y costos. Repón
+              el stock de cada producto desde su tarjeta cuando se acabe.
             </p>
           </div>
-          <PackFormDialog
-            productos={productosSimples}
-            trigger={
-              <Button variant="outline" disabled={productosSimples.length === 0}>
-                <PackagePlus className="h-4 w-4" />
-                Crear pack
-              </Button>
-            }
-          />
+          <div className="flex flex-wrap gap-2">
+            <CategoriasManager
+              categorias={categorias}
+              trigger={
+                <Button variant="outline">
+                  <Tags className="h-4 w-4" />
+                  Categorías
+                </Button>
+              }
+            />
+            <DeliciaFormDialog
+              productos={productosSimples}
+              categorias={categorias}
+              trigger={
+                <Button variant="outline" disabled={productosSimples.length === 0}>
+                  <PackagePlus className="h-4 w-4" />
+                  Crear delicia
+                </Button>
+              }
+            />
+          </div>
         </header>
 
-        <ProductForm />
+        <ProductForm categorias={categorias} />
 
         {productos.length === 0 ? (
           <div className="rounded-xl border border-dashed bg-card p-12 text-center">
@@ -60,11 +83,12 @@ export default async function ProductosPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
             {productos.map((producto, index) => (
               <ProductCard
                 key={producto.id}
                 producto={producto}
+                categorias={categorias}
                 variant={index % 4}
               />
             ))}

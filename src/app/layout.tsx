@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Montserrat, Vidaloka } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { ServiceWorkerRegister } from "@/components/shared/ServiceWorkerRegister";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -51,6 +52,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         {children}
         <Toaster position="top-center" richColors />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

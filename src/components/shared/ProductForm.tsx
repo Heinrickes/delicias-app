@@ -9,9 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LABELS } from "@/lib/constants";
 
-const EMPTY = { nombre: "", categoria: "", precio: "", costo: "", stock: "", unidad: "" };
+const EMPTY = { nombre: "", categoria_id: "", precio: "", costo: "", stock: "", unidad: "" };
 
-export function ProductForm() {
+const selectClass =
+  "h-9 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+
+type Categoria = { id: string; nombre: string };
+
+export function ProductForm({ categorias }: { categorias: Categoria[] }) {
   const [form, setForm] = useState(EMPTY);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -27,7 +32,7 @@ export function ProductForm() {
         precio: parseInt(form.precio) || 0,
         costo: parseInt(form.costo) || 0,
         stock: parseInt(form.stock) || 0,
-        categoria: form.categoria,
+        categoria_id: form.categoria_id || null,
         unidad: form.unidad,
       });
 
@@ -79,12 +84,19 @@ export function ProductForm() {
 
             <div className="space-y-1.5">
               <Label htmlFor="categoria">Categoría</Label>
-              <Input
+              <select
                 id="categoria"
-                value={form.categoria}
-                onChange={(e) => set("categoria", e.target.value)}
-                placeholder="Ej: Alfajores"
-              />
+                value={form.categoria_id}
+                onChange={(e) => set("categoria_id", e.target.value)}
+                className={selectClass}
+              >
+                <option value="">Sin categoría</option>
+                {categorias.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-1.5">

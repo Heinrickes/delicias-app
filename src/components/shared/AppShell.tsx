@@ -1,8 +1,12 @@
 import { ReactNode } from "react";
+import Link from "next/link";
+import { Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { MainNav } from "@/components/shared/MainNav";
 import { MobileNav } from "@/components/shared/MobileNav";
 import { UserNav } from "@/components/shared/UserNav";
+import { NotificacionesBell } from "@/components/shared/NotificacionesBell";
+import { getAvisos } from "@/lib/notificaciones-data";
 
 async function getUserEmail() {
   const supabase = await createClient();
@@ -14,7 +18,7 @@ async function getUserEmail() {
 }
 
 export async function AppShell({ children }: { children: ReactNode }) {
-  const email = await getUserEmail();
+  const [email, avisos] = await Promise.all([getUserEmail(), getAvisos()]);
 
   return (
     <main className="min-h-screen bg-background p-2 text-foreground md:p-3">
@@ -44,7 +48,15 @@ export async function AppShell({ children }: { children: ReactNode }) {
         </aside>
 
         <section className="min-w-0 flex-1 bg-surface px-5 pb-24 pt-6 md:px-8 lg:px-10 lg:pb-10">
-          <div className="mb-6 flex items-center justify-end">
+          <div className="mb-6 flex items-center justify-end gap-2">
+            <NotificacionesBell avisos={avisos} />
+            <Link
+              href="/ajustes"
+              className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Ajustes"
+            >
+              <Settings className="h-4 w-4" />
+            </Link>
             <UserNav email={email} />
           </div>
 

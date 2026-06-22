@@ -1,11 +1,13 @@
 import {
   BarChart3,
   Boxes,
+  CalendarDays,
   ClipboardList,
   Coins,
   LayoutDashboard,
   Package,
   Receipt,
+  ShoppingCart,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -18,8 +20,10 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/ventas", label: "Ventas", icon: Receipt },
   { href: "/productos", label: "Productos", icon: Package },
   { href: "/stock", label: "Inventario", icon: Boxes },
+  { href: "/costos", label: "Costos", icon: ShoppingCart },
   { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
   { href: "/por-cobrar", label: "Por cobrar", icon: Coins },
+  { href: "/calendario", label: "Calendario", icon: CalendarDays },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/reportes", label: "Reportes", icon: BarChart3 },
 ];

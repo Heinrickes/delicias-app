@@ -1,0 +1,94 @@
+import { AppShell } from "@/components/shared/AppShell";
+import { CostosManager, type Insumo } from "@/components/shared/CostosManager";
+import { createClient } from "@/lib/supabase/server";
+import { formatMoneda } from "@/lib/constants";
+import { Boxes, Coins, ShoppingCart } from "lucide-react";
+
+export const revalidate = 0;
+
+export default async function CostosPage() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("insumos")
+    .select("id, nombre, unidad, stock, stock_minimo, costo_unitario, proveedor, en_lista")
+    .eq("activo", true)
+    .order("nombre");
+
+  const insumos = (data ?? []) as Insumo[];
+  const valor = insumos.reduce((s, i) => s + i.stock * i.costo_unitario, 0);
+  const porComprar = insumos.filter(
+    (i) => i.stock < i.stock_minimo || i.en_lista
+  ).length;
+
+  return (
+    <AppShell>
+      <div className="space-y-8">
+        <header>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            Insumos
+          </p>
+          <h2 className="mt-1 font-serif text-3xl leading-tight text-foreground">
+            Costos
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Tu despensa de insumos: controla stock, costos y arma la lista de
+            compras.
+          </p>
+        </header>
+
+        <section className="grid grid-cols-3 gap-4">
+          <Metric label="Insumos" value={insumos.length.toString()} icon={<Boxes className="h-4 w-4" />} />
+          <Metric
+            label="Valor en despensa"
+            value={formatMoneda(valor)}
+            icon={<Coins className="h-4 w-4" />}
+          />
+          <Metric
+            label="Por comprar"
+            value={porComprar.toString()}
+            icon={<ShoppingCart className="h-4 w-4" />}
+            danger={porComprar > 0}
+          />
+        </section>
+
+        <CostosManager insumos={insumos} />
+      </div>
+    </AppShell>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  icon,
+  danger = false,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  danger?: boolean;
+}) {
+  return (
+    <div className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
+      <div className="flex items-center gap-2">
+        <span
+          className={`flex h-7 w-7 items-center justify-center rounded-md ${
+            danger ? "bg-danger/10 text-danger" : "bg-background text-gold"
+          }`}
+        >
+          {icon}
+        </span>
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
+      </div>
+      <p
+        className={`mt-3 text-2xl font-semibold tabular-nums ${
+          danger ? "text-danger" : "text-foreground"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}

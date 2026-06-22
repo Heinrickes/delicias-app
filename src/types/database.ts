@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      ajustes: {
+        Row: {
+          actualizado_en: string
+          avisar_cobros: boolean
+          avisar_entregas: boolean
+          avisar_produccion: boolean
+          avisar_stock: boolean
+          dias_anticipacion: number
+          id: number
+          push_activado: boolean
+        }
+        Insert: {
+          actualizado_en?: string
+          avisar_cobros?: boolean
+          avisar_entregas?: boolean
+          avisar_produccion?: boolean
+          avisar_stock?: boolean
+          dias_anticipacion?: number
+          id?: number
+          push_activado?: boolean
+        }
+        Update: {
+          actualizado_en?: string
+          avisar_cobros?: boolean
+          avisar_entregas?: boolean
+          avisar_produccion?: boolean
+          avisar_stock?: boolean
+          dias_anticipacion?: number
+          id?: number
+          push_activado?: boolean
+        }
+        Relationships: []
+      }
+      categorias: {
+        Row: {
+          creado_en: string
+          id: string
+          nombre: string
+          orden: number
+        }
+        Insert: {
+          creado_en?: string
+          id?: string
+          nombre: string
+          orden?: number
+        }
+        Update: {
+          creado_en?: string
+          id?: string
+          nombre?: string
+          orden?: number
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           creado_en: string
@@ -41,6 +95,45 @@ export type Database = {
           nombre?: string
           notas?: string | null
           telefono?: string | null
+        }
+        Relationships: []
+      }
+      insumos: {
+        Row: {
+          activo: boolean
+          costo_unitario: number
+          creado_en: string
+          en_lista: boolean
+          id: string
+          nombre: string
+          proveedor: string | null
+          stock: number
+          stock_minimo: number
+          unidad: string
+        }
+        Insert: {
+          activo?: boolean
+          costo_unitario?: number
+          creado_en?: string
+          en_lista?: boolean
+          id?: string
+          nombre: string
+          proveedor?: string | null
+          stock?: number
+          stock_minimo?: number
+          unidad?: string
+        }
+        Update: {
+          activo?: boolean
+          costo_unitario?: number
+          creado_en?: string
+          en_lista?: boolean
+          id?: string
+          nombre?: string
+          proveedor?: string | null
+          stock?: number
+          stock_minimo?: number
+          unidad?: string
         }
         Relationships: []
       }
@@ -204,10 +297,73 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          creado_en: string
+          endpoint: string
+          id: string
+          p256dh: string
+        }
+        Insert: {
+          auth: string
+          creado_en?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+        }
+        Update: {
+          auth?: string
+          creado_en?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+        }
+        Relationships: []
+      }
+      producciones: {
+        Row: {
+          cantidad: number
+          creado_en: string
+          estado: string
+          fecha_plan: string
+          id: string
+          nota: string | null
+          producto_id: string
+        }
+        Insert: {
+          cantidad: number
+          creado_en?: string
+          estado?: string
+          fecha_plan: string
+          id?: string
+          nota?: string | null
+          producto_id: string
+        }
+        Update: {
+          cantidad?: number
+          creado_en?: string
+          estado?: string
+          fecha_plan?: string
+          id?: string
+          nota?: string | null
+          producto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "producciones_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       productos: {
         Row: {
           activo: boolean | null
           categoria: string | null
+          categoria_id: string | null
           costo: number
           creado_en: string
           id: string
@@ -221,6 +377,7 @@ export type Database = {
         Insert: {
           activo?: boolean | null
           categoria?: string | null
+          categoria_id?: string | null
           costo?: number
           creado_en?: string
           id?: string
@@ -234,6 +391,7 @@ export type Database = {
         Update: {
           activo?: boolean | null
           categoria?: string | null
+          categoria_id?: string | null
           costo?: number
           creado_en?: string
           id?: string
@@ -244,7 +402,15 @@ export type Database = {
           tipo?: string
           unidad?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "productos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ventas: {
         Row: {
@@ -319,6 +485,10 @@ export type Database = {
       }
       cambiar_estado_pedido: {
         Args: { p_estado: string; p_fecha_pago: string; p_id: string }
+        Returns: undefined
+      }
+      confirmar_produccion: {
+        Args: { p_id: string }
         Returns: undefined
       }
       crear_venta: {

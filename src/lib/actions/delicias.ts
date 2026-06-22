@@ -13,28 +13,32 @@ async function requireUser() {
   return supabase;
 }
 
-export type PackItemInput = { producto_id: string; cantidad: number };
+export type DeliciaItemInput = { producto_id: string; cantidad: number };
 
-export type PackInput = {
+export type DeliciaInput = {
   nombre: string;
   precio: number;
-  categoria?: string;
-  items: PackItemInput[];
+  categoria_id?: string | null;
+  items: DeliciaItemInput[];
 };
 
-export async function crearPack(input: PackInput): Promise<ActionResult> {
+/**
+ * Crea una Delicia (caja): un producto `tipo='delicia'` compuesto por varios
+ * productos simples. Al venderla se descuenta el stock de cada producto base.
+ */
+export async function crearDelicia(input: DeliciaInput): Promise<ActionResult> {
   try {
     if (!input.nombre.trim()) {
       return { ok: false, error: "El nombre es obligatorio" };
     }
     const items = input.items.filter((i) => i.producto_id && i.cantidad > 0);
     if (items.length === 0) {
-      return { ok: false, error: "Agrega al menos un producto al pack" };
+      return { ok: false, error: "Agrega al menos un producto a la delicia" };
     }
 
     const supabase = await requireUser();
 
-    // Un pack solo puede componerse de productos simples (no de otros packs).
+    // Una delicia solo puede componerse de productos simples (no de otras delicias).
     const { data: componentes, error: compErr } = await supabase
       .from("productos")
       .select("id, tipo")
@@ -43,32 +47,43 @@ export async function crearPack(input: PackInput): Promise<ActionResult> {
         items.map((i) => i.producto_id)
       );
     if (compErr) return { ok: false, error: compErr.message };
-    if ((componentes ?? []).some((c) => c.tipo === "pack")) {
+    if ((componentes ?? []).some((c) => c.tipo === "delicia")) {
       return {
         ok: false,
-        error: "Un pack no puede contener otros packs, solo productos simples",
+        error: "Una delicia no puede contener otras delicias, solo productos simples",
       };
     }
 
-    const { data: pack, error } = await supabase
+    let categoria: string | null = null;
+    if (input.categoria_id) {
+      const { data: cat } = await supabase
+        .from("categorias")
+        .select("nombre")
+        .eq("id", input.categoria_id)
+        .single();
+      categoria = cat?.nombre ?? null;
+    }
+
+    const { data: delicia, error } = await supabase
       .from("productos")
       .insert({
         nombre: input.nombre.trim(),
         precio: input.precio,
-        costo: 0, // el costo del pack se calcula desde sus componentes
-        stock: 0, // el stock del pack es derivado del producto base
-        categoria: input.categoria?.trim() || "Packs",
-        unidad: "pack",
-        tipo: "pack",
+        costo: 0, // el costo se calcula desde sus componentes
+        stock: 0, // el stock es derivado de los productos base
+        categoria_id: input.categoria_id || null,
+        categoria,
+        unidad: "caja",
+        tipo: "delicia",
       })
       .select("id")
       .single();
 
-    if (error || !pack) return { ok: false, error: error?.message ?? "Error" };
+    if (error || !delicia) return { ok: false, error: error?.message ?? "Error" };
 
     const { error: itemsErr } = await supabase.from("pack_items").insert(
       items.map((i) => ({
-        pack_id: pack.id,
+        pack_id: delicia.id,
         producto_id: i.producto_id,
         cantidad: i.cantidad,
       }))

@@ -9,7 +9,7 @@ import {
 } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { crearPack } from "@/lib/actions/packs";
+import { crearDelicia } from "@/lib/actions/delicias";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,7 @@ type ProductoBase = {
   costo: number;
   stock: number;
 };
+type Categoria = { id: string; nombre: string };
 type Item = {
   producto_id: string;
   nombre: string;
@@ -42,16 +43,18 @@ type Item = {
 const selectClass =
   "h-9 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
-export function PackFormDialog({
+export function DeliciaFormDialog({
   productos,
+  categorias,
   trigger,
 }: {
   productos: ProductoBase[];
+  categorias: Categoria[];
   trigger: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [nombre, setNombre] = useState("");
-  const [categoria, setCategoria] = useState("");
+  const [categoriaId, setCategoriaId] = useState("");
   const [precio, setPrecio] = useState("");
   const [items, setItems] = useState<Item[]>([]);
   const [prodSel, setProdSel] = useState("");
@@ -72,7 +75,7 @@ export function PackFormDialog({
 
   const reset = () => {
     setNombre("");
-    setCategoria("");
+    setCategoriaId("");
     setPrecio("");
     setItems([]);
     setProdSel("");
@@ -114,14 +117,14 @@ export function PackFormDialog({
     e.preventDefault();
     if (items.length === 0) return toast.error("Agrega al menos un producto");
     startTransition(async () => {
-      const result = await crearPack({
+      const result = await crearDelicia({
         nombre,
         precio: precioNum,
-        categoria,
+        categoria_id: categoriaId || null,
         items: items.map((i) => ({ producto_id: i.producto_id, cantidad: i.cantidad })),
       });
       if (result.ok) {
-        toast.success("Pack creado");
+        toast.success("Delicia creada");
         reset();
         setOpen(false);
       } else {
@@ -145,39 +148,46 @@ export function PackFormDialog({
         : trigger}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Nuevo pack</DialogTitle>
+          <DialogTitle>Nueva delicia</DialogTitle>
           <DialogDescription>
-            Un pack agrupa productos a un precio especial. Al venderlo se
-            descuenta el stock de cada producto base.
+            Una delicia es una caja que agrupa productos a un precio especial. Al
+            venderla se descuenta el stock de cada producto base.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="pnombre">{LABELS.nombre} del pack</Label>
+              <Label htmlFor="dnombre">{LABELS.nombre} de la delicia</Label>
               <Input
-                id="pnombre"
+                id="dnombre"
                 required
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                placeholder="Ej: Pack de 3 Alfajores"
+                placeholder="Ej: Caja Surtida de 6"
                 autoFocus
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="pcat">Categoría</Label>
-              <Input
-                id="pcat"
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
-                placeholder="Packs"
-              />
+              <Label htmlFor="dcat">Categoría</Label>
+              <select
+                id="dcat"
+                value={categoriaId}
+                onChange={(e) => setCategoriaId(e.target.value)}
+                className={selectClass}
+              >
+                <option value="">Sin categoría</option>
+                {categorias.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="pprecio">{LABELS.precio} del pack</Label>
+              <Label htmlFor="dprecio">{LABELS.precio} de la delicia</Label>
               <Input
-                id="pprecio"
+                id="dprecio"
                 type="number"
                 required
                 min="0"
@@ -192,9 +202,9 @@ export function PackFormDialog({
           <div className="space-y-2 rounded-lg border bg-background/40 p-3">
             <div className="flex items-end gap-2">
               <div className="flex-1 space-y-1.5">
-                <Label htmlFor="pprod">Producto</Label>
+                <Label htmlFor="dprod">Producto</Label>
                 <select
-                  id="pprod"
+                  id="dprod"
                   value={prodSel}
                   onChange={(e) => setProdSel(e.target.value)}
                   className={selectClass}
@@ -208,9 +218,9 @@ export function PackFormDialog({
                 </select>
               </div>
               <div className="w-20 space-y-1.5">
-                <Label htmlFor="pcant">Cant.</Label>
+                <Label htmlFor="dcant">Cant.</Label>
                 <Input
-                  id="pcant"
+                  id="dcant"
                   type="number"
                   min="1"
                   value={cantSel}
@@ -262,7 +272,7 @@ export function PackFormDialog({
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">
                     Se pueden armar: {disponibles}{" "}
-                    {disponibles === 1 ? "pack" : "packs"}
+                    {disponibles === 1 ? "caja" : "cajas"}
                   </span>
                   {precioNum > 0 && (
                     <span className="font-medium text-success">
@@ -276,7 +286,7 @@ export function PackFormDialog({
 
           <DialogFooter>
             <Button type="submit" disabled={isPending}>
-              {isPending ? LABELS.guardando : "Crear pack"}
+              {isPending ? LABELS.guardando : "Crear delicia"}
             </Button>
           </DialogFooter>
         </form>

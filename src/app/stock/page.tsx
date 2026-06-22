@@ -49,7 +49,7 @@ async function getData(dias: number) {
       .from("productos")
       .select("id, nombre, categoria, stock, stock_minimo, costo, unidad")
       .eq("activo", true)
-      .eq("tipo", "simple") // los packs no tienen stock propio (es derivado)
+      .eq("tipo", "simple") // las delicias no tienen stock propio (es derivado)
       .order("nombre"),
     supabase
       .from("ventas")

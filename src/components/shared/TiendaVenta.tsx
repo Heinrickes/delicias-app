@@ -29,7 +29,7 @@ type ProductoTienda = {
   precio: number;
   stock: number;
   categoria: string | null;
-  tipo: "simple" | "pack";
+  tipo: "simple" | "delicia";
 };
 type ClienteOpt = { id: string; nombre: string };
 
@@ -200,7 +200,7 @@ export function TiendaVenta({
           No hay productos disponibles. Agrégalos en Productos.
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
           {productos.map((p, idx) => {
             const restante = p.stock - enCarrito(p.id);
             const agotado = p.stock <= 0;
@@ -212,20 +212,20 @@ export function TiendaVenta({
                 onClick={() => agregar(p)}
                 disabled={sinMas}
                 className={cn(
-                  "group flex flex-col overflow-hidden rounded-xl bg-card text-left ring-1 ring-foreground/10 transition-shadow",
+                  "group flex flex-col overflow-hidden rounded-lg bg-card text-left ring-1 ring-foreground/10 transition-shadow",
                   sinMas
                     ? "cursor-not-allowed opacity-60"
-                    : "hover:shadow-[0_18px_40px_rgba(75,45,30,0.10)]"
+                    : "hover:shadow-[0_14px_34px_rgba(75,45,30,0.08)]"
                 )}
               >
                 <div
-                  className="relative h-28 border-b bg-cover bg-center sm:h-32"
+                  className="relative h-20 bg-cover bg-center sm:h-24"
                   style={{ background: VISUALS[idx % VISUALS.length] }}
                 >
                   <div className="absolute left-2 top-2 flex flex-wrap gap-1">
-                    {p.tipo === "pack" && (
+                    {p.tipo === "delicia" && (
                       <Badge className="bg-primary text-primary-foreground">
-                        Pack
+                        Delicia
                       </Badge>
                     )}
                     {agotado && (
@@ -238,16 +238,16 @@ export function TiendaVenta({
                     </span>
                   )}
                 </div>
-                <div className="flex flex-1 flex-col p-3">
+                <div className="flex flex-1 flex-col p-2.5">
                   {p.categoria && (
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <span className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {p.categoria}
                     </span>
                   )}
-                  <h3 className="mt-0.5 line-clamp-2 font-serif text-sm leading-snug text-foreground">
+                  <h3 className="mt-0.5 line-clamp-2 font-serif text-[13px] leading-snug text-foreground">
                     {p.nombre}
                   </h3>
-                  <div className="mt-2 flex items-center justify-between">
+                  <div className="mt-1.5 flex items-center justify-between">
                     <span className="text-sm font-semibold tabular-nums text-foreground">
                       {formatMoneda(p.precio)}
                     </span>

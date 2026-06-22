@@ -6,42 +6,45 @@ export type ProductoEnriquecido = {
   id: string;
   nombre: string;
   precio: number;
-  costo: number; // efectivo (packs: suma de componentes)
-  stock: number; // efectivo (packs: packs armables)
+  costo: number; // efectivo (delicias: suma de componentes)
+  stock: number; // efectivo (delicias: cajas armables)
   stock_minimo: number;
   categoria: string | null;
-  tipo: "simple" | "pack";
+  categoria_id: string | null;
+  tipo: "simple" | "delicia";
   componentes: ComponentePack[];
 };
 
 /**
  * Trae los productos activos con datos efectivos:
- * para los packs calcula costo, stock disponible y composición desde sus componentes.
+ * para las delicias calcula costo, stock disponible y composición desde sus componentes.
  */
 export async function getProductosEnriquecidos(): Promise<ProductoEnriquecido[]> {
   const supabase = await createClient();
 
   const { data: productos } = await supabase
     .from("productos")
-    .select("id, nombre, precio, costo, stock, stock_minimo, categoria, tipo")
+    .select(
+      "id, nombre, precio, costo, stock, stock_minimo, categoria, categoria_id, tipo"
+    )
     .eq("activo", true)
     .order("nombre");
 
   const lista = productos ?? [];
-  const packIds = lista.filter((p) => p.tipo === "pack").map((p) => p.id);
+  const deliciaIds = lista.filter((p) => p.tipo === "delicia").map((p) => p.id);
 
-  const itemsPorPack = new Map<
+  const itemsPorDelicia = new Map<
     string,
     { cantidad: number; nombre: string; costo: number; stock: number }[]
   >();
 
-  if (packIds.length > 0) {
+  if (deliciaIds.length > 0) {
     const { data: items } = await supabase
       .from("pack_items")
       .select(
         "pack_id, cantidad, productos!pack_items_producto_id_fkey(nombre, costo, stock)"
       )
-      .in("pack_id", packIds);
+      .in("pack_id", deliciaIds);
 
     for (const it of items ?? []) {
       const base = it.productos as {
@@ -49,20 +52,20 @@ export async function getProductosEnriquecidos(): Promise<ProductoEnriquecido[]>
         costo: number;
         stock: number;
       } | null;
-      const arr = itemsPorPack.get(it.pack_id) ?? [];
+      const arr = itemsPorDelicia.get(it.pack_id) ?? [];
       arr.push({
         cantidad: it.cantidad,
         nombre: base?.nombre ?? "—",
         costo: base?.costo ?? 0,
         stock: base?.stock ?? 0,
       });
-      itemsPorPack.set(it.pack_id, arr);
+      itemsPorDelicia.set(it.pack_id, arr);
     }
   }
 
   return lista.map((p): ProductoEnriquecido => {
-    if (p.tipo === "pack") {
-      const comps = itemsPorPack.get(p.id) ?? [];
+    if (p.tipo === "delicia") {
+      const comps = itemsPorDelicia.get(p.id) ?? [];
       const costo = comps.reduce((s, c) => s + c.cantidad * c.costo, 0);
       const stock =
         comps.length > 0
@@ -76,7 +79,8 @@ export async function getProductosEnriquecidos(): Promise<ProductoEnriquecido[]>
         stock,
         stock_minimo: p.stock_minimo,
         categoria: p.categoria,
-        tipo: "pack",
+        categoria_id: p.categoria_id,
+        tipo: "delicia",
         componentes: comps.map((c) => ({ nombre: c.nombre, cantidad: c.cantidad })),
       };
     }
@@ -88,6 +92,7 @@ export async function getProductosEnriquecidos(): Promise<ProductoEnriquecido[]>
       stock: p.stock,
       stock_minimo: p.stock_minimo,
       categoria: p.categoria,
+      categoria_id: p.categoria_id,
       tipo: "simple",
       componentes: [],
     };
