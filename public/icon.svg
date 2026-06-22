@@ -1,13 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Delicias Caseras">
-  <defs>
-    <linearGradient id="dcBg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#5a3825" />
-      <stop offset="1" stop-color="#3a2218" />
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" fill="url(#dcBg)" />
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#b89b63" stroke-width="6" opacity="0.85" />
-  <text x="256" y="262" text-anchor="middle" dominant-baseline="central"
-    font-family="Georgia, 'Times New Roman', serif" font-size="248" fill="#f6efe5">D</text>
-  <circle cx="334" cy="168" r="17" fill="#c0714a" />
+  <rect width="512" height="512" rx="112" fill="#3b2a20" />
+  <g fill="none" stroke="#b8734d" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M256 150 C340 215 340 330 256 408 C172 330 172 215 256 150 Z" />
+    <path d="M256 178 V382" />
+    <path d="M206 214 C230 272 230 330 210 378" />
+    <path d="M306 214 C282 272 282 330 302 378" />
+    <path d="M256 150 C256 116 282 96 322 96" />
+    <path d="M322 96 C292 72 262 88 262 128" />
+  </g>
 </svg>

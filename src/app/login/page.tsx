@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { Lock, Mail, Key, LogIn, AlertCircle } from "lucide-react";
+import { Mail, Key, LogIn, AlertCircle } from "lucide-react";
 import { BotanicalAccent } from "@/components/shared/BotanicalAccent";
+import { LogoMark } from "@/components/shared/Logo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -40,14 +41,12 @@ export default function LoginPage() {
       <div className="relative w-full max-w-md overflow-hidden rounded-lg border bg-card p-8 shadow-[0_18px_60px_rgba(81,51,35,0.08)]">
         <BotanicalAccent className="pointer-events-none absolute -right-6 -top-8 h-40 w-28 rotate-12 text-gold/20" />
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gold/15">
-            <Lock className="h-6 w-6 text-primary" />
-          </div>
+          <LogoMark className="mb-3 h-12 w-12 text-gold" />
           <h1 className="font-serif text-3xl leading-tight text-foreground">
-            Delicias
+            Delicias Caseras
           </h1>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-muted-foreground">
-            Caseras
+          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.32em] text-gold">
+            Chocolate artesanal
           </p>
           <p className="mt-4 text-sm text-muted-foreground">
             Ingresa tus credenciales para acceder al inventario
