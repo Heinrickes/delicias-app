@@ -26,11 +26,13 @@ export async function AppShell({ children }: { children: ReactNode }) {
         <aside className="border-b bg-surface px-5 py-5 lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r">
           <div className="flex items-center justify-between gap-4 lg:mb-8 lg:block">
             <div>
-              <p className="font-serif text-[1.7rem] leading-none text-primary">
+              <p className="font-serif text-[1.5rem] leading-[1.05] text-primary">
                 Delicias
-              </p>
-              <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.34em] text-muted-foreground">
+                <br />
                 Caseras
+              </p>
+              <p className="mt-1.5 text-[9px] font-semibold uppercase tracking-[0.28em] text-gold">
+                Chocolate artesanal
               </p>
             </div>
           </div>
@@ -39,10 +41,10 @@ export async function AppShell({ children }: { children: ReactNode }) {
 
           <div className="mt-10 hidden rounded-lg border bg-background/60 p-4 text-center lg:block lg:mt-auto">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold">
-              Hecho con amor
+              Hecho con dedicación
             </p>
             <p className="mt-2 text-xs leading-5 text-muted-foreground">
-              Ingredientes seleccionados y dedicacion en cada detalle.
+              Disfrutado con intención. Chocolate fino artesanal.
             </p>
           </div>
         </aside>

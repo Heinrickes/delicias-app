@@ -5,75 +5,78 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
-  Delicias Caseras — sistema de diseño
-  Estética: minimalista y elegante. Crema/blush de fondo, chocolate para texto
-  fuerte y primario, terracota/rust de acento, dorado y oliva como secundarios.
-  Tipografías: Vidaloka (serif display) + Montserrat (sans).
+  Delicias Caseras — sistema de diseño (manual de marca)
+  Crema de fondo, cacao para texto/primario, chocolate y nude como neutros,
+  cobre de acento y oliva suave como secundario.
+  Tipografías: Fraunces (serif display) + Montserrat (sans).
 */
 
 :root {
   --radius: 0.625rem;
 
+  /* Manual de marca: Crema #F4EFE6 · Cacao #3B2A20 · Chocolate #6B4B3A
+     Nude #CDAA96 · Oliva suave #7A7F64 · Cobre #B8734D */
+
   /* Lienzo y texto */
-  --background: #f6efe5;
-  --foreground: #33271f;
+  --background: #f4efe6;
+  --foreground: #3b2a20;
 
   /* Superficies */
-  --card: #fffdf9;
-  --card-foreground: #33271f;
-  --popover: #fffdf9;
-  --popover-foreground: #33271f;
+  --card: #fffdf8;
+  --card-foreground: #3b2a20;
+  --popover: #fffdf8;
+  --popover-foreground: #3b2a20;
 
-  /* Primario (chocolate) */
-  --primary: #4b2d1e;
-  --primary-foreground: #fbf6ee;
+  /* Primario (cacao) */
+  --primary: #3b2a20;
+  --primary-foreground: #f4efe6;
 
-  /* Secundario (arena clara) */
-  --secondary: #efe3d3;
-  --secondary-foreground: #4b2d1e;
+  /* Secundario (nude/arena) */
+  --secondary: #ede2d4;
+  --secondary-foreground: #3b2a20;
 
   /* Apagados */
-  --muted: #efe6d9;
-  --muted-foreground: #7c6b5d;
+  --muted: #ece2d3;
+  --muted-foreground: #8a7868;
 
-  /* Acento (terracota suave para hovers/realces) */
-  --accent: #e7d3c2;
-  --accent-foreground: #4b2d1e;
+  /* Acento (nude para hovers/realces) */
+  --accent: #cdaa96;
+  --accent-foreground: #3b2a20;
 
   /* Estados */
-  --destructive: #b64032;
+  --destructive: #b23b2e;
 
   /* Bordes / inputs / foco */
-  --border: #e7dacb;
-  --input: #e7dacb;
-  --ring: #b89b63;
+  --border: #e6dac8;
+  --input: #e6dac8;
+  --ring: #b8734d;
 
   /* Colores de marca extra (utilidades directas) */
-  --surface: #fffdf9;
-  --terracotta: #c0714a;
+  --surface: #fffdf8;
+  --terracotta: #b8734d;
   --rust: #a6522f;
-  --gold: #b89b63;
-  --olive: #6b705c;
+  --gold: #b8734d;
+  --olive: #7a7f64;
   --olive-foreground: #ffffff;
-  --success: #5f7a4e;
-  --danger: #b64032;
+  --success: #6b7355;
+  --danger: #b23b2e;
 
   /* Gráficos (Recharts) */
-  --chart-1: #c0714a;
-  --chart-2: #b89b63;
-  --chart-3: #6b705c;
-  --chart-4: #7a4a30;
-  --chart-5: #d9a88c;
+  --chart-1: #6b4b3a;
+  --chart-2: #b8734d;
+  --chart-3: #7a7f64;
+  --chart-4: #cdaa96;
+  --chart-5: #3b2a20;
 
   /* Sidebar */
-  --sidebar: #fffdf9;
-  --sidebar-foreground: #33271f;
-  --sidebar-primary: #4b2d1e;
-  --sidebar-primary-foreground: #fbf6ee;
-  --sidebar-accent: #efe6d9;
-  --sidebar-accent-foreground: #4b2d1e;
-  --sidebar-border: #e7dacb;
-  --sidebar-ring: #b89b63;
+  --sidebar: #fffdf8;
+  --sidebar-foreground: #3b2a20;
+  --sidebar-primary: #3b2a20;
+  --sidebar-primary-foreground: #f4efe6;
+  --sidebar-accent: #ece2d3;
+  --sidebar-accent-foreground: #3b2a20;
+  --sidebar-border: #e6dac8;
+  --sidebar-ring: #b8734d;
 }
 
 .dark {
@@ -94,7 +97,7 @@
   --destructive: #d4685a;
   --border: #ffffff1a;
   --input: #ffffff26;
-  --ring: #b89b63;
+  --ring: #b8734d;
   --surface: #2e221a;
   --sidebar: #2e221a;
   --sidebar-foreground: #f4ece1;
@@ -107,10 +110,10 @@
 }
 
 @theme inline {
-  /* Tipografías */
+  /* Tipografías (manual de marca: Fraunces + Montserrat) */
   --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-vidaloka), Georgia, "Times New Roman", serif;
-  --font-heading: var(--font-vidaloka), Georgia, serif;
+  --font-serif: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-heading: var(--font-fraunces), Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* Tokens semánticos shadcn */

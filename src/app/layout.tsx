@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Montserrat, Vidaloka } from "next/font/google";
+import { Montserrat, Fraunces } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerRegister } from "@/components/shared/ServiceWorkerRegister";
 import "./globals.css";
@@ -10,9 +10,8 @@ const montserrat = Montserrat({
   display: "swap",
 });
 
-const vidaloka = Vidaloka({
-  variable: "--font-vidaloka",
-  weight: "400",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
   display: "swap",
 });
@@ -33,7 +32,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#4B2D1E",
+  themeColor: "#3B2A20",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -47,7 +46,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${montserrat.variable} ${vidaloka.variable} h-full antialiased bg-background`}
+      className={`${montserrat.variable} ${fraunces.variable} h-full antialiased bg-background`}
     >
       <body className="min-h-full flex flex-col font-sans">
         {children}
