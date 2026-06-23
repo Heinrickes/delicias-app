@@ -5,8 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { MainNav } from "@/components/shared/MainNav";
 import { MobileNav } from "@/components/shared/MobileNav";
 import { UserNav } from "@/components/shared/UserNav";
+import Image from "next/image";
 import { NotificacionesBell } from "@/components/shared/NotificacionesBell";
-import { LogoMark } from "@/components/shared/Logo";
 import { getAvisos } from "@/lib/notificaciones-data";
 
 async function getUserEmail() {
@@ -27,7 +27,13 @@ export async function AppShell({ children }: { children: ReactNode }) {
         <aside className="border-b bg-surface px-5 py-5 lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r">
           <div className="flex items-center justify-between gap-4 lg:mb-8 lg:block">
             <div className="flex items-center gap-2.5">
-              <LogoMark className="h-9 w-9 shrink-0 text-gold" />
+              <Image
+                src="/logo-pod.png"
+                alt=""
+                width={40}
+                height={40}
+                className="h-9 w-9 shrink-0 object-contain"
+              />
               <div>
                 <p className="font-serif text-[1.35rem] leading-[1.02] text-primary">
                   Delicias
