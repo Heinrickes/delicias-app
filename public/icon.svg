@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="512" height="512" role="img" aria-label="Delicias Caseras">
-  <rect width="48" height="48" rx="11" fill="#3b2a20" />
+  <rect width="48" height="48" rx="11" fill="#7a7f64" />
   <g fill="none" stroke="#b8734d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 1)">
     <path d="M24 40 C 13 33 11 21 15.5 10 C 20.5 19 23 31 24 40 Z" />
     <path d="M16.5 14 C 19.5 22 22 31 24 39" />
