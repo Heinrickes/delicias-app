@@ -34,12 +34,14 @@ export async function AppShell({ children }: { children: ReactNode }) {
                 height={56}
                 className="h-14 w-14 shrink-0 object-contain"
               />
-              <p className="font-serif text-[1.35rem] leading-[1.02] text-primary lg:mt-1">
-                Delicias Caseras
-              </p>
-              <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.26em] text-gold">
-                Chocolate artesanal
-              </p>
+              <div className="lg:mt-1">
+                <p className="font-serif text-[1.35rem] leading-[1.02] text-primary">
+                  Delicias Caseras
+                </p>
+                <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.26em] text-gold">
+                  Chocolate artesanal
+                </p>
+              </div>
             </div>
           </div>
 
