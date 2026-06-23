@@ -37,17 +37,20 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="relative w-full max-w-md overflow-hidden rounded-lg border bg-card p-8 shadow-[0_18px_60px_rgba(81,51,35,0.08)]">
+      <div className="relative w-full max-w-md overflow-hidden rounded-lg border bg-card px-8 pb-8 pt-5 shadow-[0_18px_60px_rgba(81,51,35,0.08)]">
         <div className="mb-8 flex flex-col items-center text-center">
           <Image
             src="/logo-emblema.png"
             alt="Delicias Caseras · Chocolate artesanal"
-            width={184}
-            height={184}
+            width={160}
+            height={160}
             priority
-            className="h-44 w-44 object-contain"
+            className="h-40 w-40 object-contain"
           />
-          <p className="mt-2 text-sm text-muted-foreground">
+          <h1 className="mt-2 font-serif text-3xl leading-tight text-foreground">
+            Delicias Caseras
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">
             Ingresa tus credenciales para acceder al inventario
           </p>
         </div>
