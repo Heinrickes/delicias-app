@@ -50,6 +50,12 @@ export default function RootLayout({
       className={`${montserrat.variable} ${fraunces.variable} h-full antialiased bg-background`}
     >
       <body className="min-h-full flex flex-col font-sans">
+        {/* Captura beforeinstallprompt antes de que React hidrate */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__pwaPrompt=e;});`,
+          }}
+        />
         {children}
         <Toaster position="top-center" richColors />
         <ServiceWorkerRegister />

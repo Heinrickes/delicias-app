@@ -13,8 +13,16 @@ export function PwaInstallBanner() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    // Ya instalada → no mostrar
+    // Ya instalada como PWA → no mostrar
     if (window.matchMedia("(display-mode: standalone)").matches) return;
+
+    // El script inline captura el evento antes de que React hidrate;
+    // si ya llegó, lo tomamos directamente del global.
+    const w = window as Window & { __pwaPrompt?: BeforeInstallPromptEvent };
+    if (w.__pwaPrompt) {
+      setPrompt(w.__pwaPrompt);
+      return;
+    }
 
     const handler = (e: Event) => {
       e.preventDefault();
