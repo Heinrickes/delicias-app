@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Montserrat, Fraunces } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ServiceWorkerRegister } from "@/components/shared/ServiceWorkerRegister";
+import { PwaInstallBanner } from "@/components/shared/PwaInstallBanner";
 import "./globals.css";
 
 const montserrat = Montserrat({
@@ -52,6 +53,7 @@ export default function RootLayout({
         {children}
         <Toaster position="top-center" richColors />
         <ServiceWorkerRegister />
+        <PwaInstallBanner />
       </body>
     </html>
   );
