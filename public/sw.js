@@ -7,6 +7,15 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Fetch handler requerido para que Chrome reconozca la app como PWA instalable.
+// Network-first: siempre toma la versión más reciente del servidor.
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
+});
+
 // Notificación push remota (cuando el servidor de envío esté configurado).
 self.addEventListener("push", (event) => {
   let data = {};
