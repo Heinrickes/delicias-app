@@ -1,4 +1,4 @@
-import { PageShell, HeaderSkeleton, StatsSkeleton, CardGridSkeleton } from "@/components/shared/PageShell";
+import { PageShell, HeaderSkeleton, StatsSkeleton, RowsSkeleton } from "@/components/shared/PageShell";
 
 export default function Loading() {
   return (
@@ -6,7 +6,7 @@ export default function Loading() {
       <div className="space-y-8">
         <HeaderSkeleton />
         <StatsSkeleton count={4} />
-        <CardGridSkeleton cards={6} />
+        <RowsSkeleton rows={5} />
       </div>
     </PageShell>
   );

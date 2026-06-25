@@ -166,7 +166,6 @@ export function TiendaVenta({
     });
     setFase("bolsa");
     setDrawerOpen(true);
-    toast.success(`Agregado: ${prod.nombre}`);
   };
 
   const setCantidad = (id: string, next: number) => {
@@ -325,22 +324,36 @@ export function TiendaVenta({
         </div>
       )}
 
-      {/* Backdrop: solo en móvil; en desktop el catálogo sigue clickeable */}
+      {/* Backdrop */}
       <div
         onClick={() => setDrawerOpen(false)}
         className={cn(
-          "fixed inset-0 z-40 bg-foreground/40 transition-opacity lg:hidden",
+          "fixed inset-0 z-40 bg-foreground/20 transition-opacity lg:bg-foreground/40 lg:hidden",
           drawerOpen ? "opacity-100" : "pointer-events-none opacity-0"
         )}
       />
 
-      {/* Drawer: Tu bolsa */}
+      {/* Drawer: Tu bolsa
+          Móvil  → bottom sheet (h-[62vh], sube desde abajo)
+          Desktop → panel lateral derecho (ancho fijo, cubre toda la altura) */}
       <aside
         className={cn(
-          "fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-card shadow-2xl transition-transform duration-300",
-          drawerOpen ? "translate-x-0" : "translate-x-full"
+          "fixed z-50 flex flex-col bg-card shadow-2xl transition-transform duration-300",
+          // Mobile: bottom sheet
+          "bottom-0 left-0 right-0 h-[62vh] rounded-t-2xl",
+          // Desktop: side panel
+          "lg:bottom-auto lg:inset-y-0 lg:left-auto lg:h-auto lg:max-h-none lg:w-full lg:max-w-md lg:rounded-none",
+          // Animación
+          drawerOpen
+            ? "translate-y-0 lg:translate-x-0"
+            : "translate-y-full lg:translate-y-0 lg:translate-x-full"
         )}
       >
+        {/* Handle visual: solo en móvil */}
+        <div className="flex justify-center pb-1 pt-2.5 lg:hidden" onClick={() => setDrawerOpen(false)}>
+          <div className="h-1 w-10 rounded-full bg-foreground/20" />
+        </div>
+
         <header className="flex items-center justify-between border-b px-5 py-4">
           <div className="flex items-center gap-2">
             {fase === "pago" && (

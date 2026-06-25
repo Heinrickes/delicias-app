@@ -69,16 +69,16 @@ function Metric({
   danger?: boolean;
 }) {
   return (
-    <div className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
-      <div className="flex items-center gap-2">
+    <div className="rounded-xl bg-card p-3 sm:p-5 ring-1 ring-foreground/10">
+      <div className="flex items-start gap-2">
         <span
-          className={`flex h-7 w-7 items-center justify-center rounded-md ${
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
             danger ? "bg-danger/10 text-danger" : "bg-background text-gold"
           }`}
         >
           {icon}
         </span>
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className="min-w-0 text-xs font-semibold uppercase leading-tight tracking-wide text-muted-foreground">
           {label}
         </p>
       </div>
