@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import {
   ShoppingBag,
   X,
@@ -30,6 +31,7 @@ type ProductoTienda = {
   precio: number;
   stock: number;
   categoria: string | null;
+  imagen_url: string | null;
   tipo: "simple" | "delicia";
   componentes: ComponenteItem[];
 };
@@ -273,8 +275,17 @@ export function TiendaVenta({
               >
                 <div
                   className="relative h-20 bg-cover bg-center sm:h-24"
-                  style={{ background: VISUALS[idx % VISUALS.length] }}
+                  style={p.imagen_url ? undefined : { background: VISUALS[idx % VISUALS.length] }}
                 >
+                  {p.imagen_url && (
+                    <Image
+                      src={p.imagen_url}
+                      alt={p.nombre}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 50vw, 33vw"
+                    />
+                  )}
                   <div className="absolute left-2 top-2 flex flex-wrap gap-1">
                     {p.tipo === "delicia" && (
                       <Badge className="bg-primary text-primary-foreground">

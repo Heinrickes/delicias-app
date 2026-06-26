@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Pencil, Trash2, X, Check, PackagePlus, Boxes } from "lucide-react";
+import { useState, useTransition, useRef } from "react";
+import Image from "next/image";
+import { Pencil, Trash2, X, Check, PackagePlus, Boxes, ImagePlus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { actualizarProducto, eliminarProducto } from "@/lib/actions/productos";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +32,7 @@ type Producto = {
   stock_minimo?: number;
   categoria: string | null;
   categoria_id?: string | null;
+  imagen_url?: string | null;
   tipo?: "simple" | "delicia";
   componentes?: { nombre: string; cantidad: number }[];
 };
@@ -60,6 +63,9 @@ export function ProductCard({
   const [editPrecio, setEditPrecio] = useState(producto.precio.toString());
   const [editCosto, setEditCosto] = useState(producto.costo.toString());
   const [editCategoria, setEditCategoria] = useState(producto.categoria_id ?? "");
+  const [editImagenUrl, setEditImagenUrl] = useState(producto.imagen_url ?? null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, startSaving] = useTransition();
   const [deleting, startDeleting] = useTransition();
 
@@ -71,6 +77,24 @@ export function ProductCard({
   const umbral = producto.stock_minimo ?? STOCK_BAJO_UMBRAL;
   const stockBajo = stock < umbral;
 
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    const supabase = createClient();
+    const ext = file.name.split(".").pop() ?? "jpg";
+    const path = `${producto.id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("productos").upload(path, file, { upsert: true });
+    if (error) {
+      toast.error("Error al subir la imagen");
+      setUploadingImage(false);
+      return;
+    }
+    const { data: { publicUrl } } = supabase.storage.from("productos").getPublicUrl(path);
+    setEditImagenUrl(publicUrl);
+    setUploadingImage(false);
+  };
+
   const handleGuardarEdicion = () => {
     startSaving(async () => {
       const result = await actualizarProducto(producto.id, {
@@ -78,6 +102,7 @@ export function ProductCard({
         precio: parseInt(editPrecio) || 0,
         costo: esDelicia ? 0 : parseInt(editCosto) || 0,
         categoria_id: editCategoria || null,
+        imagen_url: editImagenUrl,
       });
       if (result.ok) {
         toast.success("Producto actualizado");
@@ -105,14 +130,28 @@ export function ProductCard({
     setEditPrecio(producto.precio.toString());
     setEditCosto(producto.costo.toString());
     setEditCategoria(producto.categoria_id ?? "");
+    setEditImagenUrl(producto.imagen_url ?? null);
   };
 
   return (
     <div className="group relative overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10 transition-shadow hover:shadow-[0_14px_34px_rgba(75,45,30,0.08)]">
       <div
         className="relative h-16 bg-cover bg-center"
-        style={{ background: productVisuals[variant % productVisuals.length] }}
+        style={
+          (isEditing ? editImagenUrl : producto.imagen_url)
+            ? undefined
+            : { background: productVisuals[variant % productVisuals.length] }
+        }
       >
+        {(isEditing ? editImagenUrl : producto.imagen_url) && (
+          <Image
+            src={(isEditing ? editImagenUrl : producto.imagen_url)!}
+            alt={producto.nombre}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 50vw, 25vw"
+          />
+        )}
         <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1">
           {esDelicia && (
             <Badge className="bg-primary text-primary-foreground">Delicia</Badge>
@@ -123,6 +162,28 @@ export function ProductCard({
             </Badge>
           )}
         </div>
+        {/* Botón para cambiar imagen en modo edición */}
+        {isEditing && (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingImage}
+            className="absolute inset-0 flex items-center justify-center bg-foreground/30 opacity-0 transition-opacity group-hover:opacity-100"
+          >
+            {uploadingImage ? (
+              <Loader2 className="h-5 w-5 animate-spin text-white" />
+            ) : (
+              <ImagePlus className="h-5 w-5 text-white drop-shadow" />
+            )}
+          </button>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleImageChange}
+        />
       </div>
 
       <div className="absolute right-2.5 top-2.5 flex gap-1 rounded-md bg-card/80 p-1 opacity-0 shadow-sm backdrop-blur transition-opacity group-hover:opacity-100">

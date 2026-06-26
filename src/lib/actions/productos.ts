@@ -83,6 +83,7 @@ export async function actualizarProducto(
     precio: number;
     costo: number;
     categoria_id?: string | null;
+    imagen_url?: string | null;
   }
 ): Promise<ActionResult> {
   try {
@@ -96,6 +97,7 @@ export async function actualizarProducto(
         costo: input.costo,
         categoria_id: input.categoria_id || null,
         categoria,
+        ...(input.imagen_url !== undefined && { imagen_url: input.imagen_url }),
       })
       .eq("id", id);
 

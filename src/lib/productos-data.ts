@@ -15,6 +15,7 @@ export type ProductoEnriquecido = {
   stock_minimo: number;
   categoria: string | null;
   categoria_id: string | null;
+  imagen_url: string | null;
   tipo: "simple" | "delicia";
   componentes: ComponentePack[];
 };
@@ -29,7 +30,7 @@ export async function getProductosEnriquecidos(): Promise<ProductoEnriquecido[]>
   const { data: productos } = await supabase
     .from("productos")
     .select(
-      "id, nombre, precio, costo, stock, stock_minimo, categoria, categoria_id, tipo"
+      "id, nombre, precio, costo, stock, stock_minimo, categoria, categoria_id, imagen_url, tipo"
     )
     .eq("activo", true)
     .order("nombre");
@@ -91,7 +92,8 @@ export async function getProductosEnriquecidos(): Promise<ProductoEnriquecido[]>
         stock_minimo: p.stock_minimo,
         categoria: p.categoria,
         categoria_id: p.categoria_id,
-        tipo: "delicia",
+        imagen_url: p.imagen_url,
+        tipo: "delicia" as const,
         componentes: comps.map((c) => ({
           producto_id: c.producto_id,
           nombre: c.nombre,
@@ -108,7 +110,8 @@ export async function getProductosEnriquecidos(): Promise<ProductoEnriquecido[]>
       stock_minimo: p.stock_minimo,
       categoria: p.categoria,
       categoria_id: p.categoria_id,
-      tipo: "simple",
+      imagen_url: p.imagen_url,
+      tipo: "simple" as const,
       componentes: [],
     };
   });

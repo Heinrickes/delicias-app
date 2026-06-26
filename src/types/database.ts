@@ -367,6 +367,7 @@ export type Database = {
           costo: number
           creado_en: string
           id: string
+          imagen_url: string | null
           nombre: string
           precio: number
           stock: number
@@ -381,6 +382,7 @@ export type Database = {
           costo?: number
           creado_en?: string
           id?: string
+          imagen_url?: string | null
           nombre: string
           precio: number
           stock?: number
@@ -395,6 +397,7 @@ export type Database = {
           costo?: number
           creado_en?: string
           id?: string
+          imagen_url?: string | null
           nombre?: string
           precio?: number
           stock?: number

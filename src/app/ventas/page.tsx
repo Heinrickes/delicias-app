@@ -20,6 +20,7 @@ async function getCatalogo() {
       precio: p.precio,
       stock: p.stock,
       categoria: p.categoria,
+      imagen_url: p.imagen_url,
       tipo: p.tipo,
       componentes: p.componentes,
     })),
