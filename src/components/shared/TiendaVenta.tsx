@@ -12,6 +12,7 @@ import {
   ClipboardList,
   UserPlus,
   ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { crearVenta, type VentaItemInput } from "@/lib/actions/ventas";
@@ -476,11 +477,13 @@ export function TiendaVenta({
                 </span>
               </div>
               <Button
+                variant="outline"
                 className="mt-4 w-full"
                 size="lg"
                 onClick={() => setFase("pago")}
               >
-                Continuar
+                Cerrar venta
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </footer>
           </>
