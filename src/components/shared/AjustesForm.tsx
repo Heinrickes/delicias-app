@@ -34,17 +34,18 @@ function Toggle({
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={on}
       onClick={() => onChange(!on)}
       className={cn(
-        "relative h-6 w-11 shrink-0 overflow-hidden rounded-full transition-colors",
+        "flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-colors duration-200",
         on ? "bg-primary" : "bg-muted-foreground/30"
       )}
-      aria-pressed={on}
     >
       <span
         className={cn(
-          "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
-          on ? "translate-x-[1.375rem]" : "translate-x-0.5"
+          "h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200",
+          on ? "translate-x-5" : "translate-x-0"
         )}
       />
     </button>
