@@ -172,53 +172,60 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
       </div>
 
       {/* Acciones según estado */}
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        {estado === "pendiente" && (
-          <>
-            <Button
-              size="sm"
-              className="flex-1"
+      <div className="mt-4 flex items-end justify-between border-t pt-3">
+        <div className="flex gap-4">
+          {estado === "pendiente" && (
+            <>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => cambiar("entregado")}
+                className="flex flex-col items-center gap-1 disabled:opacity-50"
+              >
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-success text-white shadow-sm">
+                  <Check className="h-5 w-5" />
+                </span>
+                <span className="text-[10px] font-semibold text-success">Cobrar</span>
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => setCobrarOpen(true)}
+                className="flex flex-col items-center gap-1 disabled:opacity-50"
+              >
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-terracotta text-white shadow-sm">
+                  <Coins className="h-5 w-5" />
+                </span>
+                <span className="text-[10px] font-semibold text-terracotta">Por cobrar</span>
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => cambiar("cancelado")}
+                className="flex flex-col items-center gap-1 disabled:opacity-50"
+              >
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-sm">
+                  <X className="h-5 w-5" />
+                </span>
+                <span className="text-[10px] font-semibold text-muted-foreground">Cancelar</span>
+              </button>
+            </>
+          )}
+
+          {estado === "por_cobrar" && (
+            <button
+              type="button"
               disabled={pending}
               onClick={() => cambiar("entregado")}
+              className="flex flex-col items-center gap-1 disabled:opacity-50"
             >
-              <Check className="h-4 w-4" />
-              Entregar y cobrar
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={pending}
-              onClick={() => setCobrarOpen(true)}
-            >
-              <Coins className="h-4 w-4" />
-              Por cobrar
-            </Button>
-          </>
-        )}
-
-        {estado === "por_cobrar" && (
-          <Button
-            size="sm"
-            className="flex-1"
-            disabled={pending}
-            onClick={() => cambiar("entregado")}
-          >
-            <Check className="h-4 w-4" />
-            Marcar pagado
-          </Button>
-        )}
-
-        {estado === "pendiente" && (
-          <Button
-            size="sm"
-            variant="ghost"
-            disabled={pending}
-            onClick={() => cambiar("cancelado")}
-            title="Cancelar pedido"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-success text-white shadow-sm">
+                <Check className="h-5 w-5" />
+              </span>
+              <span className="text-[10px] font-semibold text-success">Pagado</span>
+            </button>
+          )}
+        </div>
 
         <AlertDialog>
           <AlertDialogTrigger
@@ -228,7 +235,7 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
                 size="icon-sm"
                 disabled={pending}
                 title={LABELS.eliminar}
-                className="ml-auto hover:bg-destructive/10 hover:text-destructive"
+                className="hover:bg-destructive/10 hover:text-destructive"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
