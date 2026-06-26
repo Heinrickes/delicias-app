@@ -36,7 +36,7 @@ export default async function CostosPage() {
           </p>
         </header>
 
-        <section className="grid grid-cols-3 gap-4">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Metric label="Insumos" value={insumos.length.toString()} icon={<Boxes className="h-4 w-4" />} />
           <Metric
             label="Valor en despensa"
