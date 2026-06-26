@@ -469,22 +469,21 @@ export function TiendaVenta({
 
             <footer className="border-t px-5 py-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  {LABELS.total}
-                </span>
-                <span className="text-xl font-semibold tabular-nums text-foreground">
-                  {formatMoneda(subtotal)}
-                </span>
+                <div>
+                  <p className="text-xs text-muted-foreground">{LABELS.total}</p>
+                  <p className="text-xl font-semibold tabular-nums text-foreground">
+                    {formatMoneda(subtotal)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFase("pago")}
+                  className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                  aria-label="Cerrar venta"
+                >
+                  <ArrowRight className="h-5 w-5" />
+                </button>
               </div>
-              <Button
-                variant="outline"
-                className="mt-4 w-full"
-                size="lg"
-                onClick={() => setFase("pago")}
-              >
-                Cerrar venta
-                <ArrowRight className="h-4 w-4" />
-              </Button>
             </footer>
           </>
         ) : (
