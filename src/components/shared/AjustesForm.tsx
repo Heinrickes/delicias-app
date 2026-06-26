@@ -36,7 +36,7 @@ function Toggle({
       type="button"
       onClick={() => onChange(!on)}
       className={cn(
-        "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+        "relative h-6 w-11 shrink-0 overflow-hidden rounded-full transition-colors",
         on ? "bg-primary" : "bg-muted-foreground/30"
       )}
       aria-pressed={on}
