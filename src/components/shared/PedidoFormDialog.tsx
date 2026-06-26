@@ -141,7 +141,7 @@ export function PedidoFormDialog({
         <DialogHeader>
           <DialogTitle>Nuevo pedido</DialogTitle>
           <DialogDescription>
-            Registra un encargo con su cliente y fecha de entrega.
+            Registra un pedido con su cliente y fecha de entrega.
           </DialogDescription>
         </DialogHeader>
 
@@ -262,7 +262,7 @@ export function PedidoFormDialog({
               id="notas"
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
-              placeholder="Detalles del encargo, decoración, etc."
+              placeholder="Detalles del pedido, decoración, etc."
               rows={2}
             />
           </div>

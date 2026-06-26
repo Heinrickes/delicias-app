@@ -226,7 +226,7 @@ export function TiendaVenta({
         const msg = {
           entregado: "Venta registrada · stock actualizado",
           por_cobrar: "Entregado · pendiente de cobro",
-          pendiente: "Encargo guardado",
+          pendiente: "Pedido guardado",
         }[estado];
         toast.success(msg);
         reset();
@@ -641,7 +641,7 @@ export function TiendaVenta({
                     <ClipboardList className="h-6 w-6" />
                   </span>
                   <span className="text-center text-[11px] font-semibold leading-tight text-primary">
-                    Encargo
+                    Pedido
                   </span>
                 </button>
               </div>
