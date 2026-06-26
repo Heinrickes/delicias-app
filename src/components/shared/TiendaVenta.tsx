@@ -350,9 +350,10 @@ export function TiendaVenta({
           Desktop → panel lateral derecho (ancho fijo, cubre toda la altura) */}
       <aside
         className={cn(
-          "fixed z-50 flex flex-col bg-card shadow-2xl transition-transform duration-300",
-          // Mobile: bottom sheet (empieza encima de la nav bar de 3.75rem)
-          "bottom-[3.75rem] left-0 right-0 h-[62vh] rounded-t-2xl",
+          "fixed z-50 flex flex-col bg-card shadow-2xl transition-[transform,height] duration-300",
+          // Mobile: bottom sheet — se expande a pantalla completa en fase pago
+          "bottom-[3.75rem] left-0 right-0 rounded-t-2xl",
+          fase === "pago" ? "h-[calc(100vh-3.75rem)]" : "h-[62vh]",
           // Desktop: side panel
           "lg:bottom-auto lg:inset-y-0 lg:left-auto lg:h-auto lg:max-h-none lg:w-full lg:max-w-md lg:rounded-none",
           // Animación
