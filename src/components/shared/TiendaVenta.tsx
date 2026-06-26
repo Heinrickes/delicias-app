@@ -585,33 +585,61 @@ export function TiendaVenta({
               </div>
             </div>
 
-            <footer className="space-y-2 border-t px-5 py-4">
-              <Button
-                className="w-full"
-                size="lg"
-                disabled={isPending}
-                onClick={() => confirmar("entregado")}
-              >
-                <Check className="h-4 w-4" />
-                Entregado y pagado · {formatMoneda(subtotal)}
-              </Button>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
+            <footer className="border-t px-5 py-4">
+              <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+                ¿Cómo cerramos?
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => confirmar("entregado")}
+                  className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-success/10 disabled:opacity-50"
+                >
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-success text-white shadow">
+                    <Check className="h-6 w-6" />
+                  </span>
+                  <span className="text-center text-[11px] font-semibold leading-tight text-success">
+                    Pagado
+                  </span>
+                  <span className="text-center text-[10px] tabular-nums text-muted-foreground">
+                    {formatMoneda(subtotal)}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
                   disabled={isPending}
                   onClick={() => confirmar("por_cobrar")}
+                  className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-gold/10 disabled:opacity-50"
                 >
-                  <Coins className="h-4 w-4" />
-                  Por cobrar
-                </Button>
-                <Button
-                  variant="ghost"
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gold text-white shadow">
+                    <Coins className="h-6 w-6" />
+                  </span>
+                  <span className="text-center text-[11px] font-semibold leading-tight text-gold">
+                    Por cobrar
+                  </span>
+                  <span className="text-center text-[10px] tabular-nums text-muted-foreground">
+                    {formatMoneda(subtotal)}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
                   disabled={isPending}
                   onClick={() => confirmar("pendiente")}
+                  className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10 disabled:opacity-50"
                 >
-                  <ClipboardList className="h-4 w-4" />
-                  Encargo
-                </Button>
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                    <ClipboardList className="h-6 w-6" />
+                  </span>
+                  <span className="text-center text-[11px] font-semibold leading-tight text-primary">
+                    Encargo
+                  </span>
+                  <span className="text-center text-[10px] tabular-nums text-muted-foreground">
+                    {formatMoneda(subtotal)}
+                  </span>
+                </button>
               </div>
             </footer>
           </>
