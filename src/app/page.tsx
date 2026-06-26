@@ -7,6 +7,7 @@ import { getProductosEnriquecidos } from "@/lib/productos-data";
 import { formatMoneda } from "@/lib/constants";
 import {
   AlertTriangle,
+  BarChart3,
   CalendarClock,
   ChartNoAxesCombined,
   Coins,
@@ -234,8 +235,9 @@ export default async function Home({
                 </h3>
                 <Link
                   href="/reportes"
-                  className="rounded-md border bg-surface px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  className="inline-flex items-center gap-1.5 rounded-md border bg-surface px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
+                  <BarChart3 className="h-3.5 w-3.5" />
                   Ver reportes
                 </Link>
               </div>

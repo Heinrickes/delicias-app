@@ -10,7 +10,6 @@ import {
   Check,
   X,
   ShoppingCart,
-  Star,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -22,6 +21,7 @@ import {
 } from "@/lib/actions/insumos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -135,33 +135,30 @@ export function CostosManager({ insumos }: { insumos: Insumo[] }) {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="i-stock">Stock actual</Label>
-                <Input
+                <NumericInput
                   id="i-stock"
-                  type="number"
                   step="any"
                   value={form.stock}
-                  onChange={(e) => set("stock", e.target.value)}
+                  onChange={(v) => set("stock", v)}
                   placeholder="0"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="i-min">Stock mínimo</Label>
-                <Input
+                <NumericInput
                   id="i-min"
-                  type="number"
                   step="any"
                   value={form.stock_minimo}
-                  onChange={(e) => set("stock_minimo", e.target.value)}
+                  onChange={(v) => set("stock_minimo", v)}
                   placeholder="0"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="i-costo">Costo unitario</Label>
-                <Input
+                <NumericInput
                   id="i-costo"
-                  type="number"
                   value={form.costo_unitario}
-                  onChange={(e) => set("costo_unitario", e.target.value)}
+                  onChange={(v) => set("costo_unitario", v)}
                   placeholder="0"
                 />
               </div>
@@ -314,11 +311,10 @@ function InsumoRow({
       <td className="px-4 py-3 text-center tabular-nums">
         {editStock ? (
           <span className="inline-flex items-center gap-1">
-            <Input
-              type="number"
+            <NumericInput
               step="any"
               value={stockVal}
-              onChange={(e) => setStockVal(e.target.value)}
+              onChange={setStockVal}
               className="h-8 w-20 text-center"
             />
             <Button size="icon-sm" onClick={guardarStock} disabled={pending}>
@@ -358,9 +354,13 @@ function InsumoRow({
             onClick={toggle}
             disabled={pending}
             title={insumo.en_lista ? "Quitar de la lista" : "Agregar a la lista"}
-            className={cn(insumo.en_lista && "text-gold")}
+            className={cn(
+              insumo.en_lista
+                ? "text-success hover:text-success/80"
+                : "text-muted-foreground hover:text-primary"
+            )}
           >
-            <Star className={cn("h-4 w-4", insumo.en_lista && "fill-current")} />
+            <Plus className={cn("h-4 w-4 transition-transform", insumo.en_lista && "rotate-45")} />
           </Button>
           <Button
             size="icon-sm"

@@ -12,7 +12,14 @@ import { toast } from "sonner";
 import { crearDelicia } from "@/lib/actions/delicias";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { formatMoneda, LABELS } from "@/lib/constants";
 
 type ProductoBase = {
@@ -40,8 +48,6 @@ type Item = {
   cantidad: number;
 };
 
-const selectClass =
-  "h-9 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function DeliciaFormDialog({
   productos,
@@ -169,30 +175,34 @@ export function DeliciaFormDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="dcat">Categoría</Label>
-              <select
-                id="dcat"
-                value={categoriaId}
-                onChange={(e) => setCategoriaId(e.target.value)}
-                className={selectClass}
+              <Label>Categoría</Label>
+              <Select
+                value={categoriaId || "none"}
+                onValueChange={(v) => setCategoriaId(!v || v === "none" ? "" : v)}
               >
-                <option value="">Sin categoría</option>
-                {categorias.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-9 w-full">
+                  <span className={cn("flex-1 text-left text-sm", !categoriaId && "text-muted-foreground")}>
+                    {categoriaId
+                      ? categorias.find((c) => c.id === categoriaId)?.nombre ?? "Sin categoría"
+                      : "Sin categoría"}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin categoría</SelectItem>
+                  {categorias.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="dprecio">{LABELS.precio} de la delicia</Label>
-              <Input
+              <NumericInput
                 id="dprecio"
-                type="number"
                 required
                 min="0"
                 value={precio}
-                onChange={(e) => setPrecio(e.target.value)}
+                onChange={setPrecio}
                 placeholder="2500"
               />
             </div>
@@ -202,29 +212,35 @@ export function DeliciaFormDialog({
           <div className="space-y-2 rounded-lg border bg-background/40 p-3">
             <div className="flex items-end gap-2">
               <div className="flex-1 space-y-1.5">
-                <Label htmlFor="dprod">Producto</Label>
-                <select
-                  id="dprod"
-                  value={prodSel}
-                  onChange={(e) => setProdSel(e.target.value)}
-                  className={selectClass}
+                <Label>Producto</Label>
+                <Select
+                  value={prodSel || "none"}
+                  onValueChange={(v) => setProdSel(!v || v === "none" ? "" : v)}
                 >
-                  <option value="">Elige…</option>
-                  {productos.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nombre} ({formatMoneda(p.precio)})
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="h-9 w-full">
+                    <span className={cn("flex-1 text-left text-sm", !prodSel && "text-muted-foreground")}>
+                      {prodSel
+                        ? (() => { const p = productos.find(x => x.id === prodSel); return p ? `${p.nombre} (${formatMoneda(p.precio)})` : "Elige…"; })()
+                        : "Elige…"}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Elige…</SelectItem>
+                    {productos.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nombre} ({formatMoneda(p.precio)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="w-20 space-y-1.5">
                 <Label htmlFor="dcant">Cant.</Label>
-                <Input
+                <NumericInput
                   id="dcant"
-                  type="number"
                   min="1"
                   value={cantSel}
-                  onChange={(e) => setCantSel(e.target.value)}
+                  onChange={setCantSel}
                 />
               </div>
               <Button type="button" variant="outline" size="icon" onClick={agregar}>

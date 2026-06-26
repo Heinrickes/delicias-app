@@ -8,7 +8,15 @@ import { actualizarProducto, eliminarProducto } from "@/lib/actions/productos";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,9 +46,6 @@ type Producto = {
 };
 
 type Categoria = { id: string; nombre: string };
-
-const selectClass =
-  "h-9 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 const productVisuals = [
   "radial-gradient(circle at 35% 45%, #F3D9B8 0 10%, transparent 11%), radial-gradient(circle at 55% 50%, #F3D9B8 0 11%, transparent 12%), radial-gradient(circle at 72% 45%, #F3D9B8 0 10%, transparent 11%), linear-gradient(135deg, #D5B38D, #F2E5D1)",
@@ -240,10 +245,9 @@ export function ProductCard({
                 <span className="text-xs text-muted-foreground">
                   {LABELS.precio}
                 </span>
-                <Input
-                  type="number"
+                <NumericInput
                   value={editPrecio}
-                  onChange={(e) => setEditPrecio(e.target.value)}
+                  onChange={setEditPrecio}
                   placeholder="Precio"
                 />
               </div>
@@ -252,10 +256,9 @@ export function ProductCard({
                   <span className="text-xs text-muted-foreground">
                     {LABELS.costo}
                   </span>
-                  <Input
-                    type="number"
+                  <NumericInput
                     value={editCosto}
-                    onChange={(e) => setEditCosto(e.target.value)}
+                    onChange={setEditCosto}
                     placeholder="Costo"
                   />
                 </div>
@@ -263,18 +266,24 @@ export function ProductCard({
             </div>
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground">Categoría</span>
-              <select
-                value={editCategoria}
-                onChange={(e) => setEditCategoria(e.target.value)}
-                className={selectClass}
+              <Select
+                value={editCategoria || "none"}
+                onValueChange={(v) => setEditCategoria(!v || v === "none" ? "" : v)}
               >
-                <option value="">Sin categoría</option>
-                {categorias.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-9 w-full">
+                  <span className={cn("flex-1 text-left text-sm", !editCategoria && "text-muted-foreground")}>
+                    {editCategoria
+                      ? categorias.find((c) => c.id === editCategoria)?.nombre ?? "Sin categoría"
+                      : "Sin categoría"}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin categoría</SelectItem>
+                  {categorias.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex gap-2 pt-1">
               <Button
@@ -338,10 +347,17 @@ export function ProductCard({
                     <Button
                       variant={stockBajo ? "default" : "outline"}
                       size="sm"
-                      className="w-full"
+                      className="w-full gap-1.5"
+                      title={stockBajo ? "Reponer stock" : "Gestionar stock"}
                     >
-                      <PackagePlus className="h-4 w-4" />
-                      {stockBajo ? "Reponer stock" : "Gestionar stock"}
+                      {stockBajo ? (
+                        <PackagePlus className="h-4 w-4" />
+                      ) : (
+                        <Boxes className="h-4 w-4" />
+                      )}
+                      <span className="sm:hidden lg:inline">
+                        {stockBajo ? "Reponer" : "Stock"}
+                      </span>
                     </Button>
                   }
                 />

@@ -17,6 +17,7 @@ import {
 } from "@/lib/actions/stock";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -163,13 +164,12 @@ export function StockMovimientoDialog({
 
           <div className="space-y-1.5">
             <Label htmlFor="valor">{CONFIG[tipo].campo}</Label>
-            <Input
+            <NumericInput
               id="valor"
-              type="number"
               min={tipo === "ajuste" || tipo === "umbral" ? "0" : "1"}
               required
               value={valor}
-              onChange={(e) => setValor(e.target.value)}
+              onChange={setValor}
               placeholder={CONFIG[tipo].placeholder}
               autoFocus
             />

@@ -1,6 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 
 type MesOpt = { value: string; label: string };
 
@@ -13,17 +19,17 @@ export function MesSelector({
 }) {
   const router = useRouter();
   return (
-    <select
-      value={value}
-      onChange={(e) => router.push(`/?mes=${e.target.value}`)}
-      aria-label="Filtrar por mes"
-      className="h-9 rounded-lg border border-input bg-card px-3 text-sm font-medium text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-    >
-      {meses.map((m) => (
-        <option key={m.value} value={m.value}>
-          {m.label}
-        </option>
-      ))}
-    </select>
+    <Select value={value} onValueChange={(v) => v && router.push(`/?mes=${v}`)}>
+      <SelectTrigger className="h-9">
+        <span className="text-sm font-medium text-foreground">
+          {meses.find((m) => m.value === value)?.label ?? value}
+        </span>
+      </SelectTrigger>
+      <SelectContent>
+        {meses.map((m) => (
+          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

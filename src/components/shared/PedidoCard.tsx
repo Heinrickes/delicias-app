@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import { cambiarEstadoPedido, eliminarPedido } from "@/lib/actions/pedidos";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -263,12 +263,11 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label htmlFor={`fp-${pedido.id}`}>Fecha estimada de pago</Label>
-            <Input
-              id={`fp-${pedido.id}`}
-              type="date"
+            <Label>Fecha estimada de pago</Label>
+            <DatePicker
               value={fechaPago}
-              onChange={(e) => setFechaPago(e.target.value)}
+              onChange={setFechaPago}
+              placeholder="Seleccionar fecha"
             />
           </div>
           <DialogFooter>

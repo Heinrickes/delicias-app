@@ -81,13 +81,13 @@ export default async function PedidosPage() {
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Encargos
+              Gestión
             </p>
             <h2 className="mt-1 font-serif text-3xl leading-tight text-foreground">
               Pedidos
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Encargos por fecha de entrega. Al entregar se genera la venta y se
+              Pedidos por fecha de entrega. Al entregar se genera la venta y se
               descuenta el stock; puedes entregar cobrando o dejar el pago
               pendiente.
             </p>
@@ -122,7 +122,7 @@ export default async function PedidosPage() {
                 No hay pedidos activos
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Crea un encargo con el botón &quot;Nuevo pedido&quot;.
+                Crea un pedido con el botón &quot;Nuevo pedido&quot;.
               </p>
             </div>
           ) : (

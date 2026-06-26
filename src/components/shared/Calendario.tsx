@@ -20,9 +20,16 @@ import {
   eliminarProduccion,
 } from "@/lib/actions/producciones";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +49,7 @@ export type EventoCalendario = {
   titulo: string;
   detalle: string;
   refId: string;
+  completado?: boolean;
 };
 
 type Producto = { id: string; nombre: string };
@@ -71,8 +79,6 @@ const META: Record<
 };
 
 const DIAS_SEMANA = ["L", "M", "M", "J", "V", "S", "D"];
-const selectClass =
-  "h-9 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 function ymd(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
@@ -93,6 +99,7 @@ export function Calendario({
   const [filtros, setFiltros] = useState<Set<TipoEvento>>(
     new Set(["entrega", "cobro", "produccion"])
   );
+  const [mostrarCompletados, setMostrarCompletados] = useState(false);
 
   // Agendar producción
   const [openAgendar, setOpenAgendar] = useState(false);
@@ -103,8 +110,10 @@ export function Calendario({
   const [isPending, startTransition] = useTransition();
 
   const eventosVisibles = useMemo(
-    () => eventos.filter((e) => filtros.has(e.tipo)),
-    [eventos, filtros]
+    () => eventos.filter(
+      (e) => filtros.has(e.tipo) && (mostrarCompletados || !e.completado)
+    ),
+    [eventos, filtros, mostrarCompletados]
   );
   const porFecha = useMemo(() => {
     const m = new Map<string, EventoCalendario[]>();
@@ -169,10 +178,8 @@ export function Calendario({
       else toast.error(r.error);
     });
 
-  const nombreMes = mes.toLocaleDateString(LOCALE, {
-    month: "long",
-    year: "numeric",
-  });
+  const nombreMesRaw = mes.toLocaleDateString(LOCALE, { month: "long", year: "numeric" });
+  const nombreMes = nombreMesRaw.charAt(0).toUpperCase() + nombreMesRaw.slice(1);
 
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
@@ -188,7 +195,7 @@ export function Calendario({
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <h3 className="min-w-[10rem] text-center text-base font-semibold capitalize text-foreground">
+            <h3 className="min-w-[10rem] text-center text-base font-semibold text-foreground">
               {nombreMes}
             </h3>
             <Button
@@ -207,7 +214,7 @@ export function Calendario({
         </div>
 
         {/* Filtros */}
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
           {(Object.keys(META) as TipoEvento[]).map((t) => {
             const m = META[t];
             const activo = filtros.has(t);
@@ -228,6 +235,19 @@ export function Calendario({
               </button>
             );
           })}
+          <button
+            type="button"
+            onClick={() => setMostrarCompletados((v) => !v)}
+            className={cn(
+              "ml-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1 transition-colors",
+              mostrarCompletados
+                ? "bg-muted text-foreground ring-foreground/20"
+                : "text-muted-foreground ring-foreground/10 hover:text-foreground"
+            )}
+          >
+            <Check className="h-3 w-3" />
+            Historial
+          </button>
         </div>
 
         {/* Grilla */}
@@ -243,7 +263,8 @@ export function Calendario({
             const evs = porFecha.get(clave) ?? [];
             const esHoy = clave === ymd(hoy);
             const sel = clave === diaSel;
-            const tipos = [...new Set(evs.map((e) => e.tipo))];
+            const tiposActivos = [...new Set(evs.filter((e) => !e.completado).map((e) => e.tipo))];
+            const tiposCompletados = [...new Set(evs.filter((e) => e.completado).map((e) => e.tipo))];
             return (
               <button
                 key={i}
@@ -266,8 +287,11 @@ export function Calendario({
                   {d.getDate()}
                 </span>
                 <span className="flex gap-0.5">
-                  {tipos.map((t) => (
+                  {tiposActivos.map((t) => (
                     <span key={t} className={cn("h-1.5 w-1.5 rounded-full", META[t].dot)} />
+                  ))}
+                  {tiposCompletados.map((t) => (
+                    <span key={`c-${t}`} className={cn("h-1.5 w-1.5 rounded-full opacity-40", META[t].dot)} />
                   ))}
                 </span>
               </button>
@@ -301,7 +325,7 @@ export function Calendario({
               const m = META[e.tipo];
               const Icon = m.icon;
               return (
-                <li key={i} className="rounded-lg border p-3">
+                <li key={i} className={cn("rounded-lg border p-3", e.completado && "opacity-60")}>
                   <div className="flex items-start gap-2">
                     <span
                       className={cn(
@@ -317,37 +341,44 @@ export function Calendario({
                       </p>
                       <p className="text-xs text-muted-foreground">{e.detalle}</p>
                     </div>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {e.tipo === "produccion" ? (
-                      <>
-                        <Button
-                          size="sm"
-                          disabled={isPending}
-                          onClick={() => handleConfirmar(e.refId)}
-                        >
-                          <Check className="h-4 w-4" />
-                          Confirmar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={isPending}
-                          onClick={() => handleEliminar(e.refId)}
-                          title={LABELS.eliminar}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </>
-                    ) : (
-                      <Link
-                        href={e.tipo === "cobro" ? "/por-cobrar" : "/pedidos"}
-                        className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-                      >
-                        Ver {e.tipo === "cobro" ? "cobranza" : "pedido"}
-                      </Link>
+                    {e.completado && (
+                      <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                        Completado
+                      </span>
                     )}
                   </div>
+                  {!e.completado && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {e.tipo === "produccion" ? (
+                        <>
+                          <Button
+                            size="sm"
+                            disabled={isPending}
+                            onClick={() => handleConfirmar(e.refId)}
+                          >
+                            <Check className="h-4 w-4" />
+                            Confirmar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={isPending}
+                            onClick={() => handleEliminar(e.refId)}
+                            title={LABELS.eliminar}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Link
+                          href={e.tipo === "cobro" ? "/por-cobrar" : "/pedidos"}
+                          className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+                        >
+                          Ver {e.tipo === "cobro" ? "cobranza" : "pedido"}
+                        </Link>
+                      )}
+                    </div>
+                  )}
                 </li>
               );
             })}
@@ -366,43 +397,44 @@ export function Calendario({
           </DialogHeader>
           <form onSubmit={handleAgendar} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="cal-prod">Producto</Label>
-              <select
-                id="cal-prod"
-                value={prodSel}
-                onChange={(e) => setProdSel(e.target.value)}
-                className={selectClass}
-                required
+              <Label>Producto</Label>
+              <Select
+                value={prodSel || "none"}
+                onValueChange={(v) => setProdSel(!v || v === "none" ? "" : v)}
               >
-                <option value="">Elige…</option>
-                {productos.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nombre}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-9 w-full">
+                  <span className={cn("flex-1 text-left text-sm", !prodSel && "text-muted-foreground")}>
+                    {prodSel
+                      ? productos.find((p) => p.id === prodSel)?.nombre ?? "Elige…"
+                      : "Elige…"}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Elige…</SelectItem>
+                  {productos.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="cal-cant">Cantidad</Label>
-                <Input
+                <NumericInput
                   id="cal-cant"
-                  type="number"
                   min="1"
                   value={cant}
-                  onChange={(e) => setCant(e.target.value)}
+                  onChange={setCant}
                   placeholder="12"
                   required
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="cal-fecha">Fecha</Label>
-                <Input
-                  id="cal-fecha"
-                  type="date"
+                <Label>Fecha</Label>
+                <DatePicker
                   value={fecha}
-                  onChange={(e) => setFecha(e.target.value)}
-                  required
+                  onChange={setFecha}
+                  placeholder="Seleccionar fecha"
                 />
               </div>
             </div>

@@ -11,9 +11,16 @@ import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { crearPedido, type PedidoItemInput } from "@/lib/actions/pedidos";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -22,13 +29,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { formatMoneda, LABELS } from "@/lib/constants";
 
 type ClienteOpt = { id: string; nombre: string };
 type ProductoOpt = { id: string; nombre: string; precio: number };
-
-const selectClass =
-  "h-9 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 export function PedidoFormDialog({
   clientes,
@@ -143,28 +148,32 @@ export function PedidoFormDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="cliente">{LABELS.cliente}</Label>
-              <select
-                id="cliente"
-                value={clienteId}
-                onChange={(e) => setClienteId(e.target.value)}
-                className={selectClass}
+              <Label>{LABELS.cliente}</Label>
+              <Select
+                value={clienteId || "none"}
+                onValueChange={(v) => setClienteId(!v || v === "none" ? "" : v)}
               >
-                <option value="">Sin cliente</option>
-                {clientes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-9 w-full">
+                  <span className={cn("flex-1 text-left text-sm", !clienteId && "text-muted-foreground")}>
+                    {clienteId
+                      ? clientes.find((c) => c.id === clienteId)?.nombre ?? "Sin cliente"
+                      : "Sin cliente"}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin cliente</SelectItem>
+                  {clientes.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="fecha">{LABELS.fechaEntrega}</Label>
-              <Input
-                id="fecha"
-                type="date"
+              <Label>{LABELS.fechaEntrega}</Label>
+              <DatePicker
                 value={fechaEntrega}
-                onChange={(e) => setFechaEntrega(e.target.value)}
+                onChange={setFechaEntrega}
+                placeholder="Seleccionar fecha"
               />
             </div>
           </div>
@@ -173,29 +182,35 @@ export function PedidoFormDialog({
           <div className="space-y-2 rounded-lg border bg-background/40 p-3">
             <div className="flex items-end gap-2">
               <div className="flex-1 space-y-1.5">
-                <Label htmlFor="producto">Producto</Label>
-                <select
-                  id="producto"
-                  value={prodSel}
-                  onChange={(e) => setProdSel(e.target.value)}
-                  className={selectClass}
+                <Label>Producto</Label>
+                <Select
+                  value={prodSel || "none"}
+                  onValueChange={(v) => setProdSel(!v || v === "none" ? "" : v)}
                 >
-                  <option value="">Elige…</option>
-                  {productos.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nombre} ({formatMoneda(p.precio)})
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="h-9 w-full">
+                    <span className={cn("flex-1 text-left text-sm", !prodSel && "text-muted-foreground")}>
+                      {prodSel
+                        ? (() => { const p = productos.find(x => x.id === prodSel); return p ? `${p.nombre} (${formatMoneda(p.precio)})` : "Elige…"; })()
+                        : "Elige…"}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Elige…</SelectItem>
+                    {productos.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nombre} ({formatMoneda(p.precio)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="w-20 space-y-1.5">
                 <Label htmlFor="cant">Cant.</Label>
-                <Input
+                <NumericInput
                   id="cant"
-                  type="number"
                   min="1"
                   value={cantSel}
-                  onChange={(e) => setCantSel(e.target.value)}
+                  onChange={setCantSel}
                 />
               </div>
               <Button type="button" variant="outline" size="icon" onClick={agregarItem}>

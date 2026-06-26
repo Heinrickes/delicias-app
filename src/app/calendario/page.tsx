@@ -12,11 +12,11 @@ async function getData() {
       .select(
         "id, estado, fecha_entrega, fecha_estimada_pago, total, clientes(nombre)"
       )
-      .in("estado", ["pendiente", "por_cobrar"]),
+      .in("estado", ["pendiente", "por_cobrar", "entregado"]),
     supabase
       .from("producciones")
       .select("id, cantidad, fecha_plan, estado, productos(nombre)")
-      .eq("estado", "planificada"),
+      .in("estado", ["planificada", "completada"]),
     supabase
       .from("productos")
       .select("id, nombre")
@@ -47,6 +47,16 @@ async function getData() {
         refId: p.id,
       });
     }
+    if (p.estado === "entregado" && p.fecha_entrega) {
+      eventos.push({
+        tipo: "entrega",
+        fecha: p.fecha_entrega,
+        titulo: cliente,
+        detalle: `Pedido entregado · $${p.total.toLocaleString("es-CL")}`,
+        refId: p.id,
+        completado: true,
+      });
+    }
   }
 
   for (const pr of produccionesRes.data ?? []) {
@@ -55,8 +65,11 @@ async function getData() {
       tipo: "produccion",
       fecha: pr.fecha_plan,
       titulo: nombre,
-      detalle: `Producir ${pr.cantidad} u`,
+      detalle: pr.estado === "completada"
+        ? `Producción completada · ${pr.cantidad} u`
+        : `Producir ${pr.cantidad} u`,
       refId: pr.id,
+      completado: pr.estado === "completada",
     });
   }
 

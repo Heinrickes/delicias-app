@@ -6,13 +6,18 @@ import { toast } from "sonner";
 import { crearProducto } from "@/lib/actions/productos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NumericInput } from "@/components/ui/numeric-input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { LABELS } from "@/lib/constants";
 
 const EMPTY = { nombre: "", categoria_id: "", precio: "", costo: "", stock: "", unidad: "" };
-
-const selectClass =
-  "h-9 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 type Categoria = { id: string; nombre: string };
 
@@ -83,56 +88,58 @@ export function ProductForm({ categorias }: { categorias: Categoria[] }) {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="categoria">Categoría</Label>
-              <select
-                id="categoria"
-                value={form.categoria_id}
-                onChange={(e) => set("categoria_id", e.target.value)}
-                className={selectClass}
+              <Label>Categoría</Label>
+              <Select
+                value={form.categoria_id || "none"}
+                onValueChange={(v) => set("categoria_id", !v || v === "none" ? "" : v)}
               >
-                <option value="">Sin categoría</option>
-                {categorias.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-9 w-full">
+                  <span className={cn("flex-1 text-left text-sm", !form.categoria_id && "text-muted-foreground")}>
+                    {form.categoria_id
+                      ? categorias.find((c) => c.id === form.categoria_id)?.nombre ?? "Sin categoría"
+                      : "Sin categoría"}
+                  </span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin categoría</SelectItem>
+                  {categorias.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="precio">{LABELS.precio} de venta</Label>
-              <Input
+              <NumericInput
                 id="precio"
-                type="number"
                 required
                 min="0"
                 value={form.precio}
-                onChange={(e) => set("precio", e.target.value)}
+                onChange={(v) => set("precio", v)}
                 placeholder="1500"
               />
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="costo">{LABELS.costo} de producción</Label>
-              <Input
+              <NumericInput
                 id="costo"
-                type="number"
                 min="0"
                 value={form.costo}
-                onChange={(e) => set("costo", e.target.value)}
+                onChange={(v) => set("costo", v)}
                 placeholder="600"
               />
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="stock">{LABELS.stockInicial}</Label>
-              <Input
+              <NumericInput
                 id="stock"
-                type="number"
                 required
                 min="0"
                 value={form.stock}
-                onChange={(e) => set("stock", e.target.value)}
+                onChange={(v) => set("stock", v)}
                 placeholder="12"
               />
             </div>

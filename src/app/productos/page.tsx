@@ -1,5 +1,5 @@
 import { AppShell } from "@/components/shared/AppShell";
-import { ProductCard } from "@/components/shared/ProductCard";
+import { ProductosGrid } from "@/components/shared/ProductosGrid";
 import { ProductForm } from "@/components/shared/ProductForm";
 import { DeliciaFormDialog } from "@/components/shared/DeliciaFormDialog";
 import { CategoriasManager } from "@/components/shared/CategoriasManager";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { getProductosEnriquecidos } from "@/lib/productos-data";
 import { Package, PackagePlus, Tags } from "lucide-react";
+
 
 export const revalidate = 0;
 
@@ -83,16 +84,7 @@ export default async function ProductosPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-            {productos.map((producto, index) => (
-              <ProductCard
-                key={producto.id}
-                producto={producto}
-                categorias={categorias}
-                variant={index % 4}
-              />
-            ))}
-          </div>
+          <ProductosGrid productos={productos} categorias={categorias} />
         )}
       </div>
     </AppShell>
