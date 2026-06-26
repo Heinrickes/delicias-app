@@ -102,9 +102,9 @@ export function AjustesForm({ inicial }: { inicial: Ajustes }) {
             const Icon = t.icon;
             const on = form[t.key];
             return (
-              <li key={t.key} className="flex items-center justify-between py-3">
-                <span className="flex items-center gap-3 text-sm text-foreground">
-                  <Icon className="h-4 w-4 text-muted-foreground" />
+              <li key={t.key} className="flex items-center justify-between gap-4 py-3">
+                <span className="flex min-w-0 items-center gap-3 text-sm text-foreground">
+                  <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                   {t.label}
                 </span>
                 <Toggle on={on} onChange={(v) => setForm((f) => ({ ...f, [t.key]: v }))} />
