@@ -50,7 +50,7 @@ export function NotificacionesBell({ avisos }: { avisos: Aviso[] }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border bg-card shadow-2xl">
+        <div className="fixed inset-x-4 top-[7rem] z-50 overflow-hidden rounded-xl border bg-card shadow-2xl lg:absolute lg:inset-x-auto lg:right-0 lg:top-auto lg:mt-2 lg:w-80">
           <div className="flex items-center justify-between border-b px-4 py-3">
             <p className="text-base font-semibold text-foreground">Avisos</p>
             <Link
