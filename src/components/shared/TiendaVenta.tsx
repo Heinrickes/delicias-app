@@ -585,10 +585,13 @@ export function TiendaVenta({
               </div>
             </div>
 
-            <footer className="border-t px-5 py-4">
-              <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                ¿Cómo cerramos?
-              </p>
+            <footer className="border-t px-5 pb-6 pt-4">
+              <div className="mb-4 flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="text-3xl font-bold tabular-nums text-foreground">
+                  {formatMoneda(subtotal)}
+                </span>
+              </div>
               <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
@@ -602,11 +605,7 @@ export function TiendaVenta({
                   <span className="text-center text-[11px] font-semibold leading-tight text-success">
                     Pagado
                   </span>
-                  <span className="text-center text-[10px] tabular-nums text-muted-foreground">
-                    {formatMoneda(subtotal)}
-                  </span>
                 </button>
-
                 <button
                   type="button"
                   disabled={isPending}
@@ -619,11 +618,7 @@ export function TiendaVenta({
                   <span className="text-center text-[11px] font-semibold leading-tight text-gold">
                     Por cobrar
                   </span>
-                  <span className="text-center text-[10px] tabular-nums text-muted-foreground">
-                    {formatMoneda(subtotal)}
-                  </span>
                 </button>
-
                 <button
                   type="button"
                   disabled={isPending}
@@ -635,9 +630,6 @@ export function TiendaVenta({
                   </span>
                   <span className="text-center text-[11px] font-semibold leading-tight text-primary">
                     Encargo
-                  </span>
-                  <span className="text-center text-[10px] tabular-nums text-muted-foreground">
-                    {formatMoneda(subtotal)}
                   </span>
                 </button>
               </div>
