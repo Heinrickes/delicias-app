@@ -350,8 +350,8 @@ export function TiendaVenta({
       <aside
         className={cn(
           "fixed z-50 flex flex-col bg-card shadow-2xl transition-transform duration-300",
-          // Mobile: bottom sheet
-          "bottom-0 left-0 right-0 h-[62vh] rounded-t-2xl",
+          // Mobile: bottom sheet (empieza encima de la nav bar de 3.75rem)
+          "bottom-[3.75rem] left-0 right-0 h-[62vh] rounded-t-2xl",
           // Desktop: side panel
           "lg:bottom-auto lg:inset-y-0 lg:left-auto lg:h-auto lg:max-h-none lg:w-full lg:max-w-md lg:rounded-none",
           // Animación
