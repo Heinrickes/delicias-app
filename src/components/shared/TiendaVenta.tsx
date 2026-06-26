@@ -478,7 +478,7 @@ export function TiendaVenta({
                 <button
                   type="button"
                   onClick={() => setFase("pago")}
-                  className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-primary text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105"
                   aria-label="Cerrar venta"
                 >
                   <ArrowRight className="h-5 w-5" />
