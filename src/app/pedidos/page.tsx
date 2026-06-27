@@ -1,10 +1,9 @@
 import { AppShell } from "@/components/shared/AppShell";
 import { PedidoCard } from "@/components/shared/PedidoCard";
 import { PedidoFormDialog } from "@/components/shared/PedidoFormDialog";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoneda } from "@/lib/constants";
-import { ClipboardList, Plus } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 
 export const revalidate = 0;
 
@@ -96,10 +95,12 @@ export default async function PedidosPage() {
             clientes={clientes}
             productos={productos}
             trigger={
-              <Button>
-                <Plus className="h-4 w-4" />
-                Nuevo pedido
-              </Button>
+              <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                  <ClipboardList className="h-6 w-6" />
+                </span>
+                <span className="text-[11px] font-semibold text-primary">Nuevo pedido</span>
+              </button>
             }
           />
         </header>

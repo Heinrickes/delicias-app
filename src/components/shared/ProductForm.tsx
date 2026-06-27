@@ -56,14 +56,14 @@ export function ProductForm({ categorias }: { categorias: Categoria[] }) {
       <button
         type="button"
         onClick={() => setIsExpanded((v) => !v)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-muted/50"
+        className="flex w-full items-center justify-between px-5 py-3 text-left transition-colors hover:bg-muted/30"
       >
         <div className="flex items-center gap-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-            <Plus className="h-4 w-4 text-primary" />
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+            <Plus className="h-6 w-6" />
           </span>
-          <span className="text-sm font-medium text-foreground">
-            Agregar nuevo producto
+          <span className="text-sm font-semibold text-primary">
+            Nuevo producto
           </span>
         </div>
         {isExpanded ? (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AppShell } from "@/components/shared/AppShell";
 import { Badge } from "@/components/ui/badge";
+import { StockGrid } from "@/components/shared/StockGrid";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoneda, LOCALE } from "@/lib/constants";
 import {
@@ -325,7 +326,7 @@ export default async function StockPage({
           )}
         </section>
 
-        {/* Inventario completo (solo lectura) */}
+        {/* Inventario completo — cards tapeables */}
         <section>
           <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Inventario actual ({productos.length})
@@ -335,59 +336,7 @@ export default async function StockPage({
               No hay productos. Agrégalos en Productos.
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b bg-background/40 text-xs uppercase tracking-wider text-muted-foreground">
-                      <th className="px-5 py-3 font-semibold">Producto</th>
-                      <th className="px-5 py-3 font-semibold">Categoría</th>
-                      <th className="px-5 py-3 text-center font-semibold">Stock</th>
-                      <th className="px-5 py-3 text-right font-semibold">Valor</th>
-                      <th className="px-5 py-3 text-center font-semibold">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {productos.map((p) => {
-                      const agotado = p.stock <= 0;
-                      const bajo = p.stock < p.stock_minimo;
-                      return (
-                        <tr key={p.id} className="hover:bg-background/30">
-                          <td className="px-5 py-3 font-medium text-foreground">
-                            {p.nombre}
-                          </td>
-                          <td className="px-5 py-3 text-muted-foreground">
-                            {p.categoria ?? "—"}
-                          </td>
-                          <td className="px-5 py-3 text-center tabular-nums">
-                            {p.stock}{" "}
-                            <span className="text-xs text-muted-foreground">
-                              {p.unidad}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3 text-right tabular-nums text-muted-foreground">
-                            {formatMoneda(p.costo * p.stock)}
-                          </td>
-                          <td className="px-5 py-3 text-center">
-                            <Badge
-                              className={
-                                agotado
-                                  ? "bg-danger/15 text-danger"
-                                  : bajo
-                                    ? "bg-gold/15 text-gold"
-                                    : "bg-success/15 text-success"
-                              }
-                            >
-                              {agotado ? "Agotado" : bajo ? "Bajo" : "OK"}
-                            </Badge>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <StockGrid productos={productos} />
           )}
         </section>
       </div>

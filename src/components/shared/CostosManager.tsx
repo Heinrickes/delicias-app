@@ -8,7 +8,6 @@ import {
   Pencil,
   Trash2,
   Check,
-  X,
   ShoppingCart,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -95,13 +94,13 @@ export function CostosManager({ insumos }: { insumos: Insumo[] }) {
         <button
           type="button"
           onClick={() => setOpenForm((v) => !v)}
-          className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-muted/50"
+          className="flex w-full items-center justify-between px-5 py-3 text-left transition-colors hover:bg-muted/30"
         >
           <span className="flex items-center gap-3">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <Plus className="h-4 w-4 text-primary" />
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+              <Plus className="h-6 w-6" />
             </span>
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-sm font-semibold text-primary">
               Agregar insumo
             </span>
           </span>
@@ -231,7 +230,7 @@ export function CostosManager({ insumos }: { insumos: Insumo[] }) {
         )}
       </section>
 
-      {/* Inventario de insumos */}
+      {/* Inventario de insumos — cards */}
       <section>
         <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
           Insumos ({insumos.length})
@@ -241,26 +240,10 @@ export function CostosManager({ insumos }: { insumos: Insumo[] }) {
             Aún no hay insumos. Agrega el primero arriba.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b bg-background/40 text-xs uppercase tracking-wider text-muted-foreground">
-                    <th className="px-4 py-3 font-semibold">Insumo</th>
-                    <th className="px-4 py-3 font-semibold">Proveedor</th>
-                    <th className="px-4 py-3 text-center font-semibold">Stock</th>
-                    <th className="px-4 py-3 text-right font-semibold">Costo</th>
-                    <th className="px-4 py-3 text-center font-semibold">Estado</th>
-                    <th className="px-4 py-3 text-right font-semibold">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {insumos.map((i) => (
-                    <InsumoRow key={i.id} insumo={i} pending={pending} start={start} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {insumos.map((i) => (
+              <InsumoCard key={i.id} insumo={i} pending={pending} start={start} />
+            ))}
           </div>
         )}
       </section>
@@ -268,7 +251,7 @@ export function CostosManager({ insumos }: { insumos: Insumo[] }) {
   );
 }
 
-function InsumoRow({
+function InsumoCard({
   insumo,
   pending,
   start,
@@ -277,18 +260,92 @@ function InsumoRow({
   pending: boolean;
   start: React.TransitionStartFunction;
 }) {
-  const [editStock, setEditStock] = useState(false);
-  const [stockVal, setStockVal] = useState(insumo.stock.toString());
-  const [openEdit, setOpenEdit] = useState(false);
+  const [open, setOpen] = useState(false);
   const bajo = insumo.stock < insumo.stock_minimo;
 
-  const guardarStock = () =>
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="group flex w-full flex-col gap-2 rounded-xl bg-card p-4 text-left ring-1 ring-foreground/10 transition-all hover:ring-primary/40 hover:shadow-sm active:scale-[0.98]"
+      >
+        <div className="flex items-start justify-between gap-1">
+          <p className="line-clamp-2 text-sm font-semibold leading-tight text-foreground">
+            {insumo.nombre}
+          </p>
+          <span
+            className={cn(
+              "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold leading-none",
+              bajo ? "bg-danger/15 text-danger" : "bg-success/15 text-success"
+            )}
+          >
+            {bajo ? "Bajo" : "OK"}
+          </span>
+        </div>
+
+        <p className="text-xl font-bold tabular-nums text-foreground">
+          {insumo.stock}{" "}
+          <span className="text-xs font-normal text-muted-foreground">
+            {insumo.unidad}
+          </span>
+        </p>
+
+        <p className="text-xs text-muted-foreground">
+          {formatMoneda(insumo.costo_unitario)} / {insumo.unidad}
+        </p>
+
+        {insumo.proveedor && (
+          <p className="truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
+            {insumo.proveedor}
+          </p>
+        )}
+
+        {insumo.en_lista && (
+          <span className="inline-flex w-fit rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-semibold text-gold">
+            en lista
+          </span>
+        )}
+      </button>
+
+      <InsumoGestorDialog
+        insumo={insumo}
+        open={open}
+        setOpen={setOpen}
+        pending={pending}
+        start={start}
+      />
+    </>
+  );
+}
+
+function InsumoGestorDialog({
+  insumo,
+  open,
+  setOpen,
+  pending,
+  start,
+}: {
+  insumo: Insumo;
+  open: boolean;
+  setOpen: (v: boolean) => void;
+  pending: boolean;
+  start: React.TransitionStartFunction;
+}) {
+  const [stockVal, setStockVal] = useState(insumo.stock.toString());
+  const [nombre, setNombre] = useState(insumo.nombre);
+  const [unidad, setUnidad] = useState(insumo.unidad);
+  const [min, setMin] = useState(insumo.stock_minimo.toString());
+  const [costo, setCosto] = useState(insumo.costo_unitario.toString());
+  const [proveedor, setProveedor] = useState(insumo.proveedor ?? "");
+
+  const bajo = insumo.stock < insumo.stock_minimo;
+
+  const ajustarStock = () =>
     start(async () => {
       const r = await ajustarStockInsumo(insumo.id, parseFloat(stockVal) || 0);
-      if (r.ok) {
-        toast.success("Stock actualizado");
-        setEditStock(false);
-      } else toast.error(r.error);
+      if (r.ok) toast.success("Stock actualizado");
+      else toast.error(r.error);
     });
 
   const toggle = () =>
@@ -296,116 +353,6 @@ function InsumoRow({
       const r = await toggleEnLista(insumo.id, !insumo.en_lista);
       if (!r.ok) toast.error(r.error);
     });
-
-  const borrar = () =>
-    start(async () => {
-      const r = await eliminarInsumo(insumo.id);
-      if (r.ok) toast.success("Insumo eliminado");
-      else toast.error(r.error);
-    });
-
-  return (
-    <tr className="hover:bg-background/30">
-      <td className="px-4 py-3 font-medium text-foreground">{insumo.nombre}</td>
-      <td className="px-4 py-3 text-muted-foreground">{insumo.proveedor ?? "—"}</td>
-      <td className="px-4 py-3 text-center tabular-nums">
-        {editStock ? (
-          <span className="inline-flex items-center gap-1">
-            <NumericInput
-              step="any"
-              value={stockVal}
-              onChange={setStockVal}
-              className="h-8 w-20 text-center"
-            />
-            <Button size="icon-sm" onClick={guardarStock} disabled={pending}>
-              <Check className="h-4 w-4" />
-            </Button>
-            <Button size="icon-sm" variant="ghost" onClick={() => setEditStock(false)}>
-              <X className="h-4 w-4" />
-            </Button>
-          </span>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              setStockVal(insumo.stock.toString());
-              setEditStock(true);
-            }}
-            className="rounded px-2 py-0.5 hover:bg-background"
-            title="Ajustar stock"
-          >
-            {insumo.stock} <span className="text-xs text-muted-foreground">{insumo.unidad}</span>
-          </button>
-        )}
-      </td>
-      <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-        {formatMoneda(insumo.costo_unitario)}
-      </td>
-      <td className="px-4 py-3 text-center">
-        <Badge className={bajo ? "bg-danger/15 text-danger" : "bg-success/15 text-success"}>
-          {bajo ? "Comprar" : "OK"}
-        </Badge>
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-1">
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            onClick={toggle}
-            disabled={pending}
-            title={insumo.en_lista ? "Quitar de la lista" : "Agregar a la lista"}
-            className={cn(
-              insumo.en_lista
-                ? "text-success hover:text-success/80"
-                : "text-muted-foreground hover:text-primary"
-            )}
-          >
-            <Plus className={cn("h-4 w-4 transition-transform", insumo.en_lista && "rotate-45")} />
-          </Button>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            onClick={() => setOpenEdit(true)}
-            title="Editar"
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            onClick={borrar}
-            disabled={pending}
-            title="Eliminar"
-            className="hover:bg-destructive/10 hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </td>
-
-      <EditInsumoDialog insumo={insumo} open={openEdit} setOpen={setOpenEdit} start={start} pending={pending} />
-    </tr>
-  );
-}
-
-function EditInsumoDialog({
-  insumo,
-  open,
-  setOpen,
-  start,
-  pending,
-}: {
-  insumo: Insumo;
-  open: boolean;
-  setOpen: (v: boolean) => void;
-  start: React.TransitionStartFunction;
-  pending: boolean;
-}) {
-  const [nombre, setNombre] = useState(insumo.nombre);
-  const [unidad, setUnidad] = useState(insumo.unidad);
-  const [min, setMin] = useState(insumo.stock_minimo.toString());
-  const [costo, setCosto] = useState(insumo.costo_unitario.toString());
-  const [proveedor, setProveedor] = useState(insumo.proveedor ?? "");
 
   const guardar = () =>
     start(async () => {
@@ -422,38 +369,124 @@ function EditInsumoDialog({
       } else toast.error(r.error);
     });
 
+  const borrar = () =>
+    start(async () => {
+      const r = await eliminarInsumo(insumo.id);
+      if (r.ok) {
+        toast.success("Insumo eliminado");
+        setOpen(false);
+      } else toast.error(r.error);
+    });
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Editar insumo</DialogTitle>
+          <DialogTitle>{insumo.nombre}</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="col-span-2 space-y-1.5">
-            <Label>Nombre</Label>
-            <Input value={nombre} onChange={(e) => setNombre(e.target.value)} />
+
+        <div className="space-y-5">
+          {/* Stock */}
+          <div className="space-y-2">
+            <Label>Stock actual</Label>
+            <div className="flex gap-2">
+              <NumericInput
+                step="any"
+                value={stockVal}
+                onChange={setStockVal}
+                className="flex-1"
+                placeholder={insumo.stock.toString()}
+              />
+              <Button onClick={ajustarStock} disabled={pending} className="gap-1.5">
+                <Check className="h-4 w-4" />
+                Guardar
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Mínimo: {insumo.stock_minimo} {insumo.unidad} ·{" "}
+              <span className={bajo ? "text-danger" : "text-success"}>
+                {bajo ? "Stock bajo" : "Suficiente"}
+              </span>
+            </p>
           </div>
-          <div className="space-y-1.5">
-            <Label>Unidad</Label>
-            <Input value={unidad} onChange={(e) => setUnidad(e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Stock mínimo</Label>
-            <Input type="number" step="any" value={min} onChange={(e) => setMin(e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Costo unitario</Label>
-            <Input type="number" value={costo} onChange={(e) => setCosto(e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Proveedor</Label>
-            <Input value={proveedor} onChange={(e) => setProveedor(e.target.value)} />
+
+          <div className="border-t pt-4">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Editar datos
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2 space-y-1.5">
+                <Label>Nombre</Label>
+                <Input value={nombre} onChange={(e) => setNombre(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Unidad</Label>
+                <Input value={unidad} onChange={(e) => setUnidad(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Stock mínimo</Label>
+                <Input
+                  type="number"
+                  step="any"
+                  value={min}
+                  onChange={(e) => setMin(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Costo unitario</Label>
+                <Input
+                  type="number"
+                  value={costo}
+                  onChange={(e) => setCosto(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Proveedor</Label>
+                <Input
+                  value={proveedor}
+                  onChange={(e) => setProveedor(e.target.value)}
+                  placeholder="Opcional"
+                />
+              </div>
+            </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button onClick={guardar} disabled={pending}>
-            Guardar
-          </Button>
+
+        <DialogFooter className="flex-wrap gap-2 sm:justify-between">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={toggle}
+              disabled={pending}
+              className={cn(
+                "gap-1.5 text-xs",
+                insumo.en_lista ? "text-success" : "text-muted-foreground"
+              )}
+            >
+              <ShoppingCart className="h-4 w-4" />
+              {insumo.en_lista ? "Quitar de lista" : "Agregar a lista"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={borrar}
+              disabled={pending}
+              className="gap-1.5 text-xs text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+              Eliminar
+            </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={guardar} disabled={pending}>
+              <Pencil className="h-4 w-4" />
+              Actualizar
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

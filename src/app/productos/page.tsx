@@ -3,7 +3,6 @@ import { ProductosGrid } from "@/components/shared/ProductosGrid";
 import { ProductForm } from "@/components/shared/ProductForm";
 import { DeliciaFormDialog } from "@/components/shared/DeliciaFormDialog";
 import { CategoriasManager } from "@/components/shared/CategoriasManager";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { getProductosEnriquecidos } from "@/lib/productos-data";
 import { Package, PackagePlus, Tags } from "lucide-react";
@@ -48,24 +47,32 @@ export default async function ProductosPage() {
               el stock de cada producto desde su tarjeta cuando se acabe.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1">
             <CategoriasManager
               categorias={categorias}
               trigger={
-                <Button variant="outline">
-                  <Tags className="h-4 w-4" />
-                  Categorías
-                </Button>
+                <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-gold/10">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gold text-white shadow">
+                    <Tags className="h-6 w-6" />
+                  </span>
+                  <span className="text-[11px] font-semibold text-gold">Categorías</span>
+                </button>
               }
             />
             <DeliciaFormDialog
               productos={productosSimples}
               categorias={categorias}
               trigger={
-                <Button variant="outline" disabled={productosSimples.length === 0}>
-                  <PackagePlus className="h-4 w-4" />
-                  Crear delicia
-                </Button>
+                <button
+                  type="button"
+                  disabled={productosSimples.length === 0}
+                  className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-terracotta/10 disabled:opacity-50"
+                >
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-terracotta text-white shadow">
+                    <PackagePlus className="h-6 w-6" />
+                  </span>
+                  <span className="text-[11px] font-semibold text-terracotta">Crear delicia</span>
+                </button>
               }
             />
           </div>
