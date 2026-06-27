@@ -21,6 +21,14 @@ async function getUserEmail() {
 export async function AppShell({ children }: { children: ReactNode }) {
   const [email, avisos] = await Promise.all([getUserEmail(), getAvisos()]);
 
+  const badgeCounts = avisos.reduce(
+    (acc, a) => {
+      acc[a.href] = (acc[a.href] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
   return (
     <main className="min-h-screen bg-background p-2 text-foreground md:p-3">
       <div className="mx-auto flex max-w-[1540px] flex-col overflow-hidden rounded-xl border bg-surface shadow-[0_24px_80px_rgba(75,45,30,0.10)] lg:min-h-[calc(100vh-1.5rem)] lg:flex-row">
@@ -45,7 +53,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
 
-          <MainNav />
+          <MainNav badgeCounts={badgeCounts} />
 
           <div className="mt-10 hidden rounded-lg border bg-background/60 p-4 text-center lg:block lg:mt-auto">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold">
@@ -74,7 +82,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
         </section>
       </div>
 
-      <MobileNav />
+      <MobileNav badgeCounts={badgeCounts} />
     </main>
   );
 }

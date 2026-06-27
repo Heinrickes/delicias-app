@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type Aviso = {
   tipo: "entrega" | "cobro" | "stock" | "produccion";
+  refId: string;
   titulo: string;
   detalle: string;
   href: string;
@@ -53,7 +54,7 @@ export async function getAvisos(): Promise<Aviso[]> {
       .eq("estado", "planificada"),
     supabase
       .from("productos")
-      .select("nombre, stock, stock_minimo")
+      .select("id, nombre, stock, stock_minimo")
       .eq("activo", true)
       .eq("tipo", "simple"),
   ]);
@@ -70,6 +71,7 @@ export async function getAvisos(): Promise<Aviso[]> {
     ) {
       avisos.push({
         tipo: "entrega",
+        refId: p.id,
         titulo: `Entregar a ${cliente}`,
         detalle:
           p.fecha_entrega < hoyStr
@@ -89,6 +91,7 @@ export async function getAvisos(): Promise<Aviso[]> {
     ) {
       avisos.push({
         tipo: "cobro",
+        refId: p.id,
         titulo: `Cobrar a ${cliente}`,
         detalle:
           p.fecha_estimada_pago < hoyStr
@@ -106,6 +109,7 @@ export async function getAvisos(): Promise<Aviso[]> {
         const nombre = (pr.productos as { nombre: string } | null)?.nombre ?? "Producto";
         avisos.push({
           tipo: "produccion",
+          refId: pr.id,
           titulo: `Producir ${nombre}`,
           detalle: `${pr.cantidad} u · ${pr.fecha_plan === hoyStr ? "hoy" : "agendada"}`,
           href: "/calendario",
@@ -120,6 +124,7 @@ export async function getAvisos(): Promise<Aviso[]> {
       if (p.stock < p.stock_minimo) {
         avisos.push({
           tipo: "stock",
+          refId: p.id,
           titulo: `Stock bajo: ${p.nombre}`,
           detalle: `Quedan ${p.stock} (mín. ${p.stock_minimo})`,
           href: "/productos",

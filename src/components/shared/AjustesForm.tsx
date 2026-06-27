@@ -4,6 +4,10 @@ import { useState, useTransition } from "react";
 import { Truck, Coins, Boxes, Factory, Bell, BellRing } from "lucide-react";
 import { toast } from "sonner";
 import { actualizarAjustes } from "@/lib/actions/ajustes";
+import {
+  guardarSuscripcionPush,
+  enviarPushATodos,
+} from "@/lib/actions/push";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,10 +56,22 @@ function Toggle({
   );
 }
 
+function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+  const rawData = atob(base64);
+  const arr = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) arr[i] = rawData.charCodeAt(i);
+  return arr.buffer;
+}
+
 export function AjustesForm({ inicial }: { inicial: Ajustes }) {
   const [form, setForm] = useState(inicial);
   const [isPending, startTransition] = useTransition();
   const [pushEstado, setPushEstado] = useState<string>("");
+  const [pushPending, setPushPending] = useState(false);
 
   const guardar = () => {
     startTransition(async () => {
@@ -65,29 +81,71 @@ export function AjustesForm({ inicial }: { inicial: Ajustes }) {
     });
   };
 
-  const probarNotificacion = async () => {
-    if (!("Notification" in window)) {
-      setPushEstado("Este navegador no soporta notificaciones.");
-      return;
-    }
-    const permiso = await Notification.requestPermission();
-    if (permiso !== "granted") {
-      setPushEstado("Permiso denegado. Actívalo en el navegador.");
-      return;
-    }
-    if ("serviceWorker" in navigator) {
+  const activarPush = async () => {
+    setPushPending(true);
+    setPushEstado("");
+    try {
+      if (!("Notification" in window)) {
+        setPushEstado("Este navegador no soporta notificaciones.");
+        return;
+      }
+      const permiso = await Notification.requestPermission();
+      if (permiso !== "granted") {
+        setPushEstado("Permiso denegado. Actívalo en la configuración del navegador.");
+        return;
+      }
+      if (!("serviceWorker" in navigator)) {
+        setPushEstado("Service Worker no disponible en este navegador.");
+        return;
+      }
       const reg = await navigator.serviceWorker.ready;
-      reg.showNotification("Delicias Caseras", {
-        body: "Las notificaciones están activas en este dispositivo.",
-        icon: "/icon.svg",
-        badge: "/icon.svg",
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      if (!vapidKey) {
+        setPushEstado("Clave VAPID no configurada.");
+        return;
+      }
+
+      // Suscribir al push
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
-    } else {
-      new Notification("Delicias Caseras", {
-        body: "Las notificaciones están activas en este dispositivo.",
+
+      const { endpoint, keys } = sub.toJSON() as {
+        endpoint: string;
+        keys: { p256dh: string; auth: string };
+      };
+
+      // Guardar suscripción en DB
+      const saveResult = await guardarSuscripcionPush({
+        endpoint,
+        p256dh: keys.p256dh,
+        auth: keys.auth,
       });
+      if (!saveResult.ok) {
+        setPushEstado("Error al guardar suscripción.");
+        return;
+      }
+
+      // Enviar notificación de prueba desde el servidor
+      const sendResult = await enviarPushATodos(
+        "Delicias Caseras",
+        "Las notificaciones push están activas en este dispositivo. ✓",
+        "/"
+      );
+
+      if (sendResult.ok) {
+        setPushEstado("Notificación enviada ✓ — revisá el celular");
+        toast.success("Push activado correctamente");
+      } else {
+        setPushEstado("Suscripción guardada, pero el envío de prueba falló.");
+      }
+    } catch (err) {
+      console.error(err);
+      setPushEstado("Error inesperado. Revisá la consola.");
+    } finally {
+      setPushPending(false);
     }
-    setPushEstado("Permiso concedido ✓");
   };
 
   return (
@@ -152,14 +210,13 @@ export function AjustesForm({ inicial }: { inicial: Ajustes }) {
           </h3>
         </div>
         <p className="text-sm text-muted-foreground">
-          Activa los permisos para recibir avisos como notificación. Para que
-          lleguen con la app cerrada (push programado), queda pendiente la
-          configuración del servidor de envío.
+          Activa los permisos para recibir avisos como notificación push en este
+          dispositivo, incluso con la app cerrada.
         </p>
         <div className="mt-4 flex items-center gap-3">
-          <Button variant="outline" onClick={probarNotificacion}>
+          <Button variant="outline" onClick={activarPush} disabled={pushPending}>
             <BellRing className="h-4 w-4" />
-            Activar y probar
+            {pushPending ? "Activando…" : "Activar y probar"}
           </Button>
           {pushEstado && (
             <span className="text-xs text-muted-foreground">{pushEstado}</span>

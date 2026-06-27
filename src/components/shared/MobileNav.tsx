@@ -37,7 +37,11 @@ const SECONDARY = [
   { href: "/reportes", label: "Reportes", icon: BarChart3 },
 ];
 
-export function MobileNav() {
+export function MobileNav({
+  badgeCounts = {},
+}: {
+  badgeCounts?: Record<string, number>;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -72,6 +76,7 @@ export function MobileNav() {
               {SECONDARY.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(pathname, item.href);
+                const hasBadge = !!(badgeCounts[item.href]);
                 return (
                   <Link
                     key={item.label}
@@ -84,11 +89,14 @@ export function MobileNav() {
                   >
                     <span
                       className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-xl",
+                        "relative flex h-10 w-10 items-center justify-center rounded-xl",
                         active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
                       )}
                     >
                       <Icon className="h-5 w-5" />
+                      {hasBadge && (
+                        <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-danger ring-2 ring-card" />
+                      )}
                     </span>
                     {item.label}
                   </Link>
@@ -109,6 +117,7 @@ export function MobileNav() {
           {PRIMARY.slice(0, 2).map((item) => {
             const Icon = item.icon;
             const active = isActive(pathname, item.href);
+            const hasBadge = !!(badgeCounts[item.href]);
             return (
               <Link
                 key={item.label}
@@ -118,7 +127,12 @@ export function MobileNav() {
                   active ? "text-primary" : "text-muted-foreground"
                 )}
               >
-                <Icon className="h-5 w-5" />
+                <span className="relative">
+                  <Icon className="h-5 w-5" />
+                  {hasBadge && (
+                    <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-danger ring-1 ring-surface" />
+                  )}
+                </span>
                 {item.label}
               </Link>
             );
@@ -151,6 +165,7 @@ export function MobileNav() {
           {PRIMARY.slice(2).map((item) => {
             const Icon = item.icon;
             const active = isActive(pathname, item.href);
+            const hasBadge = !!(badgeCounts[item.href]);
             return (
               <Link
                 key={item.label}
@@ -160,7 +175,12 @@ export function MobileNav() {
                   active ? "text-primary" : "text-muted-foreground"
                 )}
               >
-                <Icon className="h-5 w-5" />
+                <span className="relative">
+                  <Icon className="h-5 w-5" />
+                  {hasBadge && (
+                    <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-danger ring-1 ring-surface" />
+                  )}
+                </span>
                 {item.label}
               </Link>
             );
