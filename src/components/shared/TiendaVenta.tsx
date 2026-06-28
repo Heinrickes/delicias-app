@@ -240,19 +240,25 @@ export function TiendaVenta({
   return (
     <>
       {/* Barra de catálogo con acceso a la bolsa */}
-      <div className="sticky top-0 z-20 -mx-1 mb-5 flex items-center justify-between gap-3 bg-surface/95 px-1 py-2 backdrop-blur">
+      <div className="sticky top-0 z-20 -mx-1 mb-5 flex items-center justify-between gap-2 bg-surface/95 px-1 py-2 backdrop-blur">
         <p className="text-sm text-muted-foreground">
           {productos.length} {productos.length === 1 ? "producto" : "productos"}
         </p>
-        <Button onClick={() => setDrawerOpen(true)} className="relative">
-          <ShoppingBag className="h-4 w-4" />
-          Tu bolsa
-          {totalUnidades > 0 && (
-            <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary-foreground px-1.5 text-xs font-bold text-primary">
-              {totalUnidades}
-            </span>
-          )}
-        </Button>
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10"
+        >
+          <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+            <ShoppingBag className="h-6 w-6" />
+            {totalUnidades > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">
+                {totalUnidades}
+              </span>
+            )}
+          </span>
+          <span className="text-[11px] font-semibold text-primary">Tu bolsa</span>
+        </button>
       </div>
 
       {/* Catálogo */}
@@ -413,7 +419,7 @@ export function TiendaVenta({
           </div>
         ) : fase === "bolsa" ? (
           <>
-            <div className="flex-1 divide-y overflow-y-auto px-5">
+            <div className="flex-1 divide-y overflow-y-auto overscroll-contain px-5">
               {items.map((i) => (
                 <div key={i.producto_id} className="flex gap-3 py-4">
                   <div className="min-w-0 flex-1">
@@ -495,7 +501,7 @@ export function TiendaVenta({
         ) : (
           /* Fase de pago / desenlace */
           <>
-            <div className="flex-1 space-y-5 overflow-y-auto px-5 py-4">
+            <div className="flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4">
               <div className="rounded-lg bg-background/50 px-4 py-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">
