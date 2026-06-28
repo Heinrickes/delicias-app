@@ -83,28 +83,18 @@ export function TiendaVenta({
   const [isPending, startTransition] = useTransition();
 
   // Swipe-to-dismiss del bottom sheet
-  const asideRef = useRef<HTMLElement>(null);
   const touchStartY = useRef(0);
-  const touchInHeader = useRef(false);
   const [dragOffset, setDragOffset] = useState(0);
-
-  const onAsideTouchStart = (e: React.TouchEvent) => {
-    const rect = asideRef.current?.getBoundingClientRect();
-    if (rect) {
-      const relY = e.touches[0].clientY - rect.top;
-      touchInHeader.current = relY < 100; // solo zona handle+header (~100px)
-    }
+  const onDragStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
   };
-  const onAsideTouchMove = (e: React.TouchEvent) => {
-    if (!touchInHeader.current) return;
+  const onDragMove = (e: React.TouchEvent) => {
     const delta = e.touches[0].clientY - touchStartY.current;
     if (delta > 0) setDragOffset(delta);
   };
-  const onAsideTouchEnd = () => {
-    if (touchInHeader.current && dragOffset > 80) setDrawerOpen(false);
+  const onDragEnd = () => {
+    if (dragOffset > 80) setDrawerOpen(false);
     setDragOffset(0);
-    touchInHeader.current = false;
   };
 
   const prodById = (id: string) => productos.find((p) => p.id === id);
@@ -385,10 +375,6 @@ export function TiendaVenta({
           Móvil  → bottom sheet (h-[62vh], sube desde abajo)
           Desktop → panel lateral derecho (ancho fijo, cubre toda la altura) */}
       <aside
-        ref={asideRef}
-        onTouchStart={onAsideTouchStart}
-        onTouchMove={onAsideTouchMove}
-        onTouchEnd={onAsideTouchEnd}
         className={cn(
           "fixed z-50 flex flex-col bg-card shadow-2xl duration-300",
           dragOffset === 0 && "transition-[transform,height]",
@@ -404,12 +390,19 @@ export function TiendaVenta({
         )}
         style={dragOffset > 0 ? { transform: `translateY(${dragOffset}px)` } : undefined}
       >
-        {/* Handle visual: solo en móvil */}
-        <div className="flex justify-center pb-2 pt-3 lg:hidden">
-          <div className="h-1 w-10 rounded-full bg-foreground/20" />
-        </div>
+        {/* Zona de arrastre: touch-none impide que Android intercepte el gesto */}
+        <div
+          className="touch-none select-none"
+          onTouchStart={onDragStart}
+          onTouchMove={onDragMove}
+          onTouchEnd={onDragEnd}
+        >
+          {/* Handle visual: solo en móvil */}
+          <div className="flex justify-center pb-2 pt-3 lg:hidden">
+            <div className="h-1 w-10 rounded-full bg-foreground/20" />
+          </div>
 
-        <header className="flex items-center justify-between border-b px-5 py-4">
+          <header className="flex items-center justify-between border-b px-5 py-4">
           <div className="flex items-center gap-2">
             {fase === "pago" && (
               <button
@@ -439,6 +432,7 @@ export function TiendaVenta({
             <X className="h-5 w-5" />
           </button>
         </header>
+        </div>{/* fin zona de arrastre */}
 
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
