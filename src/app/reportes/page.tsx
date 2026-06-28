@@ -339,11 +339,11 @@ export default async function ReportesPage({
                             {new Date(v.fecha).toLocaleDateString(LOCALE, {
                               day: "2-digit",
                               month: "short",
-                              hour: "2-digit",
-                              minute: "2-digit",
+                              year: "numeric",
+                              timeZone: "America/Santiago",
                             })}
                           </td>
-                          <td className="px-5 py-3 font-medium text-foreground">
+                          <td className="px-5 py-3 font-semibold text-foreground">
                             <span className="flex items-center gap-2">
                               {v.nombre_producto}
                               {v.pedido_id && (
