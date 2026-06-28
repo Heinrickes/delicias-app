@@ -70,16 +70,18 @@ export default async function ClientesPage() {
               Tus clientes recurrentes, sus datos de contacto y su historial.
             </p>
           </div>
-          <ClienteFormDialog
-            trigger={
-              <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-                  <UserPlus className="h-6 w-6" />
-                </span>
-                <span className="text-[11px] font-semibold text-primary">Nuevo cliente</span>
-              </button>
-            }
-          />
+          <div className="flex justify-end">
+            <ClienteFormDialog
+              trigger={
+                <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                    <UserPlus className="h-6 w-6" />
+                  </span>
+                  <span className="text-[11px] font-semibold text-primary">Nuevo cliente</span>
+                </button>
+              }
+            />
+          </div>
         </header>
 
         {clientes.length === 0 ? (

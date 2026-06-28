@@ -36,7 +36,7 @@ export default async function CostosPage() {
               compras.
             </p>
           </div>
-          <div className="flex flex-wrap gap-1">
+          <div className="flex justify-end">
             <InsumoFormDialog
               trigger={
                 <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">

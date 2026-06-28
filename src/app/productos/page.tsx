@@ -47,7 +47,7 @@ export default async function ProductosPage() {
               el stock de cada producto desde su tarjeta cuando se acabe.
             </p>
           </div>
-          <div className="flex flex-wrap gap-1">
+          <div className="flex justify-between gap-1">
             <ProductFormDialog
               categorias={categorias}
               trigger={

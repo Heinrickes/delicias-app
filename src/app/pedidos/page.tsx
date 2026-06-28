@@ -91,18 +91,20 @@ export default async function PedidosPage() {
               pendiente.
             </p>
           </div>
-          <PedidoFormDialog
-            clientes={clientes}
-            productos={productos}
-            trigger={
-              <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-                  <ClipboardList className="h-6 w-6" />
-                </span>
-                <span className="text-[11px] font-semibold text-primary">Nuevo pedido</span>
-              </button>
-            }
-          />
+          <div className="flex justify-end">
+            <PedidoFormDialog
+              clientes={clientes}
+              productos={productos}
+              trigger={
+                <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                    <ClipboardList className="h-6 w-6" />
+                  </span>
+                  <span className="text-[11px] font-semibold text-primary">Nuevo pedido</span>
+                </button>
+              }
+            />
+          </div>
         </header>
 
         <section className="grid grid-cols-2 gap-4 xl:grid-cols-4">
