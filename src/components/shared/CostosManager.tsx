@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { cloneElement, isValidElement, useState, useTransition } from "react";
 import {
   Plus,
   Pencil,
@@ -52,17 +52,14 @@ const EMPTY = {
   proveedor: "",
 };
 
-function InsumoFormDialog({
-  open,
-  onOpenChange,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-}) {
+export function InsumoFormDialog({ trigger }: { trigger: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
   const [form, setForm] = useState(EMPTY);
   const [pending, start] = useTransition();
   const set = (k: keyof typeof EMPTY, v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  const resetForm = () => setForm(EMPTY);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,8 +74,8 @@ function InsumoFormDialog({
       });
       if (r.ok) {
         toast.success("Insumo agregado");
-        setForm(EMPTY);
-        onOpenChange(false);
+        resetForm();
+        setOpen(false);
       } else toast.error(r.error);
     });
   };
@@ -87,10 +84,15 @@ function InsumoFormDialog({
     <Dialog
       open={open}
       onOpenChange={(v) => {
-        onOpenChange(v);
-        if (!v) setForm(EMPTY);
+        setOpen(v);
+        if (!v) resetForm();
       }}
     >
+      {isValidElement(trigger)
+        ? cloneElement(trigger as React.ReactElement<{ onClick?: () => void }>, {
+            onClick: () => setOpen(true),
+          })
+        : trigger}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Agregar insumo</DialogTitle>
@@ -186,7 +188,7 @@ function InsumoFormDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
             <Button type="submit" disabled={pending}>
@@ -201,7 +203,6 @@ function InsumoFormDialog({
 }
 
 export function CostosManager({ insumos }: { insumos: Insumo[] }) {
-  const [openForm, setOpenForm] = useState(false);
   const [pending, start] = useTransition();
 
   const porComprar = insumos.filter(
@@ -214,24 +215,6 @@ export function CostosManager({ insumos }: { insumos: Insumo[] }) {
 
   return (
     <div className="space-y-8">
-      {/* Botón circular — abre modal */}
-      <div className="flex">
-        <button
-          type="button"
-          onClick={() => setOpenForm(true)}
-          className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10"
-        >
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-            <Plus className="h-6 w-6" />
-          </span>
-          <span className="text-[11px] font-semibold text-primary">
-            Agregar insumo
-          </span>
-        </button>
-      </div>
-
-      <InsumoFormDialog open={openForm} onOpenChange={setOpenForm} />
-
       {/* Lista de compras */}
       <section>
         <div className="mb-4 flex items-center justify-between">

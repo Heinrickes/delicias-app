@@ -1,8 +1,8 @@
 import { AppShell } from "@/components/shared/AppShell";
-import { CostosManager, type Insumo } from "@/components/shared/CostosManager";
+import { CostosManager, InsumoFormDialog, type Insumo } from "@/components/shared/CostosManager";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoneda } from "@/lib/constants";
-import { Boxes, Coins, ShoppingCart } from "lucide-react";
+import { Boxes, Coins, Plus, ShoppingCart } from "lucide-react";
 
 export const revalidate = 0;
 
@@ -23,17 +23,31 @@ export default async function CostosPage() {
   return (
     <AppShell>
       <div className="space-y-8">
-        <header>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-            Insumos
-          </p>
-          <h2 className="mt-1 font-serif text-3xl leading-tight text-foreground">
-            Costos
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Tu despensa de insumos: controla stock, costos y arma la lista de
-            compras.
-          </p>
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+              Insumos
+            </p>
+            <h2 className="mt-1 font-serif text-3xl leading-tight text-foreground">
+              Costos
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+              Tu despensa de insumos: controla stock, costos y arma la lista de
+              compras.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            <InsumoFormDialog
+              trigger={
+                <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                    <Plus className="h-6 w-6" />
+                  </span>
+                  <span className="text-[11px] font-semibold text-primary">Agregar insumo</span>
+                </button>
+              }
+            />
+          </div>
         </header>
 
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
