@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import Image from "next/image";
 import {
   ShoppingBag,
@@ -81,6 +81,21 @@ export function TiendaVenta({
   const [fechaPago, setFechaPago] = useState(fechaPagoSugerida());
   const [notas, setNotas] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  // Swipe-to-dismiss del bottom sheet
+  const touchStartY = useRef(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const onHandleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+  const onHandleTouchMove = (e: React.TouchEvent) => {
+    const delta = e.touches[0].clientY - touchStartY.current;
+    if (delta > 0) setDragOffset(delta);
+  };
+  const onHandleTouchEnd = () => {
+    if (dragOffset > 80) setDrawerOpen(false);
+    setDragOffset(0);
+  };
 
   const prodById = (id: string) => productos.find((p) => p.id === id);
   const enCarrito = (id: string) =>
@@ -361,7 +376,8 @@ export function TiendaVenta({
           Desktop → panel lateral derecho (ancho fijo, cubre toda la altura) */}
       <aside
         className={cn(
-          "fixed z-50 flex flex-col bg-card shadow-2xl transition-[transform,height] duration-300",
+          "fixed z-50 flex flex-col bg-card shadow-2xl duration-300",
+          dragOffset === 0 && "transition-[transform,height]",
           // Mobile: bottom sheet — se expande a pantalla completa en fase pago
           "bottom-[3.75rem] left-0 right-0 rounded-t-2xl",
           fase === "pago" ? "h-[calc(100vh-3.75rem)]" : "h-[62vh]",
@@ -372,9 +388,16 @@ export function TiendaVenta({
             ? "translate-y-0 lg:translate-x-0"
             : "translate-y-full lg:translate-y-0 lg:translate-x-full"
         )}
+        style={dragOffset > 0 ? { transform: `translateY(${dragOffset}px)` } : undefined}
       >
-        {/* Handle visual: solo en móvil */}
-        <div className="flex justify-center pb-1 pt-2.5 lg:hidden" onClick={() => setDrawerOpen(false)}>
+        {/* Handle: toca para cerrar, desliza hacia abajo para descartar */}
+        <div
+          className="flex justify-center pb-2 pt-3 lg:hidden"
+          onTouchStart={onHandleTouchStart}
+          onTouchMove={onHandleTouchMove}
+          onTouchEnd={onHandleTouchEnd}
+          onClick={() => setDrawerOpen(false)}
+        >
           <div className="h-1 w-10 rounded-full bg-foreground/20" />
         </div>
 
@@ -419,7 +442,7 @@ export function TiendaVenta({
           </div>
         ) : fase === "bolsa" ? (
           <>
-            <div className="flex-1 divide-y overflow-y-auto overscroll-contain px-5">
+            <div className="flex-1 divide-y overflow-y-auto overscroll-contain touch-pan-y px-5">
               {items.map((i) => (
                 <div key={i.producto_id} className="flex gap-3 py-4">
                   <div className="min-w-0 flex-1">
@@ -501,7 +524,7 @@ export function TiendaVenta({
         ) : (
           /* Fase de pago / desenlace */
           <>
-            <div className="flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4">
+            <div className="flex-1 space-y-5 overflow-y-auto overscroll-contain touch-pan-y px-5 py-4">
               <div className="rounded-lg bg-background/50 px-4 py-3">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">
