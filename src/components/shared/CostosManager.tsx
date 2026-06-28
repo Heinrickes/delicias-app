@@ -3,8 +3,6 @@
 import { useState, useTransition } from "react";
 import {
   Plus,
-  ChevronDown,
-  ChevronUp,
   Pencil,
   Trash2,
   Check,
@@ -26,12 +24,13 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { formatMoneda } from "@/lib/constants";
+import { formatMoneda, LABELS } from "@/lib/constants";
 
 export type Insumo = {
   id: string;
@@ -46,21 +45,26 @@ export type Insumo = {
 
 const EMPTY = {
   nombre: "",
-  unidad: "",
+  unidad: "kg",
   stock: "",
   stock_minimo: "",
   costo_unitario: "",
   proveedor: "",
 };
 
-export function CostosManager({ insumos }: { insumos: Insumo[] }) {
-  const [openForm, setOpenForm] = useState(false);
+function InsumoFormDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
   const [form, setForm] = useState(EMPTY);
   const [pending, start] = useTransition();
   const set = (k: keyof typeof EMPTY, v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  const agregar = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     start(async () => {
       const r = await crearInsumo({
@@ -74,10 +78,131 @@ export function CostosManager({ insumos }: { insumos: Insumo[] }) {
       if (r.ok) {
         toast.success("Insumo agregado");
         setForm(EMPTY);
-        setOpenForm(false);
+        onOpenChange(false);
       } else toast.error(r.error);
     });
   };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        onOpenChange(v);
+        if (!v) setForm(EMPTY);
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Agregar insumo</DialogTitle>
+          <DialogDescription>
+            Registra un nuevo insumo en el inventario de costos.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Información principal */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Información principal
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2 space-y-1.5 sm:col-span-1">
+                <Label htmlFor="if-nombre">Nombre</Label>
+                <Input
+                  id="if-nombre"
+                  required
+                  value={form.nombre}
+                  onChange={(e) => set("nombre", e.target.value)}
+                  placeholder="Ej: Harina"
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="if-unidad">Unidad</Label>
+                <Input
+                  id="if-unidad"
+                  value={form.unidad}
+                  onChange={(e) => set("unidad", e.target.value)}
+                  placeholder="kg, l, unidad…"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Costo */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Costo
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="if-costo">Precio unitario</Label>
+                <NumericInput
+                  id="if-costo"
+                  value={form.costo_unitario}
+                  onChange={(v) => set("costo_unitario", v)}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="if-prov">Proveedor</Label>
+                <Input
+                  id="if-prov"
+                  value={form.proveedor}
+                  onChange={(e) => set("proveedor", e.target.value)}
+                  placeholder="Opcional"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Inventario */}
+          <div className="space-y-3">
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Inventario
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="if-stock">Stock actual</Label>
+                <NumericInput
+                  id="if-stock"
+                  step="any"
+                  value={form.stock}
+                  onChange={(v) => set("stock", v)}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="if-min">Stock mínimo</Label>
+                <NumericInput
+                  id="if-min"
+                  step="any"
+                  value={form.stock_minimo}
+                  onChange={(v) => set("stock_minimo", v)}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={pending}>
+              <Plus className="h-4 w-4" />
+              {pending ? LABELS.guardando : "Agregar insumo"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function CostosManager({ insumos }: { insumos: Insumo[] }) {
+  const [openForm, setOpenForm] = useState(false);
+  const [pending, start] = useTransition();
 
   const porComprar = insumos.filter(
     (i) => i.stock < i.stock_minimo || i.en_lista
@@ -89,100 +214,23 @@ export function CostosManager({ insumos }: { insumos: Insumo[] }) {
 
   return (
     <div className="space-y-8">
-      {/* Agregar insumo */}
-      <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+      {/* Botón circular — abre modal */}
+      <div className="flex">
         <button
           type="button"
-          onClick={() => setOpenForm((v) => !v)}
-          className="flex w-full items-center justify-between px-5 py-3 text-left transition-colors hover:bg-muted/30"
+          onClick={() => setOpenForm(true)}
+          className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10"
         >
-          <span className="flex items-center gap-3">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-              <Plus className="h-6 w-6" />
-            </span>
-            <span className="text-sm font-semibold text-primary">
-              Agregar insumo
-            </span>
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+            <Plus className="h-6 w-6" />
           </span>
-          {openForm ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          )}
+          <span className="text-[11px] font-semibold text-primary">
+            Agregar insumo
+          </span>
         </button>
-        {openForm && (
-          <form onSubmit={agregar} className="border-t px-5 py-5">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="i-nombre">Nombre</Label>
-                <Input
-                  id="i-nombre"
-                  required
-                  value={form.nombre}
-                  onChange={(e) => set("nombre", e.target.value)}
-                  placeholder="Ej: Harina"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="i-unidad">Unidad</Label>
-                <Input
-                  id="i-unidad"
-                  value={form.unidad}
-                  onChange={(e) => set("unidad", e.target.value)}
-                  placeholder="kg, l, unidad…"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="i-stock">Stock actual</Label>
-                <NumericInput
-                  id="i-stock"
-                  step="any"
-                  value={form.stock}
-                  onChange={(v) => set("stock", v)}
-                  placeholder="0"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="i-min">Stock mínimo</Label>
-                <NumericInput
-                  id="i-min"
-                  step="any"
-                  value={form.stock_minimo}
-                  onChange={(v) => set("stock_minimo", v)}
-                  placeholder="0"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="i-costo">Costo unitario</Label>
-                <NumericInput
-                  id="i-costo"
-                  value={form.costo_unitario}
-                  onChange={(v) => set("costo_unitario", v)}
-                  placeholder="0"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="i-prov">Proveedor</Label>
-                <Input
-                  id="i-prov"
-                  value={form.proveedor}
-                  onChange={(e) => set("proveedor", e.target.value)}
-                  placeholder="Opcional"
-                />
-              </div>
-            </div>
-            <div className="mt-5 flex justify-end gap-3">
-              <Button type="button" variant="ghost" onClick={() => setOpenForm(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={pending}>
-                <Plus className="h-4 w-4" />
-                Agregar insumo
-              </Button>
-            </div>
-          </form>
-        )}
       </div>
+
+      <InsumoFormDialog open={openForm} onOpenChange={setOpenForm} />
 
       {/* Lista de compras */}
       <section>
@@ -262,13 +310,14 @@ function InsumoCard({
 }) {
   const [open, setOpen] = useState(false);
   const bajo = insumo.stock < insumo.stock_minimo;
+  const pct = Math.min(100, Math.round((insumo.stock / Math.max(insumo.stock_minimo, 1)) * 100));
 
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group flex w-full flex-col gap-2 rounded-xl bg-card p-4 text-left ring-1 ring-foreground/10 transition-all hover:ring-primary/40 hover:shadow-sm active:scale-[0.98]"
+        className="group flex min-h-[140px] w-full flex-col gap-2 rounded-xl bg-card p-4 text-left ring-1 ring-foreground/10 transition-all hover:ring-primary/40 hover:shadow-sm active:scale-[0.98]"
       >
         <div className="flex items-start justify-between gap-1">
           <p className="line-clamp-2 text-sm font-semibold leading-tight text-foreground">
@@ -289,6 +338,20 @@ function InsumoCard({
           <span className="text-xs font-normal text-muted-foreground">
             {insumo.unidad}
           </span>
+        </p>
+
+        {/* Barra de progreso */}
+        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+          <div
+            className={cn(
+              "h-full rounded-full transition-all",
+              bajo ? "bg-danger" : "bg-success"
+            )}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <p className="text-[10px] text-muted-foreground">
+          mín. {insumo.stock_minimo} {insumo.unidad}
         </p>
 
         <p className="text-xs text-muted-foreground">

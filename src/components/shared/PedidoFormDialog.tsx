@@ -268,6 +268,9 @@ export function PedidoFormDialog({
           </div>
 
           <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
             <Button type="submit" disabled={isPending}>
               {isPending ? LABELS.guardando : "Crear pedido"}
             </Button>

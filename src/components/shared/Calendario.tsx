@@ -2,15 +2,15 @@
 
 import { useMemo, useState, useTransition } from "react";
 import {
+  Banknote,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Plus,
   Check,
+  Factory,
+  Plus,
   Trash2,
   Truck,
-  Coins,
-  Factory,
-  CalendarDays,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -68,7 +68,7 @@ const META: Record<
     label: "Cobros",
     dot: "bg-gold",
     chip: "bg-gold/15 text-gold",
-    icon: Coins,
+    icon: Banknote,
   },
   produccion: {
     label: "Producciones",
@@ -448,6 +448,9 @@ export function Calendario({
               />
             </div>
             <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setOpenAgendar(false)}>
+                Cancelar
+              </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending ? LABELS.guardando : "Agendar"}
               </Button>

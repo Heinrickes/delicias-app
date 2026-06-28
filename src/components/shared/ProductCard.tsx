@@ -348,7 +348,7 @@ export function ProductCard({
                       variant={stockBajo ? "default" : "outline"}
                       size="sm"
                       className="w-full gap-1.5"
-                      title={stockBajo ? "Reponer stock" : "Gestionar stock"}
+                      title={stockBajo ? "Reponer stock urgente" : "Gestionar movimientos de stock"}
                     >
                       {stockBajo ? (
                         <PackagePlus className="h-4 w-4" />

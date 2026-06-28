@@ -7,10 +7,10 @@ import { getProductosEnriquecidos } from "@/lib/productos-data";
 import { formatMoneda } from "@/lib/constants";
 import {
   AlertTriangle,
+  Banknote,
   BarChart3,
   CalendarClock,
   ChartNoAxesCombined,
-  Coins,
   Package,
   Percent,
   Sparkles,
@@ -177,7 +177,7 @@ export default async function Home({
             value={formatMoneda(totalPorCobrar)}
             helper="cuentas pendientes"
             href="/por-cobrar"
-            icon={<Coins className="h-4 w-4" />}
+            icon={<Banknote className="h-4 w-4" />}
           />
           <MetricCard
             label="Stock bajo"

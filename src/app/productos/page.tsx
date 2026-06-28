@@ -1,11 +1,11 @@
 import { AppShell } from "@/components/shared/AppShell";
 import { ProductosGrid } from "@/components/shared/ProductosGrid";
-import { ProductForm } from "@/components/shared/ProductForm";
+import { ProductFormDialog } from "@/components/shared/ProductFormDialog";
 import { DeliciaFormDialog } from "@/components/shared/DeliciaFormDialog";
 import { CategoriasManager } from "@/components/shared/CategoriasManager";
 import { createClient } from "@/lib/supabase/server";
 import { getProductosEnriquecidos } from "@/lib/productos-data";
-import { Package, PackagePlus, Tags } from "lucide-react";
+import { Package, PackagePlus, Plus, Tags } from "lucide-react";
 
 
 export const revalidate = 0;
@@ -48,6 +48,17 @@ export default async function ProductosPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-1">
+            <ProductFormDialog
+              categorias={categorias}
+              trigger={
+                <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                    <Plus className="h-6 w-6" />
+                  </span>
+                  <span className="text-[11px] font-semibold text-primary">Nuevo producto</span>
+                </button>
+              }
+            />
             <CategoriasManager
               categorias={categorias}
               trigger={
@@ -78,8 +89,6 @@ export default async function ProductosPage() {
           </div>
         </header>
 
-        <ProductForm categorias={categorias} />
-
         {productos.length === 0 ? (
           <div className="rounded-xl border border-dashed bg-card p-12 text-center">
             <Package className="mx-auto h-10 w-10 text-muted-foreground" />
@@ -87,7 +96,7 @@ export default async function ProductosPage() {
               No hay productos en el inventario
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Agrega tu primer producto usando el formulario de arriba.
+              Agrega tu primer producto con el botón "Nuevo producto".
             </p>
           </div>
         ) : (

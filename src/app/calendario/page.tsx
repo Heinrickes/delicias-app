@@ -32,7 +32,7 @@ async function getData() {
     if (p.estado === "pendiente" && p.fecha_entrega) {
       eventos.push({
         tipo: "entrega",
-        fecha: p.fecha_entrega,
+        fecha: p.fecha_entrega.slice(0, 10),
         titulo: cliente,
         detalle: `Entregar pedido · $${p.total.toLocaleString("es-CL")}`,
         refId: p.id,
@@ -41,7 +41,7 @@ async function getData() {
     if (p.estado === "por_cobrar" && p.fecha_estimada_pago) {
       eventos.push({
         tipo: "cobro",
-        fecha: p.fecha_estimada_pago,
+        fecha: p.fecha_estimada_pago.slice(0, 10),
         titulo: cliente,
         detalle: `Cobrar · $${p.total.toLocaleString("es-CL")}`,
         refId: p.id,
@@ -50,7 +50,7 @@ async function getData() {
     if (p.estado === "entregado" && p.fecha_entrega) {
       eventos.push({
         tipo: "entrega",
-        fecha: p.fecha_entrega,
+        fecha: p.fecha_entrega.slice(0, 10),
         titulo: cliente,
         detalle: `Pedido entregado · $${p.total.toLocaleString("es-CL")}`,
         refId: p.id,
@@ -63,7 +63,7 @@ async function getData() {
     const nombre = (pr.productos as { nombre: string } | null)?.nombre ?? "Producto";
     eventos.push({
       tipo: "produccion",
-      fecha: pr.fecha_plan,
+      fecha: pr.fecha_plan.slice(0, 10),
       titulo: nombre,
       detalle: pr.estado === "completada"
         ? `Producción completada · ${pr.cantidad} u`

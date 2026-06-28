@@ -1,9 +1,8 @@
 import { AppShell } from "@/components/shared/AppShell";
 import { ClienteCard } from "@/components/shared/ClienteCard";
 import { ClienteFormDialog } from "@/components/shared/ClienteFormDialog";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
-import { Plus, Users } from "lucide-react";
+import { UserPlus, Users } from "lucide-react";
 
 export const revalidate = 0;
 
@@ -73,10 +72,12 @@ export default async function ClientesPage() {
           </div>
           <ClienteFormDialog
             trigger={
-              <Button>
-                <Plus className="h-4 w-4" />
-                Nuevo cliente
-              </Button>
+              <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                  <UserPlus className="h-6 w-6" />
+                </span>
+                <span className="text-[11px] font-semibold text-primary">Nuevo cliente</span>
+              </button>
             }
           />
         </header>

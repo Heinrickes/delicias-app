@@ -303,8 +303,8 @@ export function TiendaVenta({
                     )}
                   </div>
                   {!sinMas && (
-                    <span className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
-                      <Plus className="h-4 w-4" />
+                    <span className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                      <ShoppingBag className="h-4 w-4" />
                     </span>
                   )}
                 </div>

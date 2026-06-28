@@ -5,11 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
+  Banknote,
   BarChart3,
   Boxes,
   CalendarDays,
   ClipboardList,
-  Coins,
   Grid2X2,
   LayoutDashboard,
   Package,
@@ -29,7 +29,7 @@ const PRIMARY = [
 
 // Páginas en el drawer (el slot 5 de la barra es el botón "Más")
 const SECONDARY = [
-  { href: "/por-cobrar", label: "Por cobrar", icon: Coins },
+  { href: "/por-cobrar", label: "Por cobrar", icon: Banknote },
   { href: "/stock", label: "Inventario", icon: Boxes },
   { href: "/costos", label: "Costos", icon: ShoppingCart },
   { href: "/calendario", label: "Calendario", icon: CalendarDays },

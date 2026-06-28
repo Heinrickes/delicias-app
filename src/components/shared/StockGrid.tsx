@@ -28,7 +28,7 @@ export function StockGrid({ productos }: { productos: Producto[] }) {
             trigger={
               <button
                 type="button"
-                className="group flex w-full flex-col gap-2 rounded-xl bg-card p-4 text-left ring-1 ring-foreground/10 transition-all hover:ring-primary/40 hover:shadow-sm active:scale-[0.98]"
+                className="group flex min-h-[140px] w-full flex-col gap-2 rounded-xl bg-card p-4 text-left ring-1 ring-foreground/10 transition-all hover:ring-primary/40 hover:shadow-sm active:scale-[0.98]"
               >
                 <div className="flex items-start justify-between gap-1">
                   <p className="line-clamp-2 text-sm font-semibold leading-tight text-foreground">
@@ -53,6 +53,22 @@ export function StockGrid({ productos }: { productos: Producto[] }) {
                   <span className="text-xs font-normal text-muted-foreground">
                     {p.unidad}
                   </span>
+                </p>
+
+                {/* Barra de progreso */}
+                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all",
+                      agotado ? "bg-danger" : bajo ? "bg-gold" : "bg-success"
+                    )}
+                    style={{
+                      width: `${Math.min(100, Math.round((p.stock / Math.max(p.stock_minimo, 1)) * 100))}%`,
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  mín. {p.stock_minimo} {p.unidad}
                 </p>
 
                 <p className="text-xs text-muted-foreground">

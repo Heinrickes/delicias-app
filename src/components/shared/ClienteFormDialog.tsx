@@ -166,6 +166,9 @@ export function ClienteFormDialog({
           </div>
 
           <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
             <Button type="submit" disabled={isPending}>
               {isPending ? LABELS.guardando : LABELS.guardar}
             </Button>
