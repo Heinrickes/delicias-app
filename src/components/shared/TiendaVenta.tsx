@@ -83,18 +83,28 @@ export function TiendaVenta({
   const [isPending, startTransition] = useTransition();
 
   // Swipe-to-dismiss del bottom sheet
+  const asideRef = useRef<HTMLElement>(null);
   const touchStartY = useRef(0);
+  const touchInHeader = useRef(false);
   const [dragOffset, setDragOffset] = useState(0);
-  const onHandleTouchStart = (e: React.TouchEvent) => {
+
+  const onAsideTouchStart = (e: React.TouchEvent) => {
+    const rect = asideRef.current?.getBoundingClientRect();
+    if (rect) {
+      const relY = e.touches[0].clientY - rect.top;
+      touchInHeader.current = relY < 100; // solo zona handle+header (~100px)
+    }
     touchStartY.current = e.touches[0].clientY;
   };
-  const onHandleTouchMove = (e: React.TouchEvent) => {
+  const onAsideTouchMove = (e: React.TouchEvent) => {
+    if (!touchInHeader.current) return;
     const delta = e.touches[0].clientY - touchStartY.current;
     if (delta > 0) setDragOffset(delta);
   };
-  const onHandleTouchEnd = () => {
-    if (dragOffset > 80) setDrawerOpen(false);
+  const onAsideTouchEnd = () => {
+    if (touchInHeader.current && dragOffset > 80) setDrawerOpen(false);
     setDragOffset(0);
+    touchInHeader.current = false;
   };
 
   const prodById = (id: string) => productos.find((p) => p.id === id);
@@ -375,6 +385,10 @@ export function TiendaVenta({
           Móvil  → bottom sheet (h-[62vh], sube desde abajo)
           Desktop → panel lateral derecho (ancho fijo, cubre toda la altura) */}
       <aside
+        ref={asideRef}
+        onTouchStart={onAsideTouchStart}
+        onTouchMove={onAsideTouchMove}
+        onTouchEnd={onAsideTouchEnd}
         className={cn(
           "fixed z-50 flex flex-col bg-card shadow-2xl duration-300",
           dragOffset === 0 && "transition-[transform,height]",
@@ -390,14 +404,8 @@ export function TiendaVenta({
         )}
         style={dragOffset > 0 ? { transform: `translateY(${dragOffset}px)` } : undefined}
       >
-        {/* Handle: toca para cerrar, desliza hacia abajo para descartar */}
-        <div
-          className="flex justify-center pb-2 pt-3 lg:hidden"
-          onTouchStart={onHandleTouchStart}
-          onTouchMove={onHandleTouchMove}
-          onTouchEnd={onHandleTouchEnd}
-          onClick={() => setDrawerOpen(false)}
-        >
+        {/* Handle visual: solo en móvil */}
+        <div className="flex justify-center pb-2 pt-3 lg:hidden">
           <div className="h-1 w-10 rounded-full bg-foreground/20" />
         </div>
 
