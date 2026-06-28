@@ -11,6 +11,7 @@ import {
   BarChart3,
   CalendarClock,
   ChartNoAxesCombined,
+  Factory,
   Package,
   Percent,
   Sparkles,
@@ -44,16 +45,28 @@ async function getMesData(mes: string) {
   const inicio = new Date(y, m - 1, 1, 0, 0, 0, 0);
   const fin = new Date(y, m, 1, 0, 0, 0, 0);
 
-  const { data } = await supabase
-    .from("ventas")
-    .select("nombre_producto, cantidad, total, costo_total")
-    .gte("fecha", inicio.toISOString())
-    .lt("fecha", fin.toISOString());
+  const [ventasRes, produccionRes] = await Promise.all([
+    supabase
+      .from("ventas")
+      .select("nombre_producto, cantidad, total, costo_total")
+      .gte("fecha", inicio.toISOString())
+      .lt("fecha", fin.toISOString()),
+    supabase
+      .from("movimientos_stock")
+      .select("cantidad")
+      .eq("tipo", "produccion")
+      .gte("fecha", inicio.toISOString())
+      .lt("fecha", fin.toISOString()),
+  ]);
 
-  const ventas = (data ?? []) as VentaMes[];
+  const ventas = (ventasRes.data ?? []) as VentaMes[];
   const acumulado = ventas.reduce((s, v) => s + v.total, 0);
   const unidades = ventas.reduce((s, v) => s + v.cantidad, 0);
   const margen = ventas.reduce((s, v) => s + (v.total - v.costo_total), 0);
+  const produccionAcumulada = (produccionRes.data ?? []).reduce(
+    (s, r) => s + (r.cantidad as number),
+    0
+  );
 
   const porProducto = new Map<string, { unidades: number; total: number }>();
   for (const v of ventas) {
@@ -67,7 +80,7 @@ async function getMesData(mes: string) {
     .sort((a, b) => b.unidades - a.unidades)
     .slice(0, 6);
 
-  return { acumulado, unidades, margen, topProductos };
+  return { acumulado, unidades, margen, produccionAcumulada, topProductos };
 }
 
 async function getResumen() {
@@ -128,7 +141,7 @@ export default async function Home({
     getResumen(),
   ]);
   const { ingresoHoy, ingresoAyer, entregasHoy, totalPorCobrar } = resumen;
-  const { acumulado, unidades, margen, topProductos } = mesData;
+  const { acumulado, unidades, margen, produccionAcumulada, topProductos } = mesData;
   const simples = productos.filter((p) => p.tipo === "simple");
   const lowStockProducts = simples.filter((p) => p.stock < p.stock_minimo);
 
@@ -205,7 +218,7 @@ export default async function Home({
             <MesSelector value={mes} meses={meses} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+          <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
             <MetricCard
               label="Ventas acumuladas"
               value={formatMoneda(acumulado)}
@@ -223,6 +236,12 @@ export default async function Home({
               value={formatMoneda(margen)}
               helper={`${margenPct}% sobre ventas`}
               icon={<Percent className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Producción acumulada"
+              value={produccionAcumulada.toString()}
+              helper="unidades producidas"
+              icon={<Factory className="h-4 w-4" />}
             />
           </div>
 
