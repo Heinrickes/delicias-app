@@ -48,14 +48,19 @@ export default async function ProductosPage() {
             </p>
           </div>
           <div className="flex justify-between gap-1">
-            <ProductFormDialog
+            <DeliciaFormDialog
+              productos={productosSimples}
               categorias={categorias}
               trigger={
-                <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-                    <Plus className="h-6 w-6" />
+                <button
+                  type="button"
+                  disabled={productosSimples.length === 0}
+                  className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-terracotta/10 disabled:opacity-50"
+                >
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-terracotta text-white shadow">
+                    <PackagePlus className="h-6 w-6" />
                   </span>
-                  <span className="text-[11px] font-semibold text-primary">Nuevo producto</span>
+                  <span className="text-[11px] font-semibold text-terracotta">Crear delicia</span>
                 </button>
               }
             />
@@ -70,19 +75,14 @@ export default async function ProductosPage() {
                 </button>
               }
             />
-            <DeliciaFormDialog
-              productos={productosSimples}
+            <ProductFormDialog
               categorias={categorias}
               trigger={
-                <button
-                  type="button"
-                  disabled={productosSimples.length === 0}
-                  className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-terracotta/10 disabled:opacity-50"
-                >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-terracotta text-white shadow">
-                    <PackagePlus className="h-6 w-6" />
+                <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+                    <Plus className="h-6 w-6" />
                   </span>
-                  <span className="text-[11px] font-semibold text-terracotta">Crear delicia</span>
+                  <span className="text-[11px] font-semibold text-primary">Nuevo producto</span>
                 </button>
               }
             />
