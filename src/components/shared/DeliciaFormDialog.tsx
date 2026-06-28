@@ -210,8 +210,8 @@ export function DeliciaFormDialog({
 
           {/* Componentes */}
           <div className="space-y-2 rounded-lg border bg-background/40 p-3">
-            <div className="flex items-end gap-2">
-              <div className="flex-1 space-y-1.5">
+            <div className="space-y-2">
+              <div className="space-y-1.5">
                 <Label>Producto</Label>
                 <Select
                   value={prodSel || "none"}
@@ -234,18 +234,20 @@ export function DeliciaFormDialog({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="w-20 space-y-1.5">
-                <Label htmlFor="dcant">Cant.</Label>
-                <NumericInput
-                  id="dcant"
-                  min="1"
-                  value={cantSel}
-                  onChange={setCantSel}
-                />
+              <div className="flex items-end gap-2">
+                <div className="w-24 space-y-1.5">
+                  <Label htmlFor="dcant">Cant.</Label>
+                  <NumericInput
+                    id="dcant"
+                    min="1"
+                    value={cantSel}
+                    onChange={setCantSel}
+                  />
+                </div>
+                <Button type="button" variant="outline" size="icon" onClick={agregar}>
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
-              <Button type="button" variant="outline" size="icon" onClick={agregar}>
-                <Plus className="h-4 w-4" />
-              </Button>
             </div>
 
             {items.length > 0 && (
@@ -301,6 +303,9 @@ export function DeliciaFormDialog({
           </div>
 
           <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
             <Button type="submit" disabled={isPending}>
               {isPending ? LABELS.guardando : "Crear delicia"}
             </Button>
