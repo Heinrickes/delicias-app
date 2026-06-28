@@ -343,7 +343,7 @@ export default async function ReportesPage({
                               timeZone: "America/Santiago",
                             })}
                           </td>
-                          <td className="px-5 py-3 font-semibold text-foreground">
+                          <td className="whitespace-nowrap px-5 py-3 font-semibold text-foreground">
                             <span className="flex items-center gap-2">
                               {v.nombre_producto}
                               {v.pedido_id && (
