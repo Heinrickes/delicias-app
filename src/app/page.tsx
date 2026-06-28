@@ -254,10 +254,10 @@ export default async function Home({
                 </h3>
                 <Link
                   href="/reportes"
-                  className="inline-flex items-center gap-1.5 rounded-md border bg-surface px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="Ver reportes"
+                  className="inline-flex items-center justify-center rounded-md border bg-surface p-1.5 text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <BarChart3 className="h-3.5 w-3.5" />
-                  Ver reportes
                 </Link>
               </div>
               {topProductos.length === 0 ? (
