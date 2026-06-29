@@ -106,9 +106,9 @@ export default async function PorCobrarPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="flex flex-col gap-2">
             {pedidos.map((p) => (
-              <PedidoCard key={p.id} pedido={toCardProps(p)} />
+              <PedidoCard key={p.id} pedido={toCardProps(p)} collapsible />
             ))}
           </div>
         )}
