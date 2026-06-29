@@ -1,15 +1,8 @@
 import Link from "next/link";
 import { AppShell } from "@/components/shared/AppShell";
-import {
-  ProduccionChart,
-  TopProductosChart,
-  VentasChart,
-} from "@/components/shared/ReportesCharts";
-import { SeccionReporte } from "@/components/shared/SeccionReporte";
-import { Badge } from "@/components/ui/badge";
+import { TabsEstadisticas } from "@/components/shared/TabsEstadisticas";
 import { createClient } from "@/lib/supabase/server";
-import { formatMoneda, LOCALE } from "@/lib/constants";
-import { Receipt, TrendingUp, Calendar, CalendarDays, Boxes } from "lucide-react";
+import { LOCALE } from "@/lib/constants";
 
 export const revalidate = 0;
 
@@ -77,7 +70,7 @@ async function getData(rango: RangoKey) {
     .eq("tipo", "produccion");
   if (desde) prodQ = prodQ.gte("fecha", desde.toISOString());
 
-  const [ventasRes, prodRes, productosRes, hoyRes, mesRes, transRes] =
+  const [ventasRes, prodRes, productosRes, hoyRes, mesRes, transRes, insumosRes] =
     await Promise.all([
       ventasQ,
       prodQ,
@@ -95,6 +88,11 @@ async function getData(rango: RangoKey) {
         )
         .order("fecha", { ascending: false })
         .limit(50),
+      supabase
+        .from("insumos")
+        .select("id, nombre, unidad, stock, stock_minimo, costo_unitario")
+        .eq("activo", true)
+        .order("nombre"),
     ]);
 
   const ventas = ventasRes.data ?? [];
@@ -105,7 +103,6 @@ async function getData(rango: RangoKey) {
   }[];
   const productos = productosRes.data ?? [];
 
-  // Serie diaria (gráfico) — acotada para legibilidad.
   const nDias = cfg.dias > 0 ? Math.min(cfg.dias, 30) : 30;
   const dias = ultimosDias(nDias);
   const porDia = new Map<string, { ingresos: number; costos: number }>();
@@ -132,7 +129,6 @@ async function getData(rango: RangoKey) {
     cantidad: prodPorDia.get(d.clave) ?? 0,
   }));
 
-  // Top vendidos
   const porVendido = new Map<string, number>();
   for (const v of ventas)
     porVendido.set(v.nombre_producto, (porVendido.get(v.nombre_producto) ?? 0) + v.cantidad);
@@ -141,7 +137,6 @@ async function getData(rango: RangoKey) {
     .sort((a, b) => b.unidades - a.unidades)
     .slice(0, 10);
 
-  // Top producidos
   const porProducido = new Map<string, number>();
   for (const m of produccion) {
     const nombre = m.productos?.nombre ?? "—";
@@ -158,6 +153,7 @@ async function getData(rango: RangoKey) {
     produccionPorDia,
     topVendidos,
     topProducidos,
+    insumos: insumosRes.data ?? [],
     metrics: {
       totalRango: ventas.reduce((s, v) => s + v.total, 0),
       margenRango: ventas.reduce((s, v) => s + (v.total - v.costo_total), 0),
@@ -181,20 +177,7 @@ export default async function ReportesPage({
     ? (rangoParam as RangoKey)
     : "30d";
 
-  const {
-    transacciones,
-    ventasPorDia,
-    produccionPorDia,
-    topVendidos,
-    topProducidos,
-    metrics,
-    nDias,
-  } = await getData(rango);
-
-  const margenPct =
-    metrics.totalRango > 0
-      ? Math.round((metrics.margenRango / metrics.totalRango) * 100)
-      : 0;
+  const data = await getData(rango);
 
   return (
     <AppShell>
@@ -229,265 +212,8 @@ export default async function ReportesPage({
           </div>
         </header>
 
-        <section className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <Metric
-            label="Ventas del período"
-            value={formatMoneda(metrics.totalRango)}
-            helper={`margen ${margenPct}%`}
-            icon={<TrendingUp className="h-4 w-4" />}
-          />
-          <Metric
-            label="Ventas de hoy"
-            value={formatMoneda(metrics.ventasHoy)}
-            icon={<Calendar className="h-4 w-4" />}
-          />
-          <Metric
-            label="Ventas del mes"
-            value={formatMoneda(metrics.ventasMes)}
-            icon={<CalendarDays className="h-4 w-4" />}
-          />
-          <Metric
-            label="Stock total"
-            value={`${metrics.stockTotal} u`}
-            helper={formatMoneda(metrics.valorStock)}
-            icon={<Boxes className="h-4 w-4" />}
-          />
-        </section>
-
-        <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-          <SeccionReporte
-            titulo="Ingresos vs costos"
-            subtitulo={`Últimos ${nDias} días`}
-            chart={<VentasChart data={ventasPorDia} />}
-            lista={<ListaDias data={ventasPorDia} />}
-          />
-          <SeccionReporte
-            titulo="Top productos vendidos"
-            subtitulo="Por unidades en el período"
-            chart={
-              topVendidos.length ? (
-                <TopProductosChart data={topVendidos} />
-              ) : (
-                <Vacio />
-              )
-            }
-            lista={<ListaRanking data={topVendidos} sufijo="vendidas" />}
-          />
-        </section>
-
-        <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-          <SeccionReporte
-            titulo="Más producidos"
-            subtitulo="Por unidades en el período"
-            chart={
-              topProducidos.length ? (
-                <TopProductosChart data={topProducidos} />
-              ) : (
-                <Vacio />
-              )
-            }
-            lista={<ListaRanking data={topProducidos} sufijo="producidas" />}
-          />
-          <SeccionReporte
-            titulo="Producción por día"
-            subtitulo={`Últimos ${nDias} días`}
-            chart={<ProduccionChart data={produccionPorDia} />}
-            lista={
-              <ListaDias
-                data={produccionPorDia.map((d) => ({
-                  dia: d.dia,
-                  ingresos: d.cantidad,
-                  costos: 0,
-                }))}
-                soloCantidad
-              />
-            }
-          />
-        </section>
-
-        <section>
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-            Historial de transacciones ({transacciones.length})
-          </h3>
-          {transacciones.length === 0 ? (
-            <div className="rounded-xl border border-dashed bg-card p-12 text-center">
-              <Receipt className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="mt-4 text-sm text-muted-foreground">
-                No hay ventas registradas
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b bg-background/40 text-xs uppercase tracking-wider text-muted-foreground">
-                      <th className="px-5 py-3 font-semibold">Fecha</th>
-                      <th className="px-5 py-3 font-semibold">Producto</th>
-                      <th className="px-5 py-3 font-semibold">Cliente</th>
-                      <th className="px-5 py-3 text-center font-semibold">Cant.</th>
-                      <th className="px-5 py-3 text-right font-semibold">Total</th>
-                      <th className="px-5 py-3 text-right font-semibold">Margen</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {transacciones.map((v) => {
-                      const m = v.total - v.costo_total;
-                      return (
-                        <tr key={v.id} className="hover:bg-background/30">
-                          <td className="whitespace-nowrap px-5 py-3 tabular-nums text-muted-foreground">
-                            {new Date(v.fecha).toLocaleDateString(LOCALE, {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                              timeZone: "America/Santiago",
-                            })}
-                          </td>
-                          <td className="whitespace-nowrap px-5 py-3 font-semibold text-foreground">
-                            <span className="flex items-center gap-2">
-                              {v.nombre_producto}
-                              {v.pedido_id && (
-                                <Badge className="bg-primary/10 text-primary">
-                                  Pedido
-                                </Badge>
-                              )}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3 text-muted-foreground">
-                            {v.clientes?.nombre ?? "—"}
-                          </td>
-                          <td className="px-5 py-3 text-center tabular-nums text-muted-foreground">
-                            {v.cantidad}
-                          </td>
-                          <td className="px-5 py-3 text-right font-medium tabular-nums text-foreground">
-                            {formatMoneda(v.total)}
-                          </td>
-                          <td className="px-5 py-3 text-right tabular-nums text-success">
-                            {formatMoneda(m)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </section>
+        <TabsEstadisticas {...data} />
       </div>
     </AppShell>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  helper,
-  icon,
-}: {
-  label: string;
-  value: string;
-  helper?: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
-      <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-background text-gold">
-          {icon}
-        </span>
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {label}
-        </p>
-      </div>
-      <p className="mt-3 text-2xl font-semibold tabular-nums text-foreground">
-        {value}
-      </p>
-      {helper && <p className="mt-1 text-xs text-success">{helper}</p>}
-    </div>
-  );
-}
-
-function ListaDias({
-  data,
-  soloCantidad = false,
-}: {
-  data: { dia: string; ingresos: number; costos: number }[];
-  soloCantidad?: boolean;
-}) {
-  const filas = data.filter((d) => d.ingresos !== 0 || d.costos !== 0).reverse();
-  if (filas.length === 0) return <Vacio />;
-  return (
-    <div className="max-h-[260px] overflow-y-auto">
-      <table className="w-full text-left text-sm">
-        <tbody className="divide-y">
-          {filas.map((d, i) => (
-            <tr key={i}>
-              <td className="py-2 text-muted-foreground">{d.dia}</td>
-              {soloCantidad ? (
-                <td className="py-2 text-right tabular-nums text-foreground">
-                  {d.ingresos} u
-                </td>
-              ) : (
-                <>
-                  <td className="py-2 text-right tabular-nums text-foreground">
-                    {formatMoneda(d.ingresos)}
-                  </td>
-                  <td className="py-2 text-right tabular-nums text-muted-foreground">
-                    {formatMoneda(d.costos)}
-                  </td>
-                </>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function ListaRanking({
-  data,
-  sufijo,
-}: {
-  data: { nombre: string; unidades: number }[];
-  sufijo: string;
-}) {
-  if (data.length === 0) return <Vacio />;
-  const max = data[0]?.unidades ?? 1;
-  return (
-    <ul className="max-h-[260px] space-y-2.5 overflow-y-auto">
-      {data.map((r, i) => (
-        <li key={r.nombre} className="flex items-center gap-3">
-          <span className="w-4 text-xs font-semibold text-muted-foreground">
-            {i + 1}
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <span className="truncate text-sm font-medium text-foreground">
-                {r.nombre}
-              </span>
-              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                {r.unidades} {sufijo}
-              </span>
-            </div>
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-background">
-              <div
-                className="h-full rounded-full bg-gold/70"
-                style={{ width: `${Math.max(6, (r.unidades / max) * 100)}%` }}
-              />
-            </div>
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function Vacio() {
-  return (
-    <div className="flex h-[260px] items-center justify-center text-sm text-muted-foreground">
-      Sin datos en este período.
-    </div>
   );
 }
