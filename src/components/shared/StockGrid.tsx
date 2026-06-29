@@ -37,6 +37,45 @@ function BarraProgreso({ stock, minimo, agotado, bajo }: { stock: number; minimo
   );
 }
 
+function InsumoCard({ producto }: { producto: Producto }) {
+  const agotado = producto.stock <= 0;
+  const bajo = !agotado && producto.stock < producto.stock_minimo;
+
+  return (
+    <CollapsibleCard
+      icon={<Package className="h-4 w-4" />}
+      title={producto.nombre}
+      badge={estadoBadge(agotado, bajo)}
+      subtitle={
+        <span>
+          {producto.stock} {producto.unidad} · {formatMoneda(producto.costo * producto.stock)}
+        </span>
+      }
+      fields={[
+        { label: "Stock actual", value: `${producto.stock} ${producto.unidad}` },
+        { label: "Stock mínimo", value: `${producto.stock_minimo} ${producto.unidad}` },
+        { label: "Valor en stock", value: formatMoneda(producto.costo * producto.stock) },
+        ...(producto.categoria ? [{ label: "Categoría", value: producto.categoria }] : []),
+      ]}
+      actions={
+        <StockMovimientoDialog
+          producto={{ id: producto.id, nombre: producto.nombre, stock: producto.stock, stock_minimo: producto.stock_minimo }}
+          trigger={
+            <button
+              type="button"
+              className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Reponer / Ajustar
+            </button>
+          }
+        />
+      }
+    >
+      <BarraProgreso stock={producto.stock} minimo={producto.stock_minimo} agotado={agotado} bajo={bajo} />
+    </CollapsibleCard>
+  );
+}
+
 export function StockGrid({ productos }: { productos: Producto[] }) {
   const [query, setQuery] = useState("");
   const [catActiva, setCatActiva] = useState<string | null>(null);
@@ -64,45 +103,9 @@ export function StockGrid({ productos }: { productos: Producto[] }) {
         <p className="py-8 text-center text-sm text-muted-foreground">Sin resultados</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {filtrados.map((p) => {
-            const agotado = p.stock <= 0;
-            const bajo = !agotado && p.stock < p.stock_minimo;
-
-            return (
-              <CollapsibleCard
-                key={p.id}
-                icon={<Package className="h-4 w-4" />}
-                title={p.nombre}
-                badge={estadoBadge(agotado, bajo)}
-                subtitle={
-                  <span>
-                    {p.stock} {p.unidad} · {formatMoneda(p.costo * p.stock)}
-                  </span>
-                }
-                fields={[
-                  { label: "Stock actual", value: `${p.stock} ${p.unidad}` },
-                  { label: "Stock mínimo", value: `${p.stock_minimo} ${p.unidad}` },
-                  { label: "Valor en stock", value: formatMoneda(p.costo * p.stock) },
-                  ...(p.categoria ? [{ label: "Categoría", value: p.categoria }] : []),
-                ]}
-                actions={
-                  <StockMovimientoDialog
-                    producto={{ id: p.id, nombre: p.nombre, stock: p.stock, stock_minimo: p.stock_minimo }}
-                    trigger={
-                      <button
-                        type="button"
-                        className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-                      >
-                        Reponer / Ajustar
-                      </button>
-                    }
-                  />
-                }
-              >
-                <BarraProgreso stock={p.stock} minimo={p.stock_minimo} agotado={agotado} bajo={bajo} />
-              </CollapsibleCard>
-            );
-          })}
+          {filtrados.map((p) => (
+            <InsumoCard key={p.id} producto={p} />
+          ))}
         </div>
       )}
     </div>

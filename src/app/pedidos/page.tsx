@@ -131,7 +131,7 @@ export default async function PedidosPage() {
           ) : (
             <div className="flex flex-col gap-2">
               {activos.map((p) => (
-                <PedidoCard key={p.id} pedido={toCardProps(p)} collapsible />
+                <PedidoCard key={p.id} pedido={toCardProps(p)} />
               ))}
             </div>
           )}
@@ -144,7 +144,7 @@ export default async function PedidosPage() {
             </h3>
             <div className="flex flex-col gap-2">
               {historial.map((p) => (
-                <PedidoCard key={p.id} pedido={toCardProps(p)} collapsible />
+                <PedidoCard key={p.id} pedido={toCardProps(p)} />
               ))}
             </div>
           </section>

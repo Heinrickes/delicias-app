@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { CalendarDays, Trash2, User, Check, Coins, X } from "lucide-react";
+import { Trash2, User, Check, Coins, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { cambiarEstadoPedido, eliminarPedido } from "@/lib/actions/pedidos";
@@ -54,7 +54,7 @@ type Pedido = {
   items: PedidoItem[];
 };
 
-const estadoBadge: Record<EstadoPedido, string> = {
+const estadoBadgeClasses: Record<EstadoPedido, string> = {
   pendiente: "bg-gold/15 text-gold",
   por_cobrar: "bg-terracotta/15 text-terracotta",
   entregado: "bg-success/15 text-success",
@@ -76,13 +76,7 @@ function hoyISO() {
   return d.toISOString().slice(0, 10);
 }
 
-export function PedidoCard({
-  pedido,
-  collapsible = false,
-}: {
-  pedido: Pedido;
-  collapsible?: boolean;
-}) {
+export function PedidoCard({ pedido }: { pedido: Pedido }) {
   const [pending, startTransition] = useTransition();
   const [cobrarOpen, setCobrarOpen] = useState(false);
   const [fechaPago, setFechaPago] = useState(hoyISO());
@@ -155,197 +149,85 @@ export function PedidoCard({
     </AlertDialog>
   );
 
-  const cobrarDialog = (
-    <Dialog open={cobrarOpen} onOpenChange={setCobrarOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Entregar por cobrar</DialogTitle>
-          <DialogDescription>
-            Se descuenta el stock y se registra la venta, pero queda pendiente
-            de pago.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-1.5">
-          <Label>Fecha estimada de pago</Label>
-          <DatePicker
-            value={fechaPago}
-            onChange={setFechaPago}
-            placeholder="Seleccionar fecha"
-          />
-        </div>
-        <DialogFooter>
-          <Button
-            disabled={pending}
-            onClick={() => cambiar("por_cobrar", fechaPago)}
-          >
-            {pending ? LABELS.guardando : "Confirmar entrega"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-
-  /* ── Modo colapsable ── */
-  if (collapsible) {
-    const accionesNode = (
-      <div className="mt-2 flex items-center justify-between border-t pt-2">
-        <div className="flex gap-2">
-          {estado === "pendiente" && (
-            <>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => cambiar("entregado")}
-                className="flex flex-col items-center gap-0.5 disabled:opacity-50"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-success text-white shadow-sm">
-                  <Check className="h-3.5 w-3.5" />
-                </span>
-                <span className="text-[9px] font-semibold text-success">Cobrar</span>
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => setCobrarOpen(true)}
-                className="flex flex-col items-center gap-0.5 disabled:opacity-50"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-terracotta text-white shadow-sm">
-                  <Coins className="h-3.5 w-3.5" />
-                </span>
-                <span className="text-[9px] font-semibold text-terracotta">Por cobrar</span>
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => cambiar("cancelado")}
-                className="flex flex-col items-center gap-0.5 disabled:opacity-50"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-sm">
-                  <X className="h-3.5 w-3.5" />
-                </span>
-                <span className="text-[9px] font-semibold text-muted-foreground">Cancelar</span>
-              </button>
-            </>
-          )}
-          {estado === "por_cobrar" && (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => cambiar("entregado")}
-              className="flex flex-col items-center gap-0.5 disabled:opacity-50"
-            >
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-success text-white shadow-sm">
-                <Check className="h-3.5 w-3.5" />
-              </span>
-              <span className="text-[9px] font-semibold text-success">Pagado</span>
-            </button>
-          )}
-        </div>
-        {deleteButton}
-      </div>
-    );
-
-    return (
-      <>
-        <CollapsibleCard
-          icon={<User className="h-4 w-4" />}
-          title={pedido.cliente ?? "Sin cliente"}
-          badge={
-            <Badge className={cn("shrink-0 text-[10px]", estadoBadge[estado] ?? "bg-muted")}>
-              {ESTADOS_PEDIDO[estado] ?? pedido.estado}
-            </Badge>
-          }
-          subtitle={
-            <span>
-              {fmtFecha(pedido.fecha_entrega)} · {formatMoneda(pedido.total)}
-            </span>
-          }
-          fields={[
-            { label: "Total", value: formatMoneda(pedido.total) },
-            { label: "Estado", value: ESTADOS_PEDIDO[estado] ?? pedido.estado },
-            ...(estado === "por_cobrar" && pedido.fecha_estimada_pago
-              ? [{ label: "Fecha cobro", value: fmtFecha(pedido.fecha_estimada_pago), className: pagoVencido ? "text-danger" : undefined }]
-              : []),
-          ]}
-        >
-          <ul className="mb-1 space-y-0.5">
-            {pedido.items.map((it, idx) => (
-              <li key={idx} className="truncate text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">{it.cantidad}×</span>{" "}
-                {it.nombre_producto}
-              </li>
-            ))}
-            {pedido.notas && (
-              <li className="truncate text-[11px] italic text-muted-foreground">
-                {pedido.notas}
-              </li>
-            )}
-          </ul>
-          {accionesNode}
-        </CollapsibleCard>
-        {cobrarDialog}
-      </>
-    );
-  }
-
-  /* ── Modo compacto (activos) ── */
   return (
-    <div className="flex flex-col rounded-xl bg-card p-3.5 ring-1 ring-foreground/10">
-      {/* Header: cliente + badge */}
-      <div className="flex items-center justify-between gap-2">
-        <p className="flex min-w-0 items-center gap-1.5 truncate text-sm font-semibold text-foreground">
-          <User className="h-3 w-3 shrink-0 text-gold" />
-          <span className="truncate">{pedido.cliente ?? "Sin cliente"}</span>
-        </p>
-        <Badge className={cn("shrink-0 text-[10px]", estadoBadge[estado] ?? "bg-muted")}>
-          {ESTADOS_PEDIDO[estado] ?? pedido.estado}
-        </Badge>
-      </div>
+    <>
+      <CollapsibleCard
+        icon={<User className="h-4 w-4" />}
+        title={pedido.cliente ?? "Sin cliente"}
+        badge={
+          <Badge className={cn("shrink-0 text-[10px]", estadoBadgeClasses[estado] ?? "bg-muted")}>
+            {ESTADOS_PEDIDO[estado] ?? pedido.estado}
+          </Badge>
+        }
+        subtitle={
+          <span>
+            {fmtFecha(pedido.fecha_entrega)} · {formatMoneda(pedido.total)}
+          </span>
+        }
+        fields={[
+          { label: "Total", value: formatMoneda(pedido.total) },
+          { label: "Estado", value: ESTADOS_PEDIDO[estado] ?? pedido.estado },
+          ...(estado === "por_cobrar" && pedido.fecha_estimada_pago
+            ? [{ label: "Fecha cobro", value: fmtFecha(pedido.fecha_estimada_pago), className: pagoVencido ? "text-danger" : undefined }]
+            : []),
+        ]}
+      >
+        {/* Items */}
+        <ul className="mb-1 space-y-0.5">
+          {pedido.items.map((it, idx) => (
+            <li key={idx} className="truncate text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">{it.cantidad}×</span>{" "}
+              {it.nombre_producto}
+            </li>
+          ))}
+          {pedido.notas && (
+            <li className="truncate text-[11px] italic text-muted-foreground">
+              {pedido.notas}
+            </li>
+          )}
+        </ul>
 
-      {/* Fecha + total en una fila */}
-      <div className="mt-1 flex items-center justify-between gap-2">
-        <p className="flex items-center gap-1 text-xs text-muted-foreground">
-          <CalendarDays className="h-3 w-3 shrink-0" />
-          {fmtFecha(pedido.fecha_entrega)}
-        </p>
-        <span className="text-sm font-bold tabular-nums text-foreground">
-          {formatMoneda(pedido.total)}
-        </span>
-      </div>
-
-      {/* Items compactos */}
-      <ul className="mt-2 space-y-0.5 border-t pt-2">
-        {pedido.items.map((it, idx) => (
-          <li key={idx} className="truncate text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">{it.cantidad}×</span>{" "}
-            {it.nombre_producto}
-          </li>
-        ))}
-      </ul>
-
-      {estado === "por_cobrar" && (
-        <p
-          className={`mt-1.5 flex items-center gap-1 text-[11px] font-medium ${
-            pagoVencido ? "text-danger" : "text-terracotta"
-          }`}
-        >
-          <Coins className="h-3 w-3 shrink-0" />
-          Cobro: {fmtFecha(pedido.fecha_estimada_pago)}
-          {pagoVencido && " · vencido"}
-        </p>
-      )}
-
-      {pedido.notas && (
-        <p className="mt-1.5 truncate text-[11px] italic text-muted-foreground">
-          {pedido.notas}
-        </p>
-      )}
-
-      {/* Acciones según estado */}
-      <div className="mt-2.5 flex items-center justify-between border-t pt-2.5">
-        <div className="flex gap-2">
-          {estado === "pendiente" && (
-            <>
+        {/* Acciones */}
+        <div className="mt-2 flex items-center justify-between border-t pt-2">
+          <div className="flex gap-2">
+            {estado === "pendiente" && (
+              <>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => cambiar("entregado")}
+                  className="flex flex-col items-center gap-0.5 disabled:opacity-50"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-success text-white shadow-sm">
+                    <Check className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-[9px] font-semibold text-success">Cobrar</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => setCobrarOpen(true)}
+                  className="flex flex-col items-center gap-0.5 disabled:opacity-50"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-terracotta text-white shadow-sm">
+                    <Coins className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-[9px] font-semibold text-terracotta">Por cobrar</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => cambiar("cancelado")}
+                  className="flex flex-col items-center gap-0.5 disabled:opacity-50"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-sm">
+                    <X className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="text-[9px] font-semibold text-muted-foreground">Cancelar</span>
+                </button>
+              </>
+            )}
+            {estado === "por_cobrar" && (
               <button
                 type="button"
                 disabled={pending}
@@ -355,52 +237,42 @@ export function PedidoCard({
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-success text-white shadow-sm">
                   <Check className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-[9px] font-semibold text-success">Cobrar</span>
+                <span className="text-[9px] font-semibold text-success">Pagado</span>
               </button>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => setCobrarOpen(true)}
-                className="flex flex-col items-center gap-0.5 disabled:opacity-50"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-terracotta text-white shadow-sm">
-                  <Coins className="h-3.5 w-3.5" />
-                </span>
-                <span className="text-[9px] font-semibold text-terracotta">Por cobrar</span>
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => cambiar("cancelado")}
-                className="flex flex-col items-center gap-0.5 disabled:opacity-50"
-              >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-sm">
-                  <X className="h-3.5 w-3.5" />
-                </span>
-                <span className="text-[9px] font-semibold text-muted-foreground">Cancelar</span>
-              </button>
-            </>
-          )}
-
-          {estado === "por_cobrar" && (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => cambiar("entregado")}
-              className="flex flex-col items-center gap-0.5 disabled:opacity-50"
-            >
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-success text-white shadow-sm">
-                <Check className="h-3.5 w-3.5" />
-              </span>
-              <span className="text-[9px] font-semibold text-success">Pagado</span>
-            </button>
-          )}
+            )}
+          </div>
+          {deleteButton}
         </div>
+      </CollapsibleCard>
 
-        {deleteButton}
-      </div>
-
-      {cobrarDialog}
-    </div>
+      {/* Diálogo por cobrar */}
+      <Dialog open={cobrarOpen} onOpenChange={setCobrarOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Entregar por cobrar</DialogTitle>
+            <DialogDescription>
+              Se descuenta el stock y se registra la venta, pero queda pendiente
+              de pago.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5">
+            <Label>Fecha estimada de pago</Label>
+            <DatePicker
+              value={fechaPago}
+              onChange={setFechaPago}
+              placeholder="Seleccionar fecha"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              disabled={pending}
+              onClick={() => cambiar("por_cobrar", fechaPago)}
+            >
+              {pending ? LABELS.guardando : "Confirmar entrega"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
