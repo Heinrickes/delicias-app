@@ -7,6 +7,7 @@ import {
   Trash2,
   Check,
   ShoppingCart,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -265,6 +266,21 @@ export function CostosManager({ insumos }: { insumos: Insumo[] }) {
                   {i.en_lista && !(i.stock < i.stock_minimo) && (
                     <Badge className="bg-gold/15 text-gold">manual</Badge>
                   )}
+                  <button
+                    type="button"
+                    disabled={pending}
+                    title="Quitar de lista"
+                    onClick={() =>
+                      start(async () => {
+                        const r = await toggleEnLista(i.id, false);
+                        if (r.ok) toast.success(`${i.nombre} quitado de la lista`);
+                        else toast.error(r.error);
+                      })
+                    }
+                    className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-danger/15 hover:text-danger disabled:opacity-50"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </div>
               );
             })}

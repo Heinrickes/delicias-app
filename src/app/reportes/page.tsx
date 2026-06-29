@@ -205,7 +205,7 @@ export default async function ReportesPage({
               Estadísticas
             </p>
             <h2 className="mt-1 font-serif text-3xl leading-tight text-foreground">
-              Reportes
+              Estadísticas
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
               Ventas, márgenes, rotación y producción. Cambia el período y alterna

@@ -34,7 +34,7 @@ const SECONDARY = [
   { href: "/costos", label: "Costos", icon: ShoppingCart },
   { href: "/calendario", label: "Calendario", icon: CalendarDays },
   { href: "/clientes", label: "Clientes", icon: Users },
-  { href: "/reportes", label: "Reportes", icon: BarChart3 },
+  { href: "/reportes", label: "Estadísticas", icon: BarChart3 },
 ];
 
 export function MobileNav({

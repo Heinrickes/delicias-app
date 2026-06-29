@@ -1,6 +1,6 @@
 import { AppShell } from "@/components/shared/AppShell";
-import { ClienteCard } from "@/components/shared/ClienteCard";
 import { ClienteFormDialog } from "@/components/shared/ClienteFormDialog";
+import { ClientesListado } from "@/components/shared/ClientesListado";
 import { createClient } from "@/lib/supabase/server";
 import { UserPlus, Users } from "lucide-react";
 
@@ -27,22 +27,16 @@ async function getData() {
     supabase.from("ventas").select("cliente_id, total"),
   ]);
 
-  const pedidosPorCliente = new Map<string, number>();
+  const pedidosPorCliente: Record<string, number> = {};
   for (const p of pedidosRes.data ?? []) {
     if (p.cliente_id)
-      pedidosPorCliente.set(
-        p.cliente_id,
-        (pedidosPorCliente.get(p.cliente_id) ?? 0) + 1
-      );
+      pedidosPorCliente[p.cliente_id] = (pedidosPorCliente[p.cliente_id] ?? 0) + 1;
   }
 
-  const ventasPorCliente = new Map<string, number>();
+  const ventasPorCliente: Record<string, number> = {};
   for (const v of ventasRes.data ?? []) {
     if (v.cliente_id)
-      ventasPorCliente.set(
-        v.cliente_id,
-        (ventasPorCliente.get(v.cliente_id) ?? 0) + v.total
-      );
+      ventasPorCliente[v.cliente_id] = (ventasPorCliente[v.cliente_id] ?? 0) + v.total;
   }
 
   return {
@@ -95,16 +89,11 @@ export default async function ClientesPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-3">
-            {clientes.map((cliente) => (
-              <ClienteCard
-                key={cliente.id}
-                cliente={cliente}
-                pedidos={pedidosPorCliente.get(cliente.id) ?? 0}
-                totalVentas={ventasPorCliente.get(cliente.id) ?? 0}
-              />
-            ))}
-          </div>
+          <ClientesListado
+            clientes={clientes}
+            pedidosPorCliente={pedidosPorCliente}
+            ventasPorCliente={ventasPorCliente}
+          />
         )}
       </div>
     </AppShell>

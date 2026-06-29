@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
+import { CollapsibleCard } from "@/components/ui/collapsible-card";
 import {
   Dialog,
   DialogContent,
@@ -71,11 +72,17 @@ function fmtFecha(d: string | null) {
 
 function hoyISO() {
   const d = new Date();
-  d.setDate(d.getDate() + 7); // sugerencia: 7 días
+  d.setDate(d.getDate() + 7);
   return d.toISOString().slice(0, 10);
 }
 
-export function PedidoCard({ pedido }: { pedido: Pedido }) {
+export function PedidoCard({
+  pedido,
+  collapsible = false,
+}: {
+  pedido: Pedido;
+  collapsible?: boolean;
+}) {
   const [pending, startTransition] = useTransition();
   const [cobrarOpen, setCobrarOpen] = useState(false);
   const [fechaPago, setFechaPago] = useState(hoyISO());
@@ -115,6 +122,119 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
     pedido.fecha_estimada_pago !== null &&
     new Date(pedido.fecha_estimada_pago + "T23:59:59") < new Date();
 
+  const deleteButton = (
+    <AlertDialog>
+      <AlertDialogTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            disabled={pending}
+            title={LABELS.eliminar}
+            className="hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        }
+      />
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Eliminar pedido?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Se eliminará el pedido y sus productos. Esta acción no se puede
+            deshacer.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{LABELS.cancelar}</AlertDialogCancel>
+          <AlertDialogAction onClick={handleBorrar}>
+            {LABELS.eliminar}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
+  const cobrarDialog = (
+    <Dialog open={cobrarOpen} onOpenChange={setCobrarOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Entregar por cobrar</DialogTitle>
+          <DialogDescription>
+            Se descuenta el stock y se registra la venta, pero queda pendiente
+            de pago.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-1.5">
+          <Label>Fecha estimada de pago</Label>
+          <DatePicker
+            value={fechaPago}
+            onChange={setFechaPago}
+            placeholder="Seleccionar fecha"
+          />
+        </div>
+        <DialogFooter>
+          <Button
+            disabled={pending}
+            onClick={() => cambiar("por_cobrar", fechaPago)}
+          >
+            {pending ? LABELS.guardando : "Confirmar entrega"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  /* ── Modo colapsable (historial) ── */
+  if (collapsible) {
+    const itemsNode = (
+      <ul className="mb-2 space-y-0.5">
+        {pedido.items.map((it, idx) => (
+          <li key={idx} className="truncate text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">{it.cantidad}×</span>{" "}
+            {it.nombre_producto}
+          </li>
+        ))}
+        {pedido.notas && (
+          <li className="truncate text-[11px] italic text-muted-foreground">
+            {pedido.notas}
+          </li>
+        )}
+      </ul>
+    );
+
+    return (
+      <>
+        <CollapsibleCard
+          icon={<User className="h-4 w-4" />}
+          title={pedido.cliente ?? "Sin cliente"}
+          badge={
+            <Badge className={cn("shrink-0 text-[10px]", estadoBadge[estado] ?? "bg-muted")}>
+              {ESTADOS_PEDIDO[estado] ?? pedido.estado}
+            </Badge>
+          }
+          subtitle={
+            <span>
+              {fmtFecha(pedido.fecha_entrega)} · {formatMoneda(pedido.total)}
+            </span>
+          }
+          fields={[
+            { label: "Total", value: formatMoneda(pedido.total) },
+            { label: "Estado", value: ESTADOS_PEDIDO[estado] ?? pedido.estado },
+            ...(estado === "por_cobrar" && pedido.fecha_estimada_pago
+              ? [{ label: "Fecha cobro", value: fmtFecha(pedido.fecha_estimada_pago) }]
+              : []),
+          ]}
+        >
+          {itemsNode}
+          <div className="mt-2 flex justify-end">{deleteButton}</div>
+        </CollapsibleCard>
+        {cobrarDialog}
+      </>
+    );
+  }
+
+  /* ── Modo compacto (activos) ── */
   return (
     <div className="flex flex-col rounded-xl bg-card p-3.5 ring-1 ring-foreground/10">
       {/* Header: cliente + badge */}
@@ -223,66 +343,10 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
           )}
         </div>
 
-        <AlertDialog>
-          <AlertDialogTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                disabled={pending}
-                title={LABELS.eliminar}
-                className="hover:bg-destructive/10 hover:text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            }
-          />
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>¿Eliminar pedido?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Se eliminará el pedido y sus productos. Esta acción no se puede
-                deshacer.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{LABELS.cancelar}</AlertDialogCancel>
-              <AlertDialogAction onClick={handleBorrar}>
-                {LABELS.eliminar}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {deleteButton}
       </div>
 
-      {/* Diálogo: entregar por cobrar (con fecha estimada de pago) */}
-      <Dialog open={cobrarOpen} onOpenChange={setCobrarOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Entregar por cobrar</DialogTitle>
-            <DialogDescription>
-              Se descuenta el stock y se registra la venta, pero queda pendiente
-              de pago.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-1.5">
-            <Label>Fecha estimada de pago</Label>
-            <DatePicker
-              value={fechaPago}
-              onChange={setFechaPago}
-              placeholder="Seleccionar fecha"
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              disabled={pending}
-              onClick={() => cambiar("por_cobrar", fechaPago)}
-            >
-              {pending ? LABELS.guardando : "Confirmar entrega"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {cobrarDialog}
     </div>
   );
 }

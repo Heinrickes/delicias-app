@@ -142,9 +142,9 @@ export default async function PedidosPage() {
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Historial ({historial.length})
             </h3>
-            <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-3">
+            <div className="flex flex-col gap-2">
               {historial.map((p) => (
-                <PedidoCard key={p.id} pedido={toCardProps(p)} />
+                <PedidoCard key={p.id} pedido={toCardProps(p)} collapsible />
               ))}
             </div>
           </section>

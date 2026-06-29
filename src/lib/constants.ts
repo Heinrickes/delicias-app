@@ -17,7 +17,7 @@ export const NAV = {
   clientes: "Clientes",
   pedidos: "Pedidos",
   ventas: "Ventas",
-  reportes: "Reportes",
+  reportes: "Estadísticas",
 } as const;
 
 export const ESTADOS_PEDIDO = {

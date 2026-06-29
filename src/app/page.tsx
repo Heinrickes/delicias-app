@@ -14,6 +14,7 @@ import {
   Factory,
   Package,
   Percent,
+  Receipt,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
@@ -94,7 +95,7 @@ async function getResumen() {
     inicioHoy.getMonth() + 1
   ).padStart(2, "0")}-${String(inicioHoy.getDate()).padStart(2, "0")}`;
 
-  const [ventasRes, pedidosRes] = await Promise.all([
+  const [ventasRes, pedidosRes, insumosRes] = await Promise.all([
     supabase
       .from("ventas")
       .select("total, cantidad, fecha")
@@ -103,6 +104,10 @@ async function getResumen() {
       .from("pedidos")
       .select("estado, fecha_entrega, total")
       .in("estado", ["pendiente", "por_cobrar"]),
+    supabase
+      .from("insumos")
+      .select("costo_unitario, stock")
+      .eq("activo", true),
   ]);
 
   const ventas = ventasRes.data ?? [];
@@ -123,7 +128,12 @@ async function getResumen() {
     .filter((p) => p.estado === "por_cobrar")
     .reduce((s, p) => s + p.total, 0);
 
-  return { ingresoHoy, ingresoAyer, entregasHoy, totalPorCobrar };
+  const valorDespensa = (insumosRes.data ?? []).reduce(
+    (s, i) => s + i.costo_unitario * i.stock,
+    0
+  );
+
+  return { ingresoHoy, ingresoAyer, entregasHoy, totalPorCobrar, valorDespensa };
 }
 
 export default async function Home({
@@ -140,7 +150,7 @@ export default async function Home({
     getMesData(mes),
     getResumen(),
   ]);
-  const { ingresoHoy, ingresoAyer, entregasHoy, totalPorCobrar } = resumen;
+  const { ingresoHoy, ingresoAyer, entregasHoy, totalPorCobrar, valorDespensa } = resumen;
   const { acumulado, unidades, margen, produccionAcumulada, topProductos } = mesData;
   const simples = productos.filter((p) => p.tipo === "simple");
   const lowStockProducts = simples.filter((p) => p.stock < p.stock_minimo);
@@ -170,7 +180,7 @@ export default async function Home({
           </h2>
         </header>
 
-        <section className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <section className="grid grid-cols-2 gap-4 xl:grid-cols-5">
           <MetricCard
             label="Ventas hoy"
             value={formatMoneda(ingresoHoy)}
@@ -201,6 +211,13 @@ export default async function Home({
             danger={lowStockProducts.length > 0}
             href="/stock"
             icon={<AlertTriangle className="h-4 w-4" />}
+          />
+          <MetricCard
+            label="Valor en despensa"
+            value={formatMoneda(valorDespensa)}
+            helper="insumos en stock"
+            href="/costos"
+            icon={<Receipt className="h-4 w-4" />}
           />
         </section>
 
@@ -254,7 +271,7 @@ export default async function Home({
                 </h3>
                 <Link
                   href="/reportes"
-                  aria-label="Ver reportes"
+                  aria-label="Ver estadísticas"
                   className="inline-flex items-center justify-center rounded-md border bg-surface p-1.5 text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <BarChart3 className="h-3.5 w-3.5" />

@@ -1,6 +1,11 @@
 "use client";
 
+import { useState } from "react";
+import { Package } from "lucide-react";
 import { StockMovimientoDialog } from "@/components/shared/StockMovimientoDialog";
+import { FilterBar } from "@/components/shared/FilterBar";
+import { CollapsibleCard } from "@/components/ui/collapsible-card";
+import { Badge } from "@/components/ui/badge";
 import { formatMoneda } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -14,77 +19,92 @@ type Producto = {
   unidad: string;
 };
 
-export function StockGrid({ productos }: { productos: Producto[] }) {
+function estadoBadge(agotado: boolean, bajo: boolean) {
+  if (agotado) return <Badge className="shrink-0 bg-danger/15 text-[10px] text-danger">Agotado</Badge>;
+  if (bajo) return <Badge className="shrink-0 bg-gold/15 text-[10px] text-gold">Bajo</Badge>;
+  return <Badge className="shrink-0 bg-success/15 text-[10px] text-success">OK</Badge>;
+}
+
+function BarraProgreso({ stock, minimo, agotado, bajo }: { stock: number; minimo: number; agotado: boolean; bajo: boolean }) {
+  const pct = Math.min(100, Math.round((stock / Math.max(minimo, 1)) * 100));
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-      {productos.map((p) => {
-        const agotado = p.stock <= 0;
-        const bajo = p.stock < p.stock_minimo;
+    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+      <div
+        className={cn("h-full rounded-full transition-all", agotado ? "bg-danger" : bajo ? "bg-gold" : "bg-success")}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}
 
-        return (
-          <StockMovimientoDialog
-            key={p.id}
-            producto={{ id: p.id, nombre: p.nombre, stock: p.stock, stock_minimo: p.stock_minimo }}
-            trigger={
-              <button
-                type="button"
-                className="group flex min-h-[140px] w-full flex-col gap-2 rounded-xl bg-card p-4 text-left ring-1 ring-foreground/10 transition-all hover:ring-primary/40 hover:shadow-sm active:scale-[0.98]"
-              >
-                <div className="flex items-start justify-between gap-1">
-                  <p className="line-clamp-2 text-sm font-semibold leading-tight text-foreground">
-                    {p.nombre}
-                  </p>
-                  <span
-                    className={cn(
-                      "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold leading-none",
-                      agotado
-                        ? "bg-danger/15 text-danger"
-                        : bajo
-                          ? "bg-gold/15 text-gold"
-                          : "bg-success/15 text-success"
-                    )}
-                  >
-                    {agotado ? "Agotado" : bajo ? "Bajo" : "OK"}
+export function StockGrid({ productos }: { productos: Producto[] }) {
+  const [query, setQuery] = useState("");
+  const [catActiva, setCatActiva] = useState<string | null>(null);
+
+  const categorias = Array.from(
+    new Set(productos.map((p) => p.categoria).filter(Boolean) as string[])
+  ).sort();
+
+  const filtrados = productos.filter((p) => {
+    const matchQuery = p.nombre.toLowerCase().includes(query.toLowerCase());
+    const matchCat = catActiva === null || p.categoria === catActiva;
+    return matchQuery && matchCat;
+  });
+
+  return (
+    <div className="space-y-3">
+      <FilterBar
+        placeholder="Buscar insumo..."
+        categorias={categorias}
+        onSearch={setQuery}
+        onCategoria={setCatActiva}
+      />
+
+      {filtrados.length === 0 ? (
+        <p className="py-8 text-center text-sm text-muted-foreground">Sin resultados</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {filtrados.map((p) => {
+            const agotado = p.stock <= 0;
+            const bajo = !agotado && p.stock < p.stock_minimo;
+
+            return (
+              <CollapsibleCard
+                key={p.id}
+                icon={<Package className="h-4 w-4" />}
+                title={p.nombre}
+                badge={estadoBadge(agotado, bajo)}
+                subtitle={
+                  <span>
+                    {p.stock} {p.unidad} · {formatMoneda(p.costo * p.stock)}
                   </span>
-                </div>
-
-                <p className="text-xl font-bold tabular-nums text-foreground">
-                  {p.stock}{" "}
-                  <span className="text-xs font-normal text-muted-foreground">
-                    {p.unidad}
-                  </span>
-                </p>
-
-                {/* Barra de progreso */}
-                <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={cn(
-                      "h-full rounded-full transition-all",
-                      agotado ? "bg-danger" : bajo ? "bg-gold" : "bg-success"
-                    )}
-                    style={{
-                      width: `${Math.min(100, Math.round((p.stock / Math.max(p.stock_minimo, 1)) * 100))}%`,
-                    }}
+                }
+                fields={[
+                  { label: "Stock actual", value: `${p.stock} ${p.unidad}` },
+                  { label: "Stock mínimo", value: `${p.stock_minimo} ${p.unidad}` },
+                  { label: "Valor en stock", value: formatMoneda(p.costo * p.stock) },
+                  ...(p.categoria ? [{ label: "Categoría", value: p.categoria }] : []),
+                ]}
+                actions={
+                  <StockMovimientoDialog
+                    producto={{ id: p.id, nombre: p.nombre, stock: p.stock, stock_minimo: p.stock_minimo }}
+                    trigger={
+                      <button
+                        type="button"
+                        className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                      >
+                        Reponer / Ajustar
+                      </button>
+                    }
                   />
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  mín. {p.stock_minimo} {p.unidad}
-                </p>
-
-                <p className="text-xs text-muted-foreground">
-                  {formatMoneda(p.costo * p.stock)}
-                </p>
-
-                {p.categoria && (
-                  <p className="truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
-                    {p.categoria}
-                  </p>
-                )}
-              </button>
-            }
-          />
-        );
-      })}
+                }
+              >
+                <BarraProgreso stock={p.stock} minimo={p.stock_minimo} agotado={agotado} bajo={bajo} />
+              </CollapsibleCard>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
