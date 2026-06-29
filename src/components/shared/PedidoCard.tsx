@@ -185,22 +185,64 @@ export function PedidoCard({
     </Dialog>
   );
 
-  /* ── Modo colapsable (historial) ── */
+  /* ── Modo colapsable ── */
   if (collapsible) {
-    const itemsNode = (
-      <ul className="mb-2 space-y-0.5">
-        {pedido.items.map((it, idx) => (
-          <li key={idx} className="truncate text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">{it.cantidad}×</span>{" "}
-            {it.nombre_producto}
-          </li>
-        ))}
-        {pedido.notas && (
-          <li className="truncate text-[11px] italic text-muted-foreground">
-            {pedido.notas}
-          </li>
-        )}
-      </ul>
+    const accionesNode = (
+      <div className="mt-2 flex items-center justify-between border-t pt-2">
+        <div className="flex gap-2">
+          {estado === "pendiente" && (
+            <>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => cambiar("entregado")}
+                className="flex flex-col items-center gap-0.5 disabled:opacity-50"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-success text-white shadow-sm">
+                  <Check className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-[9px] font-semibold text-success">Cobrar</span>
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => setCobrarOpen(true)}
+                className="flex flex-col items-center gap-0.5 disabled:opacity-50"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-terracotta text-white shadow-sm">
+                  <Coins className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-[9px] font-semibold text-terracotta">Por cobrar</span>
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => cambiar("cancelado")}
+                className="flex flex-col items-center gap-0.5 disabled:opacity-50"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-sm">
+                  <X className="h-3.5 w-3.5" />
+                </span>
+                <span className="text-[9px] font-semibold text-muted-foreground">Cancelar</span>
+              </button>
+            </>
+          )}
+          {estado === "por_cobrar" && (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => cambiar("entregado")}
+              className="flex flex-col items-center gap-0.5 disabled:opacity-50"
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-success text-white shadow-sm">
+                <Check className="h-3.5 w-3.5" />
+              </span>
+              <span className="text-[9px] font-semibold text-success">Pagado</span>
+            </button>
+          )}
+        </div>
+        {deleteButton}
+      </div>
     );
 
     return (
@@ -222,12 +264,24 @@ export function PedidoCard({
             { label: "Total", value: formatMoneda(pedido.total) },
             { label: "Estado", value: ESTADOS_PEDIDO[estado] ?? pedido.estado },
             ...(estado === "por_cobrar" && pedido.fecha_estimada_pago
-              ? [{ label: "Fecha cobro", value: fmtFecha(pedido.fecha_estimada_pago) }]
+              ? [{ label: "Fecha cobro", value: fmtFecha(pedido.fecha_estimada_pago), className: pagoVencido ? "text-danger" : undefined }]
               : []),
           ]}
         >
-          {itemsNode}
-          <div className="mt-2 flex justify-end">{deleteButton}</div>
+          <ul className="mb-1 space-y-0.5">
+            {pedido.items.map((it, idx) => (
+              <li key={idx} className="truncate text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">{it.cantidad}×</span>{" "}
+                {it.nombre_producto}
+              </li>
+            ))}
+            {pedido.notas && (
+              <li className="truncate text-[11px] italic text-muted-foreground">
+                {pedido.notas}
+              </li>
+            )}
+          </ul>
+          {accionesNode}
         </CollapsibleCard>
         {cobrarDialog}
       </>

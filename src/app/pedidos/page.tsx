@@ -129,9 +129,9 @@ export default async function PedidosPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-3">
+            <div className="flex flex-col gap-2">
               {activos.map((p) => (
-                <PedidoCard key={p.id} pedido={toCardProps(p)} />
+                <PedidoCard key={p.id} pedido={toCardProps(p)} collapsible />
               ))}
             </div>
           )}
