@@ -8,7 +8,9 @@ import {
   Check,
   ShoppingCart,
   X,
+  Package,
 } from "lucide-react";
+import { CollapsibleCard } from "@/components/ui/collapsible-card";
 import { toast } from "sonner";
 import {
   crearInsumo,
@@ -298,7 +300,7 @@ export function CostosManager({ insumos }: { insumos: Insumo[] }) {
             Aún no hay insumos. Agrega el primero arriba.
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="flex flex-col gap-2">
             {insumos.map((i) => (
               <InsumoCard key={i.id} insumo={i} pending={pending} start={start} />
             ))}
@@ -319,67 +321,81 @@ function InsumoCard({
   start: React.TransitionStartFunction;
 }) {
   const [open, setOpen] = useState(false);
-  const bajo = insumo.stock < insumo.stock_minimo;
+  const agotado = insumo.stock <= 0;
+  const bajo = !agotado && insumo.stock < insumo.stock_minimo;
   const pct = Math.min(100, Math.round((insumo.stock / Math.max(insumo.stock_minimo, 1)) * 100));
+
+  const toggle = () =>
+    start(async () => {
+      const r = await toggleEnLista(insumo.id, !insumo.en_lista);
+      if (!r.ok) toast.error(r.error);
+    });
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="group flex min-h-[140px] w-full flex-col gap-2 rounded-xl bg-card p-4 text-left ring-1 ring-foreground/10 transition-all hover:ring-primary/40 hover:shadow-sm active:scale-[0.98]"
+      <CollapsibleCard
+        icon={<Package className="h-4 w-4" />}
+        title={insumo.nombre}
+        badge={
+          agotado ? (
+            <Badge className="shrink-0 bg-danger/15 text-[10px] text-danger">Agotado</Badge>
+          ) : bajo ? (
+            <Badge className="shrink-0 bg-gold/15 text-[10px] text-gold">Bajo</Badge>
+          ) : insumo.en_lista ? (
+            <Badge className="shrink-0 bg-gold/15 text-[10px] text-gold">En lista</Badge>
+          ) : (
+            <Badge className="shrink-0 bg-success/15 text-[10px] text-success">OK</Badge>
+          )
+        }
+        subtitle={
+          <span>
+            {insumo.stock} {insumo.unidad} · {formatMoneda(insumo.costo_unitario)}/{insumo.unidad}
+            {insumo.proveedor ? ` · ${insumo.proveedor}` : ""}
+          </span>
+        }
+        fields={[
+          { label: "Stock actual", value: `${insumo.stock} ${insumo.unidad}` },
+          { label: "Stock mínimo", value: `${insumo.stock_minimo} ${insumo.unidad}` },
+          { label: "Costo unitario", value: `${formatMoneda(insumo.costo_unitario)}/${insumo.unidad}` },
+          { label: "Valor en stock", value: formatMoneda(insumo.costo_unitario * insumo.stock) },
+          ...(insumo.proveedor ? [{ label: "Proveedor", value: insumo.proveedor }] : []),
+        ]}
+        actions={
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={toggle}
+              disabled={pending}
+              className={cn(
+                "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50",
+                insumo.en_lista
+                  ? "bg-gold/15 text-gold"
+                  : "bg-muted text-muted-foreground hover:bg-gold/15 hover:text-gold"
+              )}
+            >
+              <ShoppingCart className="mr-1 inline h-3 w-3" />
+              {insumo.en_lista ? "Quitar de lista" : "Lista"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Gestionar
+            </button>
+          </div>
+        }
       >
-        <div className="flex items-start justify-between gap-1">
-          <p className="line-clamp-2 text-sm font-semibold leading-tight text-foreground">
-            {insumo.nombre}
-          </p>
-          <span
-            className={cn(
-              "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold leading-none",
-              bajo ? "bg-danger/15 text-danger" : "bg-success/15 text-success"
-            )}
-          >
-            {bajo ? "Bajo" : "OK"}
-          </span>
-        </div>
-
-        <p className="text-xl font-bold tabular-nums text-foreground">
-          {insumo.stock}{" "}
-          <span className="text-xs font-normal text-muted-foreground">
-            {insumo.unidad}
-          </span>
-        </p>
-
-        {/* Barra de progreso */}
         <div className="h-1.5 overflow-hidden rounded-full bg-muted">
           <div
             className={cn(
               "h-full rounded-full transition-all",
-              bajo ? "bg-danger" : "bg-success"
+              agotado ? "bg-danger" : bajo ? "bg-gold" : "bg-success"
             )}
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="text-[10px] text-muted-foreground">
-          mín. {insumo.stock_minimo} {insumo.unidad}
-        </p>
-
-        <p className="text-xs text-muted-foreground">
-          {formatMoneda(insumo.costo_unitario)} / {insumo.unidad}
-        </p>
-
-        {insumo.proveedor && (
-          <p className="truncate text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70">
-            {insumo.proveedor}
-          </p>
-        )}
-
-        {insumo.en_lista && (
-          <span className="inline-flex w-fit rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-semibold text-gold">
-            en lista
-          </span>
-        )}
-      </button>
+      </CollapsibleCard>
 
       <InsumoGestorDialog
         insumo={insumo}
