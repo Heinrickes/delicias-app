@@ -7,9 +7,20 @@ import {
   VentasChart,
 } from "@/components/shared/ReportesCharts";
 import { SeccionReporte } from "@/components/shared/SeccionReporte";
+import { CollapsibleCard } from "@/components/ui/collapsible-card";
 import { Badge } from "@/components/ui/badge";
 import { formatMoneda, LOCALE } from "@/lib/constants";
-import { Receipt, TrendingUp, Calendar, CalendarDays, Boxes, ShoppingCart, Percent, AlertTriangle } from "lucide-react";
+import {
+  Receipt,
+  TrendingUp,
+  Calendar,
+  CalendarDays,
+  Boxes,
+  ShoppingCart,
+  Percent,
+  AlertTriangle,
+  Package,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Transaccion = {
@@ -59,6 +70,20 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "costos", label: "Costos" },
 ];
 
+function fmtDia(fechaISO: string) {
+  return new Date(fechaISO).toLocaleDateString(LOCALE, {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    timeZone: "America/Santiago",
+  });
+}
+
+function fmtDiaKey(fechaISO: string) {
+  return new Date(fechaISO)
+    .toLocaleDateString("sv", { timeZone: "America/Santiago" });
+}
+
 export function TabsEstadisticas({
   transacciones,
   ventasPorDia,
@@ -85,6 +110,17 @@ export function TabsEstadisticas({
             metrics.unidadesRango
         )
       : 0;
+
+  // Agrupar transacciones por día
+  const txPorDia = transacciones.reduce<Map<string, Transaccion[]>>((acc, v) => {
+    const key = fmtDiaKey(v.fecha);
+    if (!acc.has(key)) acc.set(key, []);
+    acc.get(key)!.push(v);
+    return acc;
+  }, new Map());
+  const diasOrdenados = Array.from(txPorDia.entries()).sort(([a], [b]) =>
+    b.localeCompare(a)
+  );
 
   return (
     <div className="space-y-6">
@@ -156,6 +192,7 @@ export function TabsEstadisticas({
             />
           </div>
 
+          {/* Feed de transacciones agrupado por día */}
           <section>
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Historial de transacciones ({transacciones.length})
@@ -168,60 +205,51 @@ export function TabsEstadisticas({
                 </p>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-b bg-background/40 text-xs uppercase tracking-wider text-muted-foreground">
-                        <th className="px-5 py-3 font-semibold">Fecha</th>
-                        <th className="px-5 py-3 font-semibold">Producto</th>
-                        <th className="px-5 py-3 font-semibold">Cliente</th>
-                        <th className="px-5 py-3 text-center font-semibold">Cant.</th>
-                        <th className="px-5 py-3 text-right font-semibold">Total</th>
-                        <th className="px-5 py-3 text-right font-semibold">Margen</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {transacciones.map((v) => {
-                        const m = v.total - v.costo_total;
+              <div className="space-y-4">
+                {diasOrdenados.map(([key, items]) => (
+                  <div key={key}>
+                    <p className="mb-1.5 text-xs font-semibold capitalize text-muted-foreground">
+                      {fmtDia(key)}
+                    </p>
+                    <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+                      {items.map((v, idx) => {
+                        const margen = v.total - v.costo_total;
                         return (
-                          <tr key={v.id} className="hover:bg-background/30">
-                            <td className="whitespace-nowrap px-5 py-3 tabular-nums text-muted-foreground">
-                              {new Date(v.fecha).toLocaleDateString(LOCALE, {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                                timeZone: "America/Santiago",
-                              })}
-                            </td>
-                            <td className="whitespace-nowrap px-5 py-3 font-semibold text-foreground">
-                              <span className="flex items-center gap-2">
-                                {v.nombre_producto}
+                          <div
+                            key={v.id}
+                            className={cn(
+                              "flex items-center gap-3 px-4 py-3",
+                              idx !== 0 && "border-t"
+                            )}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="truncate text-sm font-semibold text-foreground">
+                                  {v.nombre_producto}
+                                </span>
                                 {v.pedido_id && (
-                                  <Badge className="bg-primary/10 text-primary">
+                                  <Badge className="shrink-0 bg-primary/10 text-[10px] text-primary">
                                     Pedido
                                   </Badge>
                                 )}
-                              </span>
-                            </td>
-                            <td className="px-5 py-3 text-muted-foreground">
-                              {v.clientes?.nombre ?? "—"}
-                            </td>
-                            <td className="px-5 py-3 text-center tabular-nums text-muted-foreground">
-                              {v.cantidad}
-                            </td>
-                            <td className="px-5 py-3 text-right font-medium tabular-nums text-foreground">
+                              </div>
+                              <p className="truncate text-[11px] text-muted-foreground">
+                                {v.clientes?.nombre ?? "Venta directa"}
+                                {" · "}
+                                {v.cantidad} u
+                                {" · "}
+                                <span className="text-success">+{formatMoneda(margen)}</span>
+                              </p>
+                            </div>
+                            <span className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
                               {formatMoneda(v.total)}
-                            </td>
-                            <td className="px-5 py-3 text-right tabular-nums text-success">
-                              {formatMoneda(m)}
-                            </td>
-                          </tr>
+                            </span>
+                          </div>
                         );
                       })}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </section>
@@ -333,71 +361,63 @@ export function TabsEstadisticas({
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b bg-background/40 text-xs uppercase tracking-wider text-muted-foreground">
-                      <th className="px-5 py-3 font-semibold">Insumo</th>
-                      <th className="px-5 py-3 text-right font-semibold">Stock</th>
-                      <th className="px-5 py-3 text-right font-semibold">Mínimo</th>
-                      <th className="px-5 py-3 text-right font-semibold">Costo unit.</th>
-                      <th className="px-5 py-3 text-right font-semibold">Valor total</th>
-                      <th className="px-5 py-3 text-center font-semibold">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {insumos
-                      .sort((a, b) => b.costo_unitario * b.stock - a.costo_unitario * a.stock)
-                      .map((i) => {
-                        const bajo = i.stock < i.stock_minimo;
-                        return (
-                          <tr key={i.id} className="hover:bg-background/30">
-                            <td className="whitespace-nowrap px-5 py-3 font-semibold text-foreground">
-                              {i.nombre}
-                            </td>
-                            <td className="px-5 py-3 text-right tabular-nums text-foreground">
-                              {i.stock} {i.unidad}
-                            </td>
-                            <td className="px-5 py-3 text-right tabular-nums text-muted-foreground">
-                              {i.stock_minimo} {i.unidad}
-                            </td>
-                            <td className="px-5 py-3 text-right tabular-nums text-muted-foreground">
-                              {formatMoneda(i.costo_unitario)}
-                            </td>
-                            <td className="px-5 py-3 text-right font-medium tabular-nums text-foreground">
-                              {formatMoneda(i.costo_unitario * i.stock)}
-                            </td>
-                            <td className="px-5 py-3 text-center">
-                              <span
-                                className={cn(
-                                  "rounded-full px-2 py-0.5 text-[10px] font-bold",
-                                  bajo
-                                    ? "bg-danger/15 text-danger"
-                                    : "bg-success/15 text-success"
-                                )}
-                              >
-                                {bajo ? "Bajo" : "OK"}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t bg-background/40">
-                      <td colSpan={4} className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        Total despensa
-                      </td>
-                      <td className="px-5 py-3 text-right font-bold tabular-nums text-foreground">
-                        {formatMoneda(valorDespensa)}
-                      </td>
-                      <td />
-                    </tr>
-                  </tfoot>
-                </table>
+            <>
+              <div className="flex flex-col gap-2">
+                {[...insumos]
+                  .sort((a, b) => b.costo_unitario * b.stock - a.costo_unitario * a.stock)
+                  .map((i) => {
+                    const agotado = i.stock <= 0;
+                    const bajo = !agotado && i.stock < i.stock_minimo;
+                    const valor = i.costo_unitario * i.stock;
+                    const pct = Math.min(100, Math.round((i.stock / Math.max(i.stock_minimo, 1)) * 100));
+                    return (
+                      <CollapsibleCard
+                        key={i.id}
+                        icon={<Package className="h-4 w-4" />}
+                        title={i.nombre}
+                        badge={
+                          agotado ? (
+                            <Badge className="shrink-0 bg-danger/15 text-[10px] text-danger">Agotado</Badge>
+                          ) : bajo ? (
+                            <Badge className="shrink-0 bg-gold/15 text-[10px] text-gold">Bajo</Badge>
+                          ) : (
+                            <Badge className="shrink-0 bg-success/15 text-[10px] text-success">OK</Badge>
+                          )
+                        }
+                        subtitle={
+                          <span>
+                            {i.stock} {i.unidad} · <span className="font-semibold text-foreground">{formatMoneda(valor)}</span>
+                          </span>
+                        }
+                        fields={[
+                          { label: "Stock actual", value: `${i.stock} ${i.unidad}` },
+                          { label: "Stock mínimo", value: `${i.stock_minimo} ${i.unidad}` },
+                          { label: "Costo unitario", value: formatMoneda(i.costo_unitario) },
+                          { label: "Valor en stock", value: formatMoneda(valor) },
+                        ]}
+                      >
+                        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={cn(
+                              "h-full rounded-full transition-all",
+                              agotado ? "bg-danger" : bajo ? "bg-gold" : "bg-success"
+                            )}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </CollapsibleCard>
+                    );
+                  })}
               </div>
-            </div>
+              <div className="flex items-center justify-between rounded-xl bg-card px-5 py-3 ring-1 ring-foreground/10">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Total despensa
+                </span>
+                <span className="text-sm font-bold tabular-nums text-foreground">
+                  {formatMoneda(valorDespensa)}
+                </span>
+              </div>
+            </>
           )}
         </div>
       )}
