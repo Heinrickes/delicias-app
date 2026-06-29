@@ -169,7 +169,7 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
 
       {/* Acciones según estado */}
       <div className="mt-2.5 flex items-center justify-between border-t pt-2.5">
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           {estado === "pendiente" && (
             <>
               <button
@@ -178,10 +178,10 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
                 onClick={() => cambiar("entregado")}
                 className="flex flex-col items-center gap-0.5 disabled:opacity-50"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-success text-white shadow-sm">
-                  <Check className="h-4 w-4" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-success text-white shadow-sm">
+                  <Check className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-[10px] font-semibold text-success">Cobrar</span>
+                <span className="text-[9px] font-semibold text-success">Cobrar</span>
               </button>
               <button
                 type="button"
@@ -189,10 +189,10 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
                 onClick={() => setCobrarOpen(true)}
                 className="flex flex-col items-center gap-0.5 disabled:opacity-50"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-terracotta text-white shadow-sm">
-                  <Coins className="h-4 w-4" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-terracotta text-white shadow-sm">
+                  <Coins className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-[10px] font-semibold text-terracotta">Por cobrar</span>
+                <span className="text-[9px] font-semibold text-terracotta">Por cobrar</span>
               </button>
               <button
                 type="button"
@@ -200,10 +200,10 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
                 onClick={() => cambiar("cancelado")}
                 className="flex flex-col items-center gap-0.5 disabled:opacity-50"
               >
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-sm">
-                  <X className="h-4 w-4" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-sm">
+                  <X className="h-3.5 w-3.5" />
                 </span>
-                <span className="text-[10px] font-semibold text-muted-foreground">Cancelar</span>
+                <span className="text-[9px] font-semibold text-muted-foreground">Cancelar</span>
               </button>
             </>
           )}
@@ -215,10 +215,10 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
               onClick={() => cambiar("entregado")}
               className="flex flex-col items-center gap-0.5 disabled:opacity-50"
             >
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-success text-white shadow-sm">
-                <Check className="h-4 w-4" />
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-success text-white shadow-sm">
+                <Check className="h-3.5 w-3.5" />
               </span>
-              <span className="text-[10px] font-semibold text-success">Pagado</span>
+              <span className="text-[9px] font-semibold text-success">Pagado</span>
             </button>
           )}
         </div>
