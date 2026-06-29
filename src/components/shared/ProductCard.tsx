@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef } from "react";
 import Image from "next/image";
-import { Pencil, Trash2, X, Check, PackagePlus, Boxes, ImagePlus, Loader2 } from "lucide-react";
+import { Pencil, Trash2, X, Check, PackagePlus, Boxes, ImagePlus, Loader2, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { actualizarProducto, eliminarProducto } from "@/lib/actions/productos";
 import { createClient } from "@/lib/supabase/client";
@@ -16,6 +16,12 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -70,6 +76,7 @@ export function ProductCard({
   const [editCategoria, setEditCategoria] = useState(producto.categoria_id ?? "");
   const [editImagenUrl, setEditImagenUrl] = useState(producto.imagen_url ?? null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [imagenDialogOpen, setImagenDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, startSaving] = useTransition();
   const [deleting, startDeleting] = useTransition();
@@ -85,6 +92,7 @@ export function ProductCard({
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setImagenDialogOpen(false);
     setUploadingImage(true);
     const supabase = createClient();
     const ext = file.name.split(".").pop() ?? "jpg";
@@ -139,6 +147,7 @@ export function ProductCard({
   };
 
   return (
+    <>
     <div className="group relative overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10 transition-shadow hover:shadow-[0_14px_34px_rgba(75,45,30,0.08)]">
       <div
         className="relative h-16 bg-cover bg-center"
@@ -171,14 +180,14 @@ export function ProductCard({
         {isEditing && (
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => setImagenDialogOpen(true)}
             disabled={uploadingImage}
             className="absolute inset-0 flex items-center justify-center bg-foreground/30"
           >
             {uploadingImage ? (
               <Loader2 className="h-5 w-5 animate-spin text-white" />
             ) : (
-              <ImagePlus className="h-5 w-5 text-white drop-shadow" />
+              <Camera className="h-5 w-5 text-white drop-shadow" />
             )}
           </button>
         )}
@@ -186,6 +195,7 @@ export function ProductCard({
           ref={fileInputRef}
           type="file"
           accept="image/*"
+          capture="environment"
           className="hidden"
           onChange={handleImageChange}
         />
@@ -364,5 +374,56 @@ export function ProductCard({
         )}
       </div>
     </div>
+
+      {/* Dialog selección de imagen */}
+      <Dialog open={imagenDialogOpen} onOpenChange={setImagenDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Imagen del producto</DialogTitle>
+          </DialogHeader>
+
+          {/* Preview */}
+          <div className="relative mx-auto h-40 w-full overflow-hidden rounded-xl bg-muted">
+            {editImagenUrl ? (
+              <Image
+                src={editImagenUrl}
+                alt={editNombre}
+                fill
+                className="object-cover"
+                sizes="100vw"
+              />
+            ) : (
+              <div
+                className="h-full w-full"
+                style={{ background: productVisuals[variant % productVisuals.length] }}
+              />
+            )}
+          </div>
+
+          <div className="flex flex-col gap-2 pt-1">
+            <Button
+              className="w-full gap-2"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Camera className="h-4 w-4" />
+              {editImagenUrl ? "Cambiar foto" : "Agregar foto"}
+            </Button>
+            {editImagenUrl && (
+              <Button
+                variant="outline"
+                className="w-full gap-2 text-danger hover:bg-danger/10 hover:text-danger"
+                onClick={() => {
+                  setEditImagenUrl(null);
+                  setImagenDialogOpen(false);
+                }}
+              >
+                <X className="h-4 w-4" />
+                Quitar imagen
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
