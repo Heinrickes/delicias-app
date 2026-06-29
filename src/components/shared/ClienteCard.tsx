@@ -55,8 +55,8 @@ export function ClienteCard({
     .toUpperCase();
 
   return (
-    <div className="group relative rounded-xl bg-card p-5 ring-1 ring-foreground/10 transition-shadow hover:shadow-[0_18px_40px_rgba(75,45,30,0.08)]">
-      <div className="absolute right-3 top-3 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+    <div className="group relative rounded-xl bg-card p-3.5 ring-1 ring-foreground/10 transition-shadow hover:shadow-[0_18px_40px_rgba(75,45,30,0.08)]">
+      <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
         <ClienteFormDialog
           cliente={cliente}
           trigger={
@@ -97,44 +97,38 @@ export function ClienteCard({
         </AlertDialog>
       </div>
 
-      <div className="flex items-center gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-semibold text-primary">
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
           {iniciales || "?"}
         </span>
         <div className="min-w-0">
-          <h3 className="truncate text-base font-semibold text-foreground">
+          <h3 className="truncate text-sm font-semibold text-foreground">
             {cliente.nombre}
           </h3>
-          {cliente.notas && (
-            <p className="truncate text-xs text-muted-foreground">
-              {cliente.notas}
-            </p>
-          )}
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+            {cliente.telefono && (
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Phone className="h-3 w-3 text-gold" />
+                {cliente.telefono}
+              </span>
+            )}
+            {cliente.email && (
+              <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+                <Mail className="h-3 w-3 shrink-0 text-gold" />
+                <span className="truncate">{cliente.email}</span>
+              </span>
+            )}
+            {cliente.direccion && (
+              <span className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3 shrink-0 text-gold" />
+                <span className="truncate">{cliente.direccion}</span>
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="mt-4 space-y-2 text-sm text-muted-foreground">
-        {cliente.telefono && (
-          <p className="flex items-center gap-2">
-            <Phone className="h-3.5 w-3.5 text-gold" />
-            {cliente.telefono}
-          </p>
-        )}
-        {cliente.email && (
-          <p className="flex items-center gap-2">
-            <Mail className="h-3.5 w-3.5 text-gold" />
-            <span className="truncate">{cliente.email}</span>
-          </p>
-        )}
-        {cliente.direccion && (
-          <p className="flex items-center gap-2">
-            <MapPin className="h-3.5 w-3.5 text-gold" />
-            <span className="truncate">{cliente.direccion}</span>
-          </p>
-        )}
-      </div>
-
-      <div className="mt-4 flex items-center justify-between border-t pt-3 text-xs">
+      <div className="mt-2.5 flex items-center justify-between border-t pt-2.5 text-xs">
         <span className="flex items-center gap-1.5 text-muted-foreground">
           <ClipboardList className="h-3.5 w-3.5" />
           {pedidos} {pedidos === 1 ? "pedido" : "pedidos"}

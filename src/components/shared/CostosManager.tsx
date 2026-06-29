@@ -29,6 +29,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { formatMoneda, LABELS } from "@/lib/constants";
 
@@ -513,16 +524,36 @@ function InsumoGestorDialog({
               <ShoppingCart className="h-4 w-4" />
               {insumo.en_lista ? "Quitar de lista" : "Agregar a lista"}
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={borrar}
-              disabled={pending}
-              className="gap-1.5 text-xs text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-              Eliminar
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={pending}
+                    className="gap-1.5 text-xs text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Eliminar
+                  </Button>
+                }
+              />
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Eliminar insumo?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Se eliminará &quot;{insumo.nombre}&quot; del inventario. Esta
+                    acción no se puede deshacer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{LABELS.cancelar}</AlertDialogCancel>
+                  <AlertDialogAction onClick={borrar}>
+                    {LABELS.eliminar}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
           <div className="flex gap-2">
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>

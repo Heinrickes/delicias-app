@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { CalendarDays, Trash2, User, Check, Coins, X } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { cambiarEstadoPedido, eliminarPedido } from "@/lib/actions/pedidos";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -115,75 +116,70 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
     new Date(pedido.fecha_estimada_pago + "T23:59:59") < new Date();
 
   return (
-    <div className="flex flex-col rounded-xl bg-card p-5 ring-1 ring-foreground/10">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-            <User className="h-3.5 w-3.5 text-gold" />
-            {pedido.cliente ?? "Sin cliente"}
-          </p>
-          <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <CalendarDays className="h-3.5 w-3.5" />
-            Entrega: {fmtFecha(pedido.fecha_entrega)}
-          </p>
-        </div>
-        <Badge className={estadoBadge[estado] ?? "bg-muted"}>
+    <div className="flex flex-col rounded-xl bg-card p-3.5 ring-1 ring-foreground/10">
+      {/* Header: cliente + badge */}
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex min-w-0 items-center gap-1.5 truncate text-sm font-semibold text-foreground">
+          <User className="h-3 w-3 shrink-0 text-gold" />
+          <span className="truncate">{pedido.cliente ?? "Sin cliente"}</span>
+        </p>
+        <Badge className={cn("shrink-0 text-[10px]", estadoBadge[estado] ?? "bg-muted")}>
           {ESTADOS_PEDIDO[estado] ?? pedido.estado}
         </Badge>
       </div>
 
-      <ul className="mt-4 space-y-1.5 border-t pt-3 text-sm">
-        {pedido.items.map((it, idx) => (
-          <li key={idx} className="flex items-center justify-between gap-2">
-            <span className="min-w-0 truncate text-muted-foreground">
-              <span className="font-medium text-foreground">{it.cantidad}×</span>{" "}
-              {it.nombre_producto}
-            </span>
-            <span className="shrink-0 tabular-nums text-muted-foreground">
-              {formatMoneda(it.subtotal)}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      {pedido.notas && (
-        <p className="mt-3 rounded-md bg-background/50 px-3 py-2 text-xs italic text-muted-foreground">
-          {pedido.notas}
+      {/* Fecha + total en una fila */}
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+          <CalendarDays className="h-3 w-3 shrink-0" />
+          {fmtFecha(pedido.fecha_entrega)}
         </p>
-      )}
-
-      {estado === "por_cobrar" && (
-        <p
-          className={`mt-3 flex items-center gap-1.5 text-xs font-medium ${
-            pagoVencido ? "text-danger" : "text-terracotta"
-          }`}
-        >
-          <Coins className="h-3.5 w-3.5" />
-          Pago estimado: {fmtFecha(pedido.fecha_estimada_pago)}
-          {pagoVencido && " · vencido"}
-        </p>
-      )}
-
-      <div className="mt-3 flex items-center justify-between border-t pt-3">
-        <span className="text-xs text-muted-foreground">{LABELS.total}</span>
-        <span className="text-lg font-semibold tabular-nums text-foreground">
+        <span className="text-sm font-bold tabular-nums text-foreground">
           {formatMoneda(pedido.total)}
         </span>
       </div>
 
+      {/* Items compactos */}
+      <ul className="mt-2 space-y-0.5 border-t pt-2">
+        {pedido.items.map((it, idx) => (
+          <li key={idx} className="truncate text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">{it.cantidad}×</span>{" "}
+            {it.nombre_producto}
+          </li>
+        ))}
+      </ul>
+
+      {estado === "por_cobrar" && (
+        <p
+          className={`mt-1.5 flex items-center gap-1 text-[11px] font-medium ${
+            pagoVencido ? "text-danger" : "text-terracotta"
+          }`}
+        >
+          <Coins className="h-3 w-3 shrink-0" />
+          Cobro: {fmtFecha(pedido.fecha_estimada_pago)}
+          {pagoVencido && " · vencido"}
+        </p>
+      )}
+
+      {pedido.notas && (
+        <p className="mt-1.5 truncate text-[11px] italic text-muted-foreground">
+          {pedido.notas}
+        </p>
+      )}
+
       {/* Acciones según estado */}
-      <div className="mt-4 flex items-end justify-between border-t pt-3">
-        <div className="flex gap-4">
+      <div className="mt-2.5 flex items-center justify-between border-t pt-2.5">
+        <div className="flex gap-3">
           {estado === "pendiente" && (
             <>
               <button
                 type="button"
                 disabled={pending}
                 onClick={() => cambiar("entregado")}
-                className="flex flex-col items-center gap-1 disabled:opacity-50"
+                className="flex flex-col items-center gap-0.5 disabled:opacity-50"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-success text-white shadow-sm">
-                  <Check className="h-5 w-5" />
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-success text-white shadow-sm">
+                  <Check className="h-4 w-4" />
                 </span>
                 <span className="text-[10px] font-semibold text-success">Cobrar</span>
               </button>
@@ -191,10 +187,10 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
                 type="button"
                 disabled={pending}
                 onClick={() => setCobrarOpen(true)}
-                className="flex flex-col items-center gap-1 disabled:opacity-50"
+                className="flex flex-col items-center gap-0.5 disabled:opacity-50"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-terracotta text-white shadow-sm">
-                  <Coins className="h-5 w-5" />
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-terracotta text-white shadow-sm">
+                  <Coins className="h-4 w-4" />
                 </span>
                 <span className="text-[10px] font-semibold text-terracotta">Por cobrar</span>
               </button>
@@ -202,10 +198,10 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
                 type="button"
                 disabled={pending}
                 onClick={() => cambiar("cancelado")}
-                className="flex flex-col items-center gap-1 disabled:opacity-50"
+                className="flex flex-col items-center gap-0.5 disabled:opacity-50"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-sm">
-                  <X className="h-5 w-5" />
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground shadow-sm">
+                  <X className="h-4 w-4" />
                 </span>
                 <span className="text-[10px] font-semibold text-muted-foreground">Cancelar</span>
               </button>
@@ -217,10 +213,10 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
               type="button"
               disabled={pending}
               onClick={() => cambiar("entregado")}
-              className="flex flex-col items-center gap-1 disabled:opacity-50"
+              className="flex flex-col items-center gap-0.5 disabled:opacity-50"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-success text-white shadow-sm">
-                <Check className="h-5 w-5" />
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-success text-white shadow-sm">
+                <Check className="h-4 w-4" />
               </span>
               <span className="text-[10px] font-semibold text-success">Pagado</span>
             </button>
