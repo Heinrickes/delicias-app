@@ -98,6 +98,36 @@ export type Database = {
         }
         Relationships: []
       }
+      compras_planificadas: {
+        Row: {
+          creado_en: string | null
+          descripcion: string
+          estado: string | null
+          fecha_plan: string
+          id: string
+          notas: string | null
+          proveedor: string | null
+        }
+        Insert: {
+          creado_en?: string | null
+          descripcion: string
+          estado?: string | null
+          fecha_plan: string
+          id?: string
+          notas?: string | null
+          proveedor?: string | null
+        }
+        Update: {
+          creado_en?: string | null
+          descripcion?: string
+          estado?: string | null
+          fecha_plan?: string
+          id?: string
+          notas?: string | null
+          proveedor?: string | null
+        }
+        Relationships: []
+      }
       insumos: {
         Row: {
           activo: boolean
@@ -297,30 +327,6 @@ export type Database = {
           },
         ]
       }
-      push_subscriptions: {
-        Row: {
-          auth: string
-          creado_en: string
-          endpoint: string
-          id: string
-          p256dh: string
-        }
-        Insert: {
-          auth: string
-          creado_en?: string
-          endpoint: string
-          id?: string
-          p256dh: string
-        }
-        Update: {
-          auth?: string
-          creado_en?: string
-          endpoint?: string
-          id?: string
-          p256dh?: string
-        }
-        Relationships: []
-      }
       producciones: {
         Row: {
           cantidad: number
@@ -415,6 +421,30 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          creado_en: string
+          endpoint: string
+          id: string
+          p256dh: string
+        }
+        Insert: {
+          auth: string
+          creado_en?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+        }
+        Update: {
+          auth?: string
+          creado_en?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+        }
+        Relationships: []
+      }
       ventas: {
         Row: {
           cantidad: number
@@ -490,10 +520,7 @@ export type Database = {
         Args: { p_estado: string; p_fecha_pago: string; p_id: string }
         Returns: undefined
       }
-      confirmar_produccion: {
-        Args: { p_id: string }
-        Returns: undefined
-      }
+      confirmar_produccion: { Args: { p_id: string }; Returns: undefined }
       crear_venta: {
         Args: {
           p_cliente_id: string

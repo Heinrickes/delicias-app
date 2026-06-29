@@ -6,7 +6,7 @@ export const revalidate = 0;
 
 async function getData() {
   const supabase = await createClient();
-  const [pedidosRes, produccionesRes, productosRes] = await Promise.all([
+  const [pedidosRes, produccionesRes, productosRes, comprasRes] = await Promise.all([
     supabase
       .from("pedidos")
       .select(
@@ -23,6 +23,10 @@ async function getData() {
       .eq("activo", true)
       .eq("tipo", "simple")
       .order("nombre"),
+    supabase
+      .from("compras_planificadas")
+      .select("id, fecha_plan, descripcion, proveedor, estado")
+      .order("fecha_plan"),
   ]);
 
   const eventos: EventoCalendario[] = [];
@@ -73,6 +77,17 @@ async function getData() {
     });
   }
 
+  for (const c of comprasRes.data ?? []) {
+    eventos.push({
+      tipo: "compra",
+      fecha: c.fecha_plan.slice(0, 10),
+      titulo: c.descripcion,
+      detalle: c.proveedor ? `Proveedor: ${c.proveedor}` : "Compra de insumos",
+      refId: c.id,
+      completado: c.estado === "realizada",
+    });
+  }
+
   return { eventos, productos: productosRes.data ?? [] };
 }
 
@@ -90,8 +105,8 @@ export default async function CalendarioPage() {
             Calendario
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Entregas, cobros y producciones agendadas. Toca un día para ver el
-            detalle.
+            Entregas, cobros, producciones y compras planificadas. Toca un día
+            para ver el detalle.
           </p>
         </header>
 

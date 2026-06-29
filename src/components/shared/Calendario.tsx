@@ -9,6 +9,7 @@ import {
   Check,
   Factory,
   Plus,
+  ShoppingCart,
   Trash2,
   Truck,
 } from "lucide-react";
@@ -19,7 +20,13 @@ import {
   confirmarProduccion,
   eliminarProduccion,
 } from "@/lib/actions/producciones";
+import {
+  agendarCompra,
+  completarCompra,
+  eliminarCompra,
+} from "@/lib/actions/compras";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { NumericInput } from "@/components/ui/numeric-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,7 +48,7 @@ import {
 import { cn } from "@/lib/utils";
 import { LABELS, LOCALE } from "@/lib/constants";
 
-export type TipoEvento = "entrega" | "cobro" | "produccion";
+export type TipoEvento = "entrega" | "cobro" | "produccion" | "compra";
 
 export type EventoCalendario = {
   tipo: TipoEvento;
@@ -76,6 +83,12 @@ const META: Record<
     chip: "bg-success/15 text-success",
     icon: Factory,
   },
+  compra: {
+    label: "Compras",
+    dot: "bg-terracotta",
+    chip: "bg-terracotta/15 text-terracotta",
+    icon: ShoppingCart,
+  },
 };
 
 const DIAS_SEMANA = ["L", "M", "M", "J", "V", "S", "D"];
@@ -97,7 +110,7 @@ export function Calendario({
   const [mes, setMes] = useState(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
   const [diaSel, setDiaSel] = useState<string | null>(ymd(hoy));
   const [filtros, setFiltros] = useState<Set<TipoEvento>>(
-    new Set(["entrega", "cobro", "produccion"])
+    new Set(["entrega", "cobro", "produccion", "compra"])
   );
   const [mostrarCompletados, setMostrarCompletados] = useState(false);
 
@@ -107,6 +120,14 @@ export function Calendario({
   const [cant, setCant] = useState("");
   const [fecha, setFecha] = useState(ymd(hoy));
   const [nota, setNota] = useState("");
+
+  // Agendar compra
+  const [openCompra, setOpenCompra] = useState(false);
+  const [compraDesc, setCompraDesc] = useState("");
+  const [compraProv, setCompraProv] = useState("");
+  const [compraFecha, setCompraFecha] = useState(ymd(hoy));
+  const [compraNota, setCompraNota] = useState("");
+
   const [isPending, startTransition] = useTransition();
 
   const eventosVisibles = useMemo(
@@ -133,11 +154,10 @@ export function Calendario({
       return n;
     });
 
-  // Construir la grilla del mes (semana inicia lunes)
   const year = mes.getFullYear();
   const month = mes.getMonth();
   const primerDia = new Date(year, month, 1);
-  const offset = (primerDia.getDay() + 6) % 7; // Lun=0
+  const offset = (primerDia.getDay() + 6) % 7;
   const diasEnMes = new Date(year, month + 1, 0).getDate();
   const celdas: (Date | null)[] = [];
   for (let i = 0; i < offset; i++) celdas.push(null);
@@ -157,9 +177,24 @@ export function Calendario({
       if (r.ok) {
         toast.success("Producción agendada");
         setOpenAgendar(false);
-        setProdSel("");
-        setCant("");
-        setNota("");
+        setProdSel(""); setCant(""); setNota("");
+      } else toast.error(r.error);
+    });
+  };
+
+  const handleAgendarCompra = (e: React.FormEvent) => {
+    e.preventDefault();
+    startTransition(async () => {
+      const r = await agendarCompra({
+        fecha_plan: compraFecha,
+        descripcion: compraDesc,
+        proveedor: compraProv,
+        notas: compraNota,
+      });
+      if (r.ok) {
+        toast.success("Compra planificada");
+        setOpenCompra(false);
+        setCompraDesc(""); setCompraProv(""); setCompraNota("");
       } else toast.error(r.error);
     });
   };
@@ -175,6 +210,20 @@ export function Calendario({
     startTransition(async () => {
       const r = await eliminarProduccion(id);
       if (r.ok) toast.success("Producción eliminada");
+      else toast.error(r.error);
+    });
+
+  const handleCompletarCompra = (id: string) =>
+    startTransition(async () => {
+      const r = await completarCompra(id);
+      if (r.ok) toast.success("Compra marcada como realizada");
+      else toast.error(r.error);
+    });
+
+  const handleEliminarCompra = (id: string) =>
+    startTransition(async () => {
+      const r = await eliminarCompra(id);
+      if (r.ok) toast.success("Compra eliminada");
       else toast.error(r.error);
     });
 
@@ -207,10 +256,16 @@ export function Calendario({
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <Button size="sm" onClick={() => setOpenAgendar(true)}>
-            <Plus className="h-4 w-4" />
-            Agendar producción
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => setOpenCompra(true)}>
+              <ShoppingCart className="h-4 w-4" />
+              Planificar compra
+            </Button>
+            <Button size="sm" onClick={() => setOpenAgendar(true)}>
+              <Plus className="h-4 w-4" />
+              Agendar producción
+            </Button>
+          </div>
         </div>
 
         {/* Filtros */}
@@ -278,12 +333,7 @@ export function Calendario({
                   esHoy && !sel && "border-foreground/15"
                 )}
               >
-                <span
-                  className={cn(
-                    "tabular-nums",
-                    esHoy ? "font-bold text-primary" : "text-foreground"
-                  )}
-                >
+                <span className={cn("tabular-nums", esHoy ? "font-bold text-primary" : "text-foreground")}>
                   {d.getDate()}
                 </span>
                 <span className="flex gap-0.5">
@@ -327,18 +377,11 @@ export function Calendario({
               return (
                 <li key={i} className={cn("rounded-lg border p-3", e.completado && "opacity-60")}>
                   <div className="flex items-start gap-2">
-                    <span
-                      className={cn(
-                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-                        m.chip
-                      )}
-                    >
+                    <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-md", m.chip)}>
                       <Icon className="h-4 w-4" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {e.titulo}
-                      </p>
+                      <p className="truncate text-sm font-medium text-foreground">{e.titulo}</p>
                       <p className="text-xs text-muted-foreground">{e.detalle}</p>
                     </div>
                     {e.completado && (
@@ -349,27 +392,29 @@ export function Calendario({
                   </div>
                   {!e.completado && (
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {e.tipo === "produccion" ? (
+                      {e.tipo === "produccion" && (
                         <>
-                          <Button
-                            size="sm"
-                            disabled={isPending}
-                            onClick={() => handleConfirmar(e.refId)}
-                          >
+                          <Button size="sm" disabled={isPending} onClick={() => handleConfirmar(e.refId)}>
                             <Check className="h-4 w-4" />
                             Confirmar
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={isPending}
-                            onClick={() => handleEliminar(e.refId)}
-                            title={LABELS.eliminar}
-                          >
+                          <Button size="sm" variant="ghost" disabled={isPending} onClick={() => handleEliminar(e.refId)} title={LABELS.eliminar}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </>
-                      ) : (
+                      )}
+                      {e.tipo === "compra" && (
+                        <>
+                          <Button size="sm" disabled={isPending} onClick={() => handleCompletarCompra(e.refId)}>
+                            <Check className="h-4 w-4" />
+                            Realizada
+                          </Button>
+                          <Button size="sm" variant="ghost" disabled={isPending} onClick={() => handleEliminarCompra(e.refId)} title={LABELS.eliminar}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                      {(e.tipo === "entrega" || e.tipo === "cobro") && (
                         <Link
                           href={e.tipo === "cobro" ? "/por-cobrar" : "/pedidos"}
                           className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
@@ -386,7 +431,7 @@ export function Calendario({
         )}
       </div>
 
-      {/* Diálogo agendar producción */}
+      {/* Diálogo: agendar producción */}
       <Dialog open={openAgendar} onOpenChange={setOpenAgendar}>
         <DialogContent>
           <DialogHeader>
@@ -404,9 +449,7 @@ export function Calendario({
               >
                 <SelectTrigger className="h-9 w-full">
                   <span className={cn("flex-1 text-left text-sm", !prodSel && "text-muted-foreground")}>
-                    {prodSel
-                      ? productos.find((p) => p.id === prodSel)?.nombre ?? "Elige…"
-                      : "Elige…"}
+                    {prodSel ? productos.find((p) => p.id === prodSel)?.nombre ?? "Elige…" : "Elige…"}
                   </span>
                 </SelectTrigger>
                 <SelectContent>
@@ -420,39 +463,78 @@ export function Calendario({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="cal-cant">Cantidad</Label>
-                <NumericInput
-                  id="cal-cant"
-                  min="1"
-                  value={cant}
-                  onChange={setCant}
-                  placeholder="12"
-                  required
-                />
+                <NumericInput id="cal-cant" min="1" value={cant} onChange={setCant} placeholder="12" required />
               </div>
               <div className="space-y-1.5">
                 <Label>Fecha</Label>
-                <DatePicker
-                  value={fecha}
-                  onChange={setFecha}
-                  placeholder="Seleccionar fecha"
-                />
+                <DatePicker value={fecha} onChange={setFecha} placeholder="Seleccionar fecha" />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cal-nota">{LABELS.notas} (opcional)</Label>
+              <Textarea id="cal-nota" value={nota} onChange={(e) => setNota(e.target.value)} rows={2} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setOpenAgendar(false)}>Cancelar</Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? LABELS.guardando : "Agendar"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo: planificar compra */}
+      <Dialog open={openCompra} onOpenChange={setOpenCompra}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Planificar compra</DialogTitle>
+            <DialogDescription>
+              Agenda una compra de insumos para una fecha específica.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAgendarCompra} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="comp-desc">¿Qué vas a comprar?</Label>
+              <Input
+                id="comp-desc"
+                required
+                value={compraDesc}
+                onChange={(e) => setCompraDesc(e.target.value)}
+                placeholder="Ej: Harina, azúcar y mantequilla"
+                autoFocus
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Fecha</Label>
+                <DatePicker value={compraFecha} onChange={setCompraFecha} placeholder="Seleccionar fecha" />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="comp-prov">Proveedor (opcional)</Label>
+                <Input
+                  id="comp-prov"
+                  value={compraProv}
+                  onChange={(e) => setCompraProv(e.target.value)}
+                  placeholder="Nombre del local"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="comp-nota">{LABELS.notas} (opcional)</Label>
               <Textarea
-                id="cal-nota"
-                value={nota}
-                onChange={(e) => setNota(e.target.value)}
+                id="comp-nota"
+                value={compraNota}
+                onChange={(e) => setCompraNota(e.target.value)}
                 rows={2}
+                placeholder="Cantidades, marcas específicas..."
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setOpenAgendar(false)}>
-                Cancelar
-              </Button>
+              <Button type="button" variant="ghost" onClick={() => setOpenCompra(false)}>Cancelar</Button>
               <Button type="submit" disabled={isPending}>
-                {isPending ? LABELS.guardando : "Agendar"}
+                <ShoppingCart className="h-4 w-4" />
+                {isPending ? LABELS.guardando : "Planificar"}
               </Button>
             </DialogFooter>
           </form>
