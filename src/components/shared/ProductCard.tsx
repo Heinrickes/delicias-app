@@ -167,7 +167,7 @@ export function ProductCard({
             </Badge>
           )}
         </div>
-        {/* Botón para cambiar imagen en modo edición */}
+        {/* Overlay de cambio de imagen (solo en edición) */}
         {isEditing && (
           <button
             type="button"
@@ -189,47 +189,6 @@ export function ProductCard({
           className="hidden"
           onChange={handleImageChange}
         />
-      </div>
-
-      <div className="absolute right-2.5 top-2.5 flex gap-1 rounded-md bg-card/80 p-1 shadow-sm backdrop-blur">
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => setIsEditing((v) => !v)}
-          title={LABELS.editar}
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                disabled={deleting}
-                title={LABELS.eliminar}
-                className="hover:bg-destructive/10 hover:text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            }
-          />
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Se ocultará &quot;{producto.nombre}&quot; del inventario. El
-                historial de ventas se conserva.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{LABELS.cancelar}</AlertDialogCancel>
-              <AlertDialogAction onClick={handleBorrar}>
-                {LABELS.eliminar}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
 
       <div className="p-3">
@@ -334,8 +293,8 @@ export function ProductCard({
               </span>
             </div>
 
-            {!esDelicia && (
-              <div className="mt-3 border-t pt-2.5">
+            <div className="mt-3 flex items-center gap-1.5 border-t pt-2.5">
+              {!esDelicia && (
                 <StockMovimientoDialog
                   producto={{
                     id: producto.id,
@@ -347,7 +306,7 @@ export function ProductCard({
                     <Button
                       variant={stockBajo ? "default" : "outline"}
                       size="sm"
-                      className="w-full gap-1.5"
+                      className="flex-1 gap-1.5"
                       title={stockBajo ? "Reponer stock urgente" : "Gestionar movimientos de stock"}
                     >
                       {stockBajo ? (
@@ -361,8 +320,46 @@ export function ProductCard({
                     </Button>
                   }
                 />
-              </div>
-            )}
+              )}
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setIsEditing((v) => !v)}
+                title={LABELS.editar}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={deleting}
+                      title={LABELS.eliminar}
+                      className="hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  }
+                />
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Se ocultará &quot;{producto.nombre}&quot; del inventario. El
+                      historial de ventas se conserva.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{LABELS.cancelar}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleBorrar}>
+                      {LABELS.eliminar}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </>
         )}
       </div>
