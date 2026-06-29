@@ -173,7 +173,7 @@ export function ProductCard({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploadingImage}
-            className="absolute inset-0 flex items-center justify-center bg-foreground/30 opacity-0 transition-opacity group-hover:opacity-100"
+            className="absolute inset-0 flex items-center justify-center bg-foreground/30"
           >
             {uploadingImage ? (
               <Loader2 className="h-5 w-5 animate-spin text-white" />
@@ -191,7 +191,7 @@ export function ProductCard({
         />
       </div>
 
-      <div className="absolute right-2.5 top-2.5 flex gap-1 rounded-md bg-card/80 p-1 opacity-0 shadow-sm backdrop-blur transition-opacity group-hover:opacity-100">
+      <div className="absolute right-2.5 top-2.5 flex gap-1 rounded-md bg-card/80 p-1 shadow-sm backdrop-blur">
         <Button
           variant="ghost"
           size="icon-sm"
