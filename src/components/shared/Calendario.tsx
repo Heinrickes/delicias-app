@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Check,
   Factory,
-  Plus,
   ShoppingCart,
   Trash2,
   Truck,
@@ -16,35 +15,14 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 import {
-  agendarProduccion,
   confirmarProduccion,
   eliminarProduccion,
 } from "@/lib/actions/producciones";
 import {
-  agendarCompra,
   completarCompra,
   eliminarCompra,
 } from "@/lib/actions/compras";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { NumericInput } from "@/components/ui/numeric-input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
-import { DatePicker } from "@/components/ui/date-picker";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { LABELS, LOCALE } from "@/lib/constants";
 
@@ -114,20 +92,6 @@ export function Calendario({
   );
   const [mostrarCompletados, setMostrarCompletados] = useState(false);
 
-  // Agendar producción
-  const [openAgendar, setOpenAgendar] = useState(false);
-  const [prodSel, setProdSel] = useState("");
-  const [cant, setCant] = useState("");
-  const [fecha, setFecha] = useState(ymd(hoy));
-  const [nota, setNota] = useState("");
-
-  // Agendar compra
-  const [openCompra, setOpenCompra] = useState(false);
-  const [compraDesc, setCompraDesc] = useState("");
-  const [compraProv, setCompraProv] = useState("");
-  const [compraFecha, setCompraFecha] = useState(ymd(hoy));
-  const [compraNota, setCompraNota] = useState("");
-
   const [isPending, startTransition] = useTransition();
 
   const eventosVisibles = useMemo(
@@ -164,40 +128,6 @@ export function Calendario({
   for (let d = 1; d <= diasEnMes; d++) celdas.push(new Date(year, month, d));
 
   const eventosDelDia = diaSel ? porFecha.get(diaSel) ?? [] : [];
-
-  const handleAgendar = (e: React.FormEvent) => {
-    e.preventDefault();
-    startTransition(async () => {
-      const r = await agendarProduccion({
-        producto_id: prodSel,
-        cantidad: parseInt(cant) || 0,
-        fecha_plan: fecha,
-        nota,
-      });
-      if (r.ok) {
-        toast.success("Producción agendada");
-        setOpenAgendar(false);
-        setProdSel(""); setCant(""); setNota("");
-      } else toast.error(r.error);
-    });
-  };
-
-  const handleAgendarCompra = (e: React.FormEvent) => {
-    e.preventDefault();
-    startTransition(async () => {
-      const r = await agendarCompra({
-        fecha_plan: compraFecha,
-        descripcion: compraDesc,
-        proveedor: compraProv,
-        notas: compraNota,
-      });
-      if (r.ok) {
-        toast.success("Compra planificada");
-        setOpenCompra(false);
-        setCompraDesc(""); setCompraProv(""); setCompraNota("");
-      } else toast.error(r.error);
-    });
-  };
 
   const handleConfirmar = (id: string) =>
     startTransition(async () => {
@@ -254,16 +184,6 @@ export function Calendario({
               aria-label="Mes siguiente"
             >
               <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={() => setOpenCompra(true)}>
-              <ShoppingCart className="h-4 w-4" />
-              Planificar compra
-            </Button>
-            <Button size="sm" onClick={() => setOpenAgendar(true)}>
-              <Plus className="h-4 w-4" />
-              Agendar producción
             </Button>
           </div>
         </div>
@@ -431,115 +351,6 @@ export function Calendario({
         )}
       </div>
 
-      {/* Diálogo: agendar producción */}
-      <Dialog open={openAgendar} onOpenChange={setOpenAgendar}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Agendar producción</DialogTitle>
-            <DialogDescription>
-              Planifica cuánto producir y cuándo. Al confirmarla se sumará al stock.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleAgendar} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Producto</Label>
-              <Select
-                value={prodSel || "none"}
-                onValueChange={(v) => setProdSel(!v || v === "none" ? "" : v)}
-              >
-                <SelectTrigger className="h-9 w-full">
-                  <span className={cn("flex-1 text-left text-sm", !prodSel && "text-muted-foreground")}>
-                    {prodSel ? productos.find((p) => p.id === prodSel)?.nombre ?? "Elige…" : "Elige…"}
-                  </span>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Elige…</SelectItem>
-                  {productos.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="cal-cant">Cantidad</Label>
-                <NumericInput id="cal-cant" min="1" value={cant} onChange={setCant} placeholder="12" required />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Fecha</Label>
-                <DatePicker value={fecha} onChange={setFecha} placeholder="Seleccionar fecha" />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="cal-nota">{LABELS.notas} (opcional)</Label>
-              <Textarea id="cal-nota" value={nota} onChange={(e) => setNota(e.target.value)} rows={2} />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setOpenAgendar(false)}>Cancelar</Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? LABELS.guardando : "Agendar"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Diálogo: planificar compra */}
-      <Dialog open={openCompra} onOpenChange={setOpenCompra}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Planificar compra</DialogTitle>
-            <DialogDescription>
-              Agenda una compra de insumos para una fecha específica.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleAgendarCompra} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="comp-desc">¿Qué vas a comprar?</Label>
-              <Input
-                id="comp-desc"
-                required
-                value={compraDesc}
-                onChange={(e) => setCompraDesc(e.target.value)}
-                placeholder="Ej: Harina, azúcar y mantequilla"
-                autoFocus
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Fecha</Label>
-                <DatePicker value={compraFecha} onChange={setCompraFecha} placeholder="Seleccionar fecha" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="comp-prov">Proveedor (opcional)</Label>
-                <Input
-                  id="comp-prov"
-                  value={compraProv}
-                  onChange={(e) => setCompraProv(e.target.value)}
-                  placeholder="Nombre del local"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="comp-nota">{LABELS.notas} (opcional)</Label>
-              <Textarea
-                id="comp-nota"
-                value={compraNota}
-                onChange={(e) => setCompraNota(e.target.value)}
-                rows={2}
-                placeholder="Cantidades, marcas específicas..."
-              />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setOpenCompra(false)}>Cancelar</Button>
-              <Button type="submit" disabled={isPending}>
-                <ShoppingCart className="h-4 w-4" />
-                {isPending ? LABELS.guardando : "Planificar"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

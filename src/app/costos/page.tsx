@@ -26,14 +26,13 @@ export default async function CostosPage() {
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-              Insumos
+              Despensa
             </p>
             <h2 className="mt-1 font-serif text-3xl leading-tight text-foreground">
-              Costos
+              Compras
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Tu despensa de insumos: controla stock, costos y arma la lista de
-              compras.
+              Tu despensa: compra insumos y controla tu stock.
             </p>
           </div>
           <div className="flex justify-end">

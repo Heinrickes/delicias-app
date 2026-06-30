@@ -31,7 +31,7 @@ const PRIMARY = [
 const SECONDARY = [
   { href: "/por-cobrar", label: "Por cobrar", icon: Banknote },
   { href: "/stock", label: "Inventario", icon: Boxes },
-  { href: "/costos", label: "Costos", icon: ShoppingCart },
+  { href: "/costos", label: "Compras", icon: ShoppingCart },
   { href: "/calendario", label: "Calendario", icon: CalendarDays },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/reportes", label: "Estadísticas", icon: BarChart3 },
