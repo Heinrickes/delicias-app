@@ -1,10 +1,11 @@
 import { ReactNode } from "react";
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { ChefHat, Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { MainNav } from "@/components/shared/MainNav";
 import { MobileNav } from "@/components/shared/MobileNav";
 import { UserNav } from "@/components/shared/UserNav";
+import { AgendarProduccionDialog } from "@/components/shared/AgendarProduccionDialog";
 import Image from "next/image";
 import { NotificacionesBell } from "@/components/shared/NotificacionesBell";
 import { getAvisos } from "@/lib/notificaciones-data";
@@ -18,8 +19,23 @@ async function getUserEmail() {
   return user?.email;
 }
 
+async function getProductosSimples() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("productos")
+    .select("id, nombre")
+    .eq("activo", true)
+    .eq("tipo", "simple")
+    .order("nombre");
+  return (data ?? []) as { id: string; nombre: string }[];
+}
+
 export async function AppShell({ children }: { children: ReactNode }) {
-  const [email, avisos] = await Promise.all([getUserEmail(), getAvisos()]);
+  const [email, avisos, productos] = await Promise.all([
+    getUserEmail(),
+    getAvisos(),
+    getProductosSimples(),
+  ]);
 
   const badgeCounts = avisos.reduce(
     (acc, a) => {
@@ -68,6 +84,19 @@ export async function AppShell({ children }: { children: ReactNode }) {
         <section className="min-w-0 flex-1 bg-surface px-5 pb-24 pt-6 md:px-8 lg:px-10 lg:pb-10">
           <div className="mb-6 flex items-center justify-end gap-2">
             <NotificacionesBell avisos={avisos} />
+            <AgendarProduccionDialog
+              productos={productos}
+              trigger={
+                <button
+                  type="button"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label="Agendar producción"
+                  title="Agendar producción"
+                >
+                  <ChefHat className="h-4 w-4" />
+                </button>
+              }
+            />
             <Link
               href="/ajustes"
               className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-foreground"

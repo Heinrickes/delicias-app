@@ -2,11 +2,9 @@ import Link from "next/link";
 import { AppShell } from "@/components/shared/AppShell";
 import { Badge } from "@/components/ui/badge";
 import { StockGrid } from "@/components/shared/StockGrid";
-import { AgendarProduccionDialog } from "@/components/shared/AgendarProduccionDialog";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoneda, LOCALE } from "@/lib/constants";
 import {
-  ChefHat,
   Coins,
   PackageCheck,
   AlertTriangle,
@@ -132,33 +130,20 @@ export default async function StockPage({
               .
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <AgendarProduccionDialog
-              productos={productos.map((p) => ({ id: p.id, nombre: p.nombre }))}
-              trigger={
-                <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-                    <ChefHat className="h-6 w-6" />
-                  </span>
-                  <span className="text-[11px] font-semibold text-primary">Agendar prod.</span>
-                </button>
-              }
-            />
-            <div className="flex flex-wrap gap-2">
-              {DIAS.map((d) => (
-                <Link
-                  key={d.key}
-                  href={`/stock?dias=${d.key}`}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
-                    d.key === diasKey
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-muted-foreground ring-1 ring-foreground/10 hover:text-foreground"
-                  }`}
-                >
-                  {d.label}
-                </Link>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {DIAS.map((d) => (
+              <Link
+                key={d.key}
+                href={`/stock?dias=${d.key}`}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                  d.key === diasKey
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground ring-1 ring-foreground/10 hover:text-foreground"
+                }`}
+              >
+                {d.label}
+              </Link>
+            ))}
           </div>
         </header>
 
