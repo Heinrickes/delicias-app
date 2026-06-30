@@ -43,6 +43,16 @@ type InsumoStats = {
   costo_unitario: number;
 };
 
+type CompraStats = {
+  id: string;
+  total: number;
+  estado: string;
+  proveedor: string | null;
+  fecha_completada: string | null;
+  fecha_planificada: string | null;
+  items: { nombre: string; cantidad: number; precio_unitario: number }[];
+};
+
 type Props = {
   transacciones: Transaccion[];
   ventasPorDia: { dia: string; ingresos: number; costos: number }[];
@@ -50,6 +60,7 @@ type Props = {
   topVendidos: { nombre: string; unidades: number }[];
   topProducidos: { nombre: string; unidades: number }[];
   insumos: InsumoStats[];
+  compras: CompraStats[];
   metrics: {
     totalRango: number;
     margenRango: number;
@@ -91,6 +102,7 @@ export function TabsEstadisticas({
   topVendidos,
   topProducidos,
   insumos,
+  compras,
   metrics,
   nDias,
 }: Props) {
@@ -103,6 +115,10 @@ export function TabsEstadisticas({
 
   const valorDespensa = insumos.reduce((s, i) => s + i.costo_unitario * i.stock, 0);
   const insumosbajoMinimo = insumos.filter((i) => i.stock < i.stock_minimo);
+  const gastoDelPeriodo = compras
+    .filter((c) => c.estado === "completado")
+    .reduce((s, c) => s + c.total, 0);
+  const comprasPendientes = compras.filter((c) => c.estado === "planificado").length;
   const costoPorVenta =
     metrics.unidadesRango > 0
       ? Math.round(
@@ -330,16 +346,17 @@ export function TabsEstadisticas({
               icon={<ShoppingCart className="h-4 w-4" />}
             />
             <Metric
-              label="Margen del período"
-              value={formatMoneda(metrics.margenRango)}
-              helper={`${margenPct}% sobre ventas`}
-              icon={<Percent className="h-4 w-4" />}
+              label="Gasto del período"
+              value={formatMoneda(gastoDelPeriodo)}
+              helper="en compras completadas"
+              icon={<Receipt className="h-4 w-4" />}
             />
             <Metric
-              label="Costo estimado / venta"
-              value={costoPorVenta > 0 ? formatMoneda(costoPorVenta) : "—"}
-              helper="promedio por unidad"
-              icon={<Receipt className="h-4 w-4" />}
+              label="Compras pendientes"
+              value={comprasPendientes.toString()}
+              helper={comprasPendientes > 0 ? "planificadas" : "todo al día"}
+              danger={comprasPendientes > 0}
+              icon={<ShoppingCart className="h-4 w-4" />}
             />
             <Metric
               label="Insumos bajo mínimo"
@@ -349,6 +366,62 @@ export function TabsEstadisticas({
               icon={<AlertTriangle className="h-4 w-4" />}
             />
           </div>
+
+          {/* Feed de compras del período */}
+          <section>
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Compras del período ({compras.length})
+            </h3>
+            {compras.length === 0 ? (
+              <div className="rounded-xl border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">
+                Sin compras registradas. Inicia una compra desde Compras.
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+                {compras.map((c, idx) => {
+                  const nombres = (c.items ?? [])
+                    .slice(0, 3)
+                    .map((i) => i.nombre)
+                    .join(", ");
+                  const fecha = c.estado === "completado"
+                    ? c.fecha_completada
+                    : c.fecha_planificada;
+                  return (
+                    <div
+                      key={c.id}
+                      className={cn("flex items-center gap-3 px-4 py-3", idx !== 0 && "border-t")}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">
+                          {nombres || "Compra de insumos"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {c.proveedor ? `${c.proveedor} · ` : ""}
+                          {fecha
+                            ? new Date(fecha + "T00:00:00").toLocaleDateString(LOCALE, { day: "2-digit", month: "short" })
+                            : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          className={
+                            c.estado === "completado"
+                              ? "bg-success/15 text-[10px] text-success"
+                              : "bg-gold/15 text-[10px] text-gold"
+                          }
+                        >
+                          {c.estado === "completado" ? "Completada" : "Planificada"}
+                        </Badge>
+                        <span className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
+                          {formatMoneda(c.total)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
 
           {insumos.length === 0 ? (
             <div className="rounded-xl border border-dashed bg-card p-12 text-center">

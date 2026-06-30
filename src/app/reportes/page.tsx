@@ -70,7 +70,15 @@ async function getData(rango: RangoKey) {
     .eq("tipo", "produccion");
   if (desde) prodQ = prodQ.gte("fecha", desde.toISOString());
 
-  const [ventasRes, prodRes, productosRes, hoyRes, mesRes, transRes, insumosRes] =
+  let comprasQ = supabase
+    .from("compras")
+    .select("id, total, estado, proveedor, fecha_completada, fecha_planificada, items")
+    .in("estado", ["completado", "planificado"])
+    .order("creado_en", { ascending: false })
+    .limit(50);
+  if (desde) comprasQ = comprasQ.gte("creado_en", desde.toISOString());
+
+  const [ventasRes, prodRes, productosRes, hoyRes, mesRes, transRes, insumosRes, comprasRes] =
     await Promise.all([
       ventasQ,
       prodQ,
@@ -93,6 +101,7 @@ async function getData(rango: RangoKey) {
         .select("id, nombre, unidad, stock, stock_minimo, costo_unitario")
         .eq("activo", true)
         .order("nombre"),
+      comprasQ,
     ]);
 
   const ventas = ventasRes.data ?? [];
@@ -147,6 +156,16 @@ async function getData(rango: RangoKey) {
     .sort((a, b) => b.unidades - a.unidades)
     .slice(0, 10);
 
+  const compras = (comprasRes.data ?? []) as {
+    id: string;
+    total: number;
+    estado: string;
+    proveedor: string | null;
+    fecha_completada: string | null;
+    fecha_planificada: string | null;
+    items: { nombre: string; cantidad: number; precio_unitario: number }[];
+  }[];
+
   return {
     transacciones: (transRes.data ?? []) as Transaccion[],
     ventasPorDia,
@@ -154,6 +173,7 @@ async function getData(rango: RangoKey) {
     topVendidos,
     topProducidos,
     insumos: insumosRes.data ?? [],
+    compras,
     metrics: {
       totalRango: ventas.reduce((s, v) => s + v.total, 0),
       margenRango: ventas.reduce((s, v) => s + (v.total - v.costo_total), 0),
