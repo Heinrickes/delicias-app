@@ -103,6 +103,34 @@ export async function ajustarStockInsumo(
   }
 }
 
+/** Suma `cantidad` al stock actual del insumo (sin tocar el resto de los campos). */
+export async function incrementarStockInsumo(
+  id: string,
+  cantidad: number
+): Promise<ActionResult> {
+  try {
+    if (!Number.isFinite(cantidad) || cantidad <= 0)
+      return { ok: false, error: "Cantidad inválida" };
+    const supabase = await requireUser();
+    const { data, error: fetchErr } = await supabase
+      .from("insumos")
+      .select("stock")
+      .eq("id", id)
+      .single();
+    if (fetchErr || !data) return { ok: false, error: "Insumo no encontrado" };
+    const { error } = await supabase
+      .from("insumos")
+      .update({ stock: (data.stock as number) + cantidad })
+      .eq("id", id);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/costos");
+    revalidatePath("/stock");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Error" };
+  }
+}
+
 /** Marca/desmarca manualmente un insumo en la lista de compras. */
 export async function toggleEnLista(
   id: string,

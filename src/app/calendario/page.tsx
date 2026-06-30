@@ -24,9 +24,10 @@ async function getData() {
       .eq("tipo", "simple")
       .order("nombre"),
     supabase
-      .from("compras_planificadas")
-      .select("id, fecha_plan, descripcion, proveedor, estado")
-      .order("fecha_plan"),
+      .from("compras")
+      .select("id, fecha_planificada, items, total, proveedor, estado")
+      .eq("estado", "planificado")
+      .order("fecha_planificada"),
   ]);
 
   const eventos: EventoCalendario[] = [];
@@ -78,13 +79,26 @@ async function getData() {
   }
 
   for (const c of comprasRes.data ?? []) {
+    if (!c.fecha_planificada) continue;
+    const items = (c.items ?? []) as { nombre: string }[];
+    const nombres = items
+      .slice(0, 3)
+      .map((i) => i.nombre)
+      .join(", ");
+    const titulo = nombres || "Compra de insumos";
+    const detalle = [
+      c.proveedor ? `${c.proveedor}` : null,
+      c.total > 0 ? `$${c.total.toLocaleString("es-CL")}` : null,
+    ]
+      .filter(Boolean)
+      .join(" · ") || "Compra planificada";
     eventos.push({
       tipo: "compra",
-      fecha: c.fecha_plan.slice(0, 10),
-      titulo: c.descripcion,
-      detalle: c.proveedor ? `Proveedor: ${c.proveedor}` : "Compra de insumos",
+      fecha: c.fecha_planificada.slice(0, 10),
+      titulo,
+      detalle,
       refId: c.id,
-      completado: c.estado === "realizada",
+      completado: false,
     });
   }
 

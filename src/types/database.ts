@@ -98,6 +98,42 @@ export type Database = {
         }
         Relationships: []
       }
+      compras: {
+        Row: {
+          creado_en: string | null
+          estado: string
+          fecha_completada: string | null
+          fecha_planificada: string | null
+          id: string
+          items: Json
+          notas: string | null
+          proveedor: string | null
+          total: number
+        }
+        Insert: {
+          creado_en?: string | null
+          estado?: string
+          fecha_completada?: string | null
+          fecha_planificada?: string | null
+          id?: string
+          items?: Json
+          notas?: string | null
+          proveedor?: string | null
+          total?: number
+        }
+        Update: {
+          creado_en?: string | null
+          estado?: string
+          fecha_completada?: string | null
+          fecha_planificada?: string | null
+          id?: string
+          items?: Json
+          notas?: string | null
+          proveedor?: string | null
+          total?: number
+        }
+        Relationships: []
+      }
       compras_planificadas: {
         Row: {
           creado_en: string | null

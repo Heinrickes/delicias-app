@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/shared/AppShell";
 import { CostosManager, InsumoFormDialog, type Insumo } from "@/components/shared/CostosManager";
+import { TiendaCompra } from "@/components/shared/TiendaCompra";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoneda } from "@/lib/constants";
 import { Boxes, Coins, Plus, ShoppingCart } from "lucide-react";
@@ -19,6 +20,16 @@ export default async function CostosPage() {
   const porComprar = insumos.filter(
     (i) => i.stock < i.stock_minimo || i.en_lista
   ).length;
+
+  const insumosParaTienda = insumos.map((i) => ({
+    id: i.id,
+    nombre: i.nombre,
+    unidad: i.unidad,
+    costo_unitario: i.costo_unitario,
+    en_lista: i.en_lista,
+    stock: i.stock,
+    stock_minimo: i.stock_minimo,
+  }));
 
   return (
     <AppShell>
@@ -64,6 +75,10 @@ export default async function CostosPage() {
           />
         </section>
 
+        {/* Drawer de compras */}
+        <TiendaCompra insumos={insumosParaTienda} />
+
+        {/* Catálogo / gestión de insumos */}
         <CostosManager insumos={insumos} />
       </div>
     </AppShell>
