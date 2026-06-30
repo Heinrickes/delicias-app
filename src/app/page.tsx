@@ -15,6 +15,7 @@ import {
   Package,
   Percent,
   Receipt,
+  ShoppingCart,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
@@ -95,7 +96,13 @@ async function getResumen() {
     inicioHoy.getMonth() + 1
   ).padStart(2, "0")}-${String(inicioHoy.getDate()).padStart(2, "0")}`;
 
-  const [ventasRes, pedidosRes, insumosRes] = await Promise.all([
+  const inicioMes = new Date(inicioHoy.getFullYear(), inicioHoy.getMonth(), 1);
+  const inicioMesStr = inicioMes.toISOString().slice(0, 10);
+  const finMesStr = new Date(inicioHoy.getFullYear(), inicioHoy.getMonth() + 1, 1)
+    .toISOString()
+    .slice(0, 10);
+
+  const [ventasRes, pedidosRes, insumosRes, comprasMesRes] = await Promise.all([
     supabase
       .from("ventas")
       .select("total, cantidad, fecha")
@@ -106,12 +113,19 @@ async function getResumen() {
       .in("estado", ["pendiente", "por_cobrar"]),
     supabase
       .from("insumos")
-      .select("costo_unitario, stock")
+      .select("costo_unitario, stock, stock_minimo, en_lista")
       .eq("activo", true),
+    supabase
+      .from("compras")
+      .select("total")
+      .eq("estado", "completado")
+      .gte("fecha_completada", inicioMesStr)
+      .lt("fecha_completada", finMesStr),
   ]);
 
   const ventas = ventasRes.data ?? [];
   const pedidos = pedidosRes.data ?? [];
+  const insumos = insumosRes.data ?? [];
   const esHoy = (f: string) => new Date(f) >= inicioHoy;
 
   const ingresoHoy = ventas
@@ -128,12 +142,19 @@ async function getResumen() {
     .filter((p) => p.estado === "por_cobrar")
     .reduce((s, p) => s + p.total, 0);
 
-  const valorDespensa = (insumosRes.data ?? []).reduce(
+  const valorDespensa = insumos.reduce(
     (s, i) => s + i.costo_unitario * i.stock,
     0
   );
+  const gastosMes = (comprasMesRes.data ?? []).reduce(
+    (s, c) => s + c.total,
+    0
+  );
+  const porComprar = insumos.filter(
+    (i) => i.stock < i.stock_minimo || i.en_lista
+  ).length;
 
-  return { ingresoHoy, ingresoAyer, entregasHoy, totalPorCobrar, valorDespensa };
+  return { ingresoHoy, ingresoAyer, entregasHoy, totalPorCobrar, valorDespensa, gastosMes, porComprar };
 }
 
 export default async function Home({
@@ -150,7 +171,7 @@ export default async function Home({
     getMesData(mes),
     getResumen(),
   ]);
-  const { ingresoHoy, ingresoAyer, entregasHoy, totalPorCobrar, valorDespensa } = resumen;
+  const { ingresoHoy, ingresoAyer, entregasHoy, totalPorCobrar, valorDespensa, gastosMes, porComprar } = resumen;
   const { acumulado, unidades, margen, produccionAcumulada, topProductos } = mesData;
   const simples = productos.filter((p) => p.tipo === "simple");
   const lowStockProducts = simples.filter((p) => p.stock < p.stock_minimo);
@@ -180,7 +201,7 @@ export default async function Home({
           </h2>
         </header>
 
-        <section className="grid grid-cols-2 gap-4 xl:grid-cols-5">
+        <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
           <MetricCard
             label="Ventas hoy"
             value={formatMoneda(ingresoHoy)}
@@ -218,6 +239,21 @@ export default async function Home({
             helper="insumos en stock"
             href="/costos"
             icon={<Receipt className="h-4 w-4" />}
+          />
+          <MetricCard
+            label="Gastos del mes"
+            value={formatMoneda(gastosMes)}
+            helper="en insumos"
+            href="/costos"
+            icon={<ShoppingCart className="h-4 w-4" />}
+          />
+          <MetricCard
+            label="Por comprar"
+            value={porComprar.toString()}
+            helper={porComprar > 0 ? "insumos bajos o en lista" : "todo en orden"}
+            danger={porComprar > 0}
+            href="/costos"
+            icon={<ShoppingCart className="h-4 w-4" />}
           />
         </section>
 
