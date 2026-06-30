@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 import { formatMoneda, LABELS } from "@/lib/constants";
 
 type ComponenteItem = { producto_id: string; nombre: string; cantidad: number };
-type ProductoTienda = {
+export type ProductoTienda = {
   id: string;
   nombre: string;
   precio: number;
@@ -43,7 +43,7 @@ type ProductoTienda = {
   tipo: "simple" | "delicia";
   componentes: ComponenteItem[];
 };
-type ClienteOpt = { id: string; nombre: string };
+export type ClienteOpt = { id: string; nombre: string };
 
 // Fondos decorativos provisionales (hasta tener fotos reales por producto).
 const VISUALS = [
@@ -63,12 +63,21 @@ function fechaPagoSugerida() {
 export function TiendaVenta({
   productos,
   clientes,
+  open: openProp,
+  onOpenChange,
 }: {
   productos: ProductoTienda[];
   clientes: ClienteOpt[];
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
 }) {
+  const isControlled = openProp !== undefined;
   const [items, setItems] = useState<VentaItemInput[]>([]);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [_drawerOpen, _setDrawerOpen] = useState(false);
+  const drawerOpen = isControlled ? openProp! : _drawerOpen;
+  const setDrawerOpen = isControlled
+    ? onOpenChange!
+    : _setDrawerOpen;
   const [fase, setFase] = useState<"bolsa" | "pago">("bolsa");
 
   const [clienteMode, setClienteMode] = useState<"existente" | "nuevo">(
@@ -259,21 +268,23 @@ export function TiendaVenta({
         <p className="text-sm text-muted-foreground">
           {productos.length} {productos.length === 1 ? "producto" : "productos"}
         </p>
-        <button
-          type="button"
-          onClick={() => setDrawerOpen(true)}
-          className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10"
-        >
-          <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-            <ShoppingBag className="h-6 w-6" />
-            {totalUnidades > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">
-                {totalUnidades}
-              </span>
-            )}
-          </span>
-          <span className="text-[11px] font-semibold text-primary">Tu bolsa</span>
-        </button>
+        {!isControlled && (
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10"
+          >
+            <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+              <ShoppingBag className="h-6 w-6" />
+              {totalUnidades > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">
+                  {totalUnidades}
+                </span>
+              )}
+            </span>
+            <span className="text-[11px] font-semibold text-primary">Tu bolsa</span>
+          </button>
+        )}
       </div>
 
       {/* Catálogo */}

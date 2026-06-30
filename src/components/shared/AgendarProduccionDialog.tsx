@@ -100,7 +100,7 @@ export function AgendarProduccionDialog({
                     {prodSel ? productos.find((p) => p.id === prodSel)?.nombre ?? "Elige…" : "Elige…"}
                   </span>
                 </SelectTrigger>
-                <SelectContent position="popper" className="max-h-52 overflow-y-auto">
+                <SelectContent className="max-h-52 overflow-y-auto">
                   <SelectItem value="none">Elige…</SelectItem>
                   {productos.map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>

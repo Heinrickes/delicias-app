@@ -42,7 +42,16 @@ function ymdHoy() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export function TiendaCompra({ insumos }: { insumos: InsumoTienda[] }) {
+export function TiendaCompra({
+  insumos,
+  open: openProp,
+  onOpenChange,
+}: {
+  insumos: InsumoTienda[];
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+}) {
+  const isControlled = openProp !== undefined;
   const getItemsIniciales = (): ItemCarrito[] =>
     insumos
       .filter((i) => i.en_lista)
@@ -55,7 +64,9 @@ export function TiendaCompra({ insumos }: { insumos: InsumoTienda[] }) {
       }));
 
   const [items, setItems] = useState<ItemCarrito[]>(getItemsIniciales);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [_drawerOpen, _setDrawerOpen] = useState(false);
+  const drawerOpen = isControlled ? openProp! : _drawerOpen;
+  const setDrawerOpen = isControlled ? onOpenChange! : _setDrawerOpen;
   const [fase, setFase] = useState<"compra" | "confirmar">("compra");
   const [proveedor, setProveedor] = useState("");
   const [notas, setNotas] = useState("");
@@ -183,21 +194,23 @@ export function TiendaCompra({ insumos }: { insumos: InsumoTienda[] }) {
         <p className="text-sm text-muted-foreground">
           {insumos.length} {insumos.length === 1 ? "insumo" : "insumos"}
         </p>
-        <button
-          type="button"
-          onClick={() => setDrawerOpen(true)}
-          className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10"
-        >
-          <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-            <ShoppingCart className="h-6 w-6" />
-            {totalUnidades > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">
-                {totalUnidades}
-              </span>
-            )}
-          </span>
-          <span className="text-[11px] font-semibold text-primary">Tu compra</span>
-        </button>
+        {!isControlled && (
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10"
+          >
+            <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
+              <ShoppingCart className="h-6 w-6" />
+              {totalUnidades > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">
+                  {totalUnidades}
+                </span>
+              )}
+            </span>
+            <span className="text-[11px] font-semibold text-primary">Tu compra</span>
+          </button>
+        )}
       </div>
 
       {/* Catálogo de insumos */}
