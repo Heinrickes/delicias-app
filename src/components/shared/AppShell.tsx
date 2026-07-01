@@ -50,15 +50,15 @@ export async function AppShell({ children }: { children: ReactNode }) {
       <div className="mx-auto flex max-w-[1540px] flex-col overflow-hidden rounded-xl border bg-surface shadow-[0_24px_80px_rgba(75,45,30,0.10)] lg:min-h-[calc(100vh-1.5rem)] lg:flex-row">
         <aside className="border-b bg-surface px-5 py-5 lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r">
           <div className="lg:mb-8 lg:block">
-            <div className="grid grid-cols-3 items-center gap-3 lg:flex lg:flex-col lg:items-center lg:gap-1 lg:text-center">
+            <div className="grid grid-cols-[2fr_3fr] items-center gap-3 lg:flex lg:flex-col lg:items-center lg:gap-1 lg:text-center">
               <Image
                 src="/logo-oficial.png"
                 alt=""
-                width={160}
-                height={160}
-                className="col-span-1 h-auto w-full max-w-28 shrink-0 justify-self-start object-contain lg:col-span-1 lg:mx-auto lg:h-32 lg:w-32 lg:max-w-none"
+                width={180}
+                height={180}
+                className="h-auto w-full max-w-36 shrink-0 justify-self-start object-contain lg:mx-auto lg:h-32 lg:w-32 lg:max-w-none"
               />
-              <div className="col-span-2 text-center lg:col-span-1 lg:mt-2">
+              <div className="text-center lg:mt-2">
                 <p className="font-serif text-xl leading-[1.05] text-primary sm:text-[1.35rem]">
                   Delicias Caseras
                 </p>
