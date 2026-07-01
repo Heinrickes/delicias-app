@@ -50,15 +50,15 @@ export async function AppShell({ children }: { children: ReactNode }) {
       <div className="mx-auto flex max-w-[1540px] flex-col overflow-hidden rounded-xl border bg-surface shadow-[0_24px_80px_rgba(75,45,30,0.10)] lg:min-h-[calc(100vh-1.5rem)] lg:flex-row">
         <aside className="border-b bg-surface px-5 py-5 lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r">
           <div className="flex items-center justify-between gap-4 lg:mb-8 lg:block">
-            <div className="flex items-center gap-3 lg:flex-col lg:items-start lg:gap-1">
+            <div className="flex items-center gap-3 lg:flex-col lg:items-center lg:gap-1 lg:text-center">
               <Image
                 src="/logo-oficial.png"
                 alt=""
-                width={56}
-                height={56}
-                className="h-14 w-14 shrink-0 object-contain"
+                width={140}
+                height={140}
+                className="h-14 w-14 shrink-0 object-contain lg:h-32 lg:w-32"
               />
-              <div className="lg:mt-1">
+              <div className="lg:mt-2">
                 <p className="font-serif text-[1.35rem] leading-[1.02] text-primary">
                   Delicias Caseras
                 </p>
