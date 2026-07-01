@@ -106,6 +106,7 @@ export type Database = {
           fecha_planificada: string | null
           id: string
           items: Json
+          nombre: string | null
           notas: string | null
           proveedor: string | null
           total: number
@@ -117,6 +118,7 @@ export type Database = {
           fecha_planificada?: string | null
           id?: string
           items?: Json
+          nombre?: string | null
           notas?: string | null
           proveedor?: string | null
           total?: number
@@ -128,6 +130,7 @@ export type Database = {
           fecha_planificada?: string | null
           id?: string
           items?: Json
+          nombre?: string | null
           notas?: string | null
           proveedor?: string | null
           total?: number
@@ -171,6 +174,7 @@ export type Database = {
           creado_en: string
           en_lista: boolean
           id: string
+          imagen_url: string | null
           nombre: string
           proveedor: string | null
           stock: number
@@ -183,6 +187,7 @@ export type Database = {
           creado_en?: string
           en_lista?: boolean
           id?: string
+          imagen_url?: string | null
           nombre: string
           proveedor?: string | null
           stock?: number
@@ -195,6 +200,7 @@ export type Database = {
           creado_en?: string
           en_lista?: boolean
           id?: string
+          imagen_url?: string | null
           nombre?: string
           proveedor?: string | null
           stock?: number

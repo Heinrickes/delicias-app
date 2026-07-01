@@ -55,6 +55,7 @@ export type Insumo = {
   costo_unitario: number;
   proveedor: string | null;
   en_lista: boolean;
+  imagen_url?: string | null;
 };
 
 const EMPTY = {

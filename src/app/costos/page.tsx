@@ -1,5 +1,4 @@
 import { AppShell } from "@/components/shared/AppShell";
-import { type Insumo } from "@/components/shared/CostosManager";
 import { createClient } from "@/lib/supabase/server";
 import { ComprasView } from "./ComprasView";
 
@@ -7,19 +6,22 @@ export const revalidate = 0;
 
 export default async function CostosPage() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("insumos")
-    .select("id, nombre, unidad, stock, stock_minimo, costo_unitario, proveedor, en_lista")
-    .eq("activo", true)
-    .order("nombre");
 
-  const insumos = (data ?? []) as Insumo[];
-  const valor = insumos.reduce((s, i) => s + i.stock * i.costo_unitario, 0);
-  const porComprar = insumos.filter(
-    (i) => i.stock < i.stock_minimo || i.en_lista
-  ).length;
+  const [insumosRes, listasRes] = await Promise.all([
+    supabase
+      .from("insumos")
+      .select("id, nombre, unidad, stock, stock_minimo, costo_unitario, en_lista, imagen_url")
+      .eq("activo", true)
+      .order("nombre"),
+    supabase
+      .from("compras")
+      .select("id, nombre, estado, total, proveedor, notas, fecha_planificada, fecha_completada, items")
+      .eq("estado", "planificado")
+      .order("creado_en", { ascending: false })
+      .limit(30),
+  ]);
 
-  const insumosParaTienda = insumos.map((i) => ({
+  const insumosParaTienda = (insumosRes.data ?? []).map((i) => ({
     id: i.id,
     nombre: i.nombre,
     unidad: i.unidad,
@@ -27,16 +29,24 @@ export default async function CostosPage() {
     en_lista: i.en_lista,
     stock: i.stock,
     stock_minimo: i.stock_minimo,
+    imagen_url: i.imagen_url ?? null,
   }));
+
+  const listas = (listasRes.data ?? []) as {
+    id: string;
+    nombre: string | null;
+    estado: string;
+    total: number;
+    proveedor: string | null;
+    notas: string | null;
+    fecha_planificada: string | null;
+    fecha_completada: string | null;
+    items: { insumo_id: string; nombre: string; cantidad: number; precio_unitario: number }[];
+  }[];
 
   return (
     <AppShell>
-      <ComprasView
-        insumos={insumos}
-        insumosParaTienda={insumosParaTienda}
-        valor={valor}
-        porComprar={porComprar}
-      />
+      <ComprasView insumosParaTienda={insumosParaTienda} listas={listas} />
     </AppShell>
   );
 }

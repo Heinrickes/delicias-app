@@ -1,23 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { ShoppingCart, Plus, Boxes, Coins } from "lucide-react";
+import { ShoppingCart, Plus, ClipboardList } from "lucide-react";
 import { TiendaCompra, type InsumoTienda } from "@/components/shared/TiendaCompra";
-import { CostosManager, InsumoFormDialog, type Insumo } from "@/components/shared/CostosManager";
+import { InsumoFormDialog } from "@/components/shared/CostosManager";
+import { ListaCompraModal, type ListaCompra } from "@/components/shared/ListaCompraModal";
 import { formatMoneda } from "@/lib/constants";
 
 export function ComprasView({
-  insumos,
   insumosParaTienda,
-  valor,
-  porComprar,
+  listas,
 }: {
-  insumos: Insumo[];
   insumosParaTienda: InsumoTienda[];
-  valor: number;
-  porComprar: number;
+  listas: ListaCompra[];
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [listaAbierta, setListaAbierta] = useState<ListaCompra | null>(null);
 
   return (
     <div className="space-y-8">
@@ -60,64 +58,77 @@ export function ComprasView({
         </div>
       </header>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Metric label="Insumos" value={insumos.length.toString()} icon={<Boxes className="h-4 w-4" />} />
-        <Metric
-          label="Valor en despensa"
-          value={formatMoneda(valor)}
-          icon={<Coins className="h-4 w-4" />}
-        />
-        <Metric
-          label="Por comprar"
-          value={porComprar.toString()}
-          icon={<ShoppingCart className="h-4 w-4" />}
-          danger={porComprar > 0}
-        />
-      </section>
-
       <TiendaCompra
         insumos={insumosParaTienda}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
       />
 
-      <CostosManager insumos={insumos} />
-    </div>
-  );
-}
+      {/* Mis listas de compra */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <ClipboardList className="h-5 w-5 text-muted-foreground" />
+          <h3 className="text-lg font-semibold text-foreground">
+            Mis listas de compra
+            {listas.length > 0 && (
+              <span className="ml-2 text-sm font-normal text-muted-foreground">
+                ({listas.length})
+              </span>
+            )}
+          </h3>
+        </div>
 
-function Metric({
-  label,
-  value,
-  icon,
-  danger = false,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  danger?: boolean;
-}) {
-  return (
-    <div className="rounded-xl bg-card p-3 ring-1 ring-foreground/10 sm:p-5">
-      <div className="flex items-start gap-2">
-        <span
-          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${
-            danger ? "bg-danger/10 text-danger" : "bg-background text-gold"
-          }`}
-        >
-          {icon}
-        </span>
-        <p className="min-w-0 text-xs font-semibold uppercase leading-tight tracking-wide text-muted-foreground">
-          {label}
-        </p>
-      </div>
-      <p
-        className={`mt-3 text-2xl font-semibold tabular-nums ${
-          danger ? "text-danger" : "text-foreground"
-        }`}
-      >
-        {value}
-      </p>
+        {listas.length === 0 ? (
+          <div className="rounded-xl border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">
+            Aún no hay listas. Agrega insumos al carrito y planifica tu compra.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {listas.map((lista) => (
+              <button
+                key={lista.id}
+                type="button"
+                onClick={() => setListaAbierta(lista)}
+                className="flex flex-col gap-3 rounded-xl bg-card p-4 text-left ring-1 ring-gold/30 transition-shadow hover:shadow-[0_8px_24px_rgba(75,45,30,0.08)]"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-medium text-foreground leading-snug">
+                    {lista.nombre || "Lista sin nombre"}
+                  </p>
+                  <span className="shrink-0 rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-semibold text-gold">
+                    Planificada
+                  </span>
+                </div>
+                <div className="flex items-end justify-between">
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-muted-foreground">
+                      {lista.items.length} {lista.items.length === 1 ? "insumo" : "insumos"}
+                      {lista.proveedor ? ` · ${lista.proveedor}` : ""}
+                    </p>
+                    {lista.fecha_planificada && (
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(lista.fecha_planificada).toLocaleDateString("es-CL", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </p>
+                    )}
+                  </div>
+                  <span className="text-lg font-bold tabular-nums text-foreground">
+                    {formatMoneda(lista.total)}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <ListaCompraModal
+        lista={listaAbierta}
+        open={!!listaAbierta}
+        onOpenChange={(v) => { if (!v) setListaAbierta(null); }}
+      />
     </div>
   );
 }

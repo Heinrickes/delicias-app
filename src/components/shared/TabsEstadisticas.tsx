@@ -338,7 +338,13 @@ export function TabsEstadisticas({
       {/* ── Tab Costos ── */}
       {tab === "costos" && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
+            <Metric
+              label="Insumos activos"
+              value={insumos.length.toString()}
+              helper="en despensa"
+              icon={<Boxes className="h-4 w-4" />}
+            />
             <Metric
               label="Valor en despensa"
               value={formatMoneda(valorDespensa)}

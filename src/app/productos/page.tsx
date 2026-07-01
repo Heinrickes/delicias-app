@@ -47,7 +47,7 @@ export default async function ProductosPage() {
               el stock de cada producto desde su tarjeta cuando se acabe.
             </p>
           </div>
-          <div className="flex justify-between gap-1">
+          <div className="flex justify-end gap-1">
             <DeliciaFormDialog
               productos={productosSimples}
               categorias={categorias}

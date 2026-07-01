@@ -52,7 +52,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between gap-4 lg:mb-8 lg:block">
             <div className="flex items-center gap-3 lg:flex-col lg:items-start lg:gap-1">
               <Image
-                src="/logo-emblema.png"
+                src="/logo-oficial.png"
                 alt=""
                 width={56}
                 height={56}
@@ -89,20 +89,25 @@ export async function AppShell({ children }: { children: ReactNode }) {
               trigger={
                 <button
                   type="button"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-foreground"
+                  className="group relative flex h-9 w-9 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-foreground"
                   aria-label="Agendar producción"
-                  title="Agendar producción"
                 >
                   <ChefHat className="h-4 w-4" />
+                  <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[100] -translate-x-1/2 whitespace-nowrap rounded-lg border bg-card px-2.5 py-1 text-[11px] font-semibold tracking-wide text-foreground shadow-lg opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                    Agendar producción
+                  </span>
                 </button>
               }
             />
             <Link
               href="/ajustes"
-              className="flex h-9 w-9 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-foreground"
+              className="group relative flex h-9 w-9 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-foreground"
               aria-label="Ajustes"
             >
               <Settings className="h-4 w-4" />
+              <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[100] -translate-x-1/2 whitespace-nowrap rounded-lg border bg-card px-2.5 py-1 text-[11px] font-semibold tracking-wide text-foreground shadow-lg opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                Ajustes
+              </span>
             </Link>
             <UserNav email={email} />
           </div>

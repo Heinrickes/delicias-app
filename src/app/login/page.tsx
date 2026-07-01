@@ -40,12 +40,12 @@ export default function LoginPage() {
       <div className="relative w-full max-w-md overflow-hidden rounded-lg border bg-card px-8 pb-8 pt-5 shadow-[0_18px_60px_rgba(81,51,35,0.08)]">
         <div className="mb-8 flex flex-col items-center text-center">
           <Image
-            src="/logo-emblema.png"
+            src="/logo-oficial.png"
             alt="Delicias Caseras · Chocolate artesanal"
-            width={160}
-            height={160}
+            width={200}
+            height={200}
             priority
-            className="h-40 w-40 object-contain"
+            className="h-48 w-48 object-contain"
           />
           <h1 className="mt-2 font-serif text-3xl leading-tight text-foreground">
             Delicias Caseras

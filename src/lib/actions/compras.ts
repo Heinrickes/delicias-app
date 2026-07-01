@@ -30,7 +30,8 @@ export async function crearCompra(
   items: CompraItem[],
   total: number,
   proveedor?: string,
-  notas?: string
+  notas?: string,
+  nombre?: string
 ): Promise<ActionResult<{ id: string }>> {
   try {
     if (!items.length) return { ok: false, error: "Agrega al menos un insumo" };
@@ -42,6 +43,7 @@ export async function crearCompra(
       .insert({
         items,
         total,
+        nombre: nombre?.trim() || null,
         proveedor: proveedor?.trim() || null,
         notas: notas?.trim() || null,
         estado: "completado",
@@ -71,7 +73,8 @@ export async function planificarCompra(
   total: number,
   fechaPlanificada: string,
   proveedor?: string,
-  notas?: string
+  notas?: string,
+  nombre?: string
 ): Promise<ActionResult<{ id: string }>> {
   try {
     if (!items.length) return { ok: false, error: "Agrega al menos un insumo" };
@@ -83,6 +86,7 @@ export async function planificarCompra(
       .insert({
         items,
         total,
+        nombre: nombre?.trim() || null,
         proveedor: proveedor?.trim() || null,
         notas: notas?.trim() || null,
         estado: "planificado",
@@ -127,6 +131,39 @@ export async function completarCompra(id: string): Promise<ActionResult> {
 
     if (error) return { ok: false, error: error.message };
 
+    revalidarCompras();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Error" };
+  }
+}
+
+/** Actualiza los precios de los items de una compra planificada. */
+export async function actualizarPreciosCompra(
+  id: string,
+  items: CompraItem[]
+): Promise<ActionResult> {
+  try {
+    const supabase = await requireUser();
+    const total = items.reduce((s, i) => s + i.precio_unitario * i.cantidad, 0);
+    const { error } = await supabase
+      .from("compras")
+      .update({ items, total })
+      .eq("id", id);
+    if (error) return { ok: false, error: error.message };
+    revalidarCompras();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Error" };
+  }
+}
+
+/** Elimina definitivamente una compra (solo planificadas, no toca stock). */
+export async function borrarCompra(id: string): Promise<ActionResult> {
+  try {
+    const supabase = await requireUser();
+    const { error } = await supabase.from("compras").delete().eq("id", id);
+    if (error) return { ok: false, error: error.message };
     revalidarCompras();
     return { ok: true };
   } catch (e) {

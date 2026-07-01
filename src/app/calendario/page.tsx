@@ -25,7 +25,7 @@ async function getData() {
       .order("nombre"),
     supabase
       .from("compras")
-      .select("id, fecha_planificada, items, total, proveedor, estado")
+      .select("id, nombre, fecha_planificada, items, total, proveedor, estado")
       .eq("estado", "planificado")
       .order("fecha_planificada"),
   ]);
@@ -81,11 +81,7 @@ async function getData() {
   for (const c of comprasRes.data ?? []) {
     if (!c.fecha_planificada) continue;
     const items = (c.items ?? []) as { nombre: string }[];
-    const nombres = items
-      .slice(0, 3)
-      .map((i) => i.nombre)
-      .join(", ");
-    const titulo = nombres || "Compra de insumos";
+    const titulo = c.nombre || "Compra de insumos";
     const detalle = [
       c.proveedor ? `${c.proveedor}` : null,
       c.total > 0 ? `$${c.total.toLocaleString("es-CL")}` : null,

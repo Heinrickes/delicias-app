@@ -81,8 +81,8 @@ export function NotificacionesBell({ avisos }: { avisos: Aviso[] }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-foreground"
-        aria-label="Avisos"
+        className="group relative flex h-9 w-9 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-foreground"
+        aria-label="Notificaciones"
       >
         <Bell className="h-4 w-4" />
         {total > 0 && (
@@ -95,6 +95,9 @@ export function NotificacionesBell({ avisos }: { avisos: Aviso[] }) {
             {total}
           </span>
         )}
+        <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[100] -translate-x-1/2 whitespace-nowrap rounded-lg border bg-card px-2.5 py-1 text-[11px] font-semibold tracking-wide text-foreground shadow-lg opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+          Notificaciones
+        </span>
       </button>
 
       {open && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
+import Image from "next/image";
 import {
   ShoppingCart,
   X,
@@ -33,9 +34,18 @@ export type InsumoTienda = {
   en_lista: boolean;
   stock: number;
   stock_minimo: number;
+  imagen_url: string | null;
 };
 
 type ItemCarrito = CompraItem & { precio_str: string };
+
+// Fondos decorativos provisionales (hasta tener fotos reales).
+const VISUALS = [
+  "radial-gradient(circle at 35% 45%, #F3D9B8 0 10%, transparent 11%), radial-gradient(circle at 55% 50%, #F3D9B8 0 11%, transparent 12%), radial-gradient(circle at 72% 45%, #F3D9B8 0 10%, transparent 11%), linear-gradient(135deg, #D5B38D, #F2E5D1)",
+  "radial-gradient(circle at 42% 48%, #3C2117 0 12%, #8A5A3C 13% 16%, transparent 17%), radial-gradient(circle at 60% 44%, #3C2117 0 10%, #8A5A3C 11% 15%, transparent 16%), linear-gradient(135deg, #E7D6C4, #B98C65)",
+  "linear-gradient(90deg, transparent 0 12%, #E8D5B9 13% 22%, #4B2D1E 23% 31%, transparent 32% 36%, #E8D5B9 37% 47%, #4B2D1E 48% 58%, transparent 59%), linear-gradient(135deg, #D2B894, #F7E7CF)",
+  "radial-gradient(circle at 35% 40%, #6D4029 0 9%, transparent 10%), radial-gradient(circle at 55% 52%, #3B2118 0 11%, transparent 12%), radial-gradient(circle at 72% 42%, #8A5A3C 0 9%, transparent 10%), linear-gradient(135deg, #EFE1D2, #B58A68)",
+];
 
 function ymdHoy() {
   const d = new Date();
@@ -52,6 +62,7 @@ export function TiendaCompra({
   onOpenChange?: (v: boolean) => void;
 }) {
   const isControlled = openProp !== undefined;
+
   const getItemsIniciales = (): ItemCarrito[] =>
     insumos
       .filter((i) => i.en_lista)
@@ -68,6 +79,7 @@ export function TiendaCompra({
   const drawerOpen = isControlled ? openProp! : _drawerOpen;
   const setDrawerOpen = isControlled ? onOpenChange! : _setDrawerOpen;
   const [fase, setFase] = useState<"compra" | "confirmar">("compra");
+  const [nombre, setNombre] = useState("");
   const [proveedor, setProveedor] = useState("");
   const [notas, setNotas] = useState("");
   const [planDate, setPlanDate] = useState(ymdHoy());
@@ -89,17 +101,14 @@ export function TiendaCompra({
   };
 
   const totalUnidades = items.reduce((s, i) => s + i.cantidad, 0);
-  const subtotal = items.reduce(
-    (s, i) => s + i.precio_unitario * i.cantidad,
-    0
-  );
+  const subtotal = items.reduce((s, i) => s + i.precio_unitario * i.cantidad, 0);
 
-  const enCarrito = (id: string) =>
-    items.find((i) => i.insumo_id === id)?.cantidad ?? 0;
+  const enCarrito = (id: string) => items.find((i) => i.insumo_id === id)?.cantidad ?? 0;
 
   const reset = () => {
     setItems(getItemsIniciales());
     setFase("compra");
+    setNombre("");
     setProveedor("");
     setNotas("");
     setPlanDate(ymdHoy());
@@ -121,8 +130,7 @@ export function TiendaCompra({
           nombre: ins.nombre,
           cantidad: 1,
           precio_unitario: ins.costo_unitario,
-          precio_str:
-            ins.costo_unitario > 0 ? ins.costo_unitario.toString() : "",
+          precio_str: ins.costo_unitario > 0 ? ins.costo_unitario.toString() : "",
         },
       ];
     });
@@ -158,7 +166,7 @@ export function TiendaCompra({
   const comprarAhora = () => {
     if (!items.length) { toast.error("La lista está vacía"); return; }
     startTransition(async () => {
-      const r = await crearCompra(items, subtotal, proveedor, notas);
+      const r = await crearCompra(items, subtotal, proveedor, notas, nombre);
       if (r.ok) {
         toast.success("Compra registrada · stock actualizado");
         reset();
@@ -176,9 +184,9 @@ export function TiendaCompra({
       return;
     }
     startTransition(async () => {
-      const r = await planificarCompra(items, subtotal, planDate, proveedor, notas);
+      const r = await planificarCompra(items, subtotal, planDate, proveedor, notas, nombre);
       if (r.ok) {
-        toast.success("Compra planificada · aparecerá en el Calendario");
+        toast.success("Lista guardada · aparece en Mis listas");
         reset();
         setDrawerOpen(false);
       } else {
@@ -189,12 +197,12 @@ export function TiendaCompra({
 
   return (
     <>
-      {/* Barra sticky con acceso al carrito */}
-      <div className="sticky top-0 z-20 -mx-1 mb-5 flex items-center justify-between gap-2 bg-surface/95 px-1 py-2 backdrop-blur">
-        <p className="text-sm text-muted-foreground">
-          {insumos.length} {insumos.length === 1 ? "insumo" : "insumos"}
-        </p>
-        {!isControlled && (
+      {/* Barra sticky (solo cuando no hay control externo) */}
+      {!isControlled && (
+        <div className="sticky top-0 z-20 -mx-1 mb-5 flex items-center justify-between gap-2 bg-surface/95 px-1 py-2 backdrop-blur">
+          <p className="text-sm text-muted-foreground">
+            {insumos.length} {insumos.length === 1 ? "insumo" : "insumos"}
+          </p>
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
@@ -210,91 +218,89 @@ export function TiendaCompra({
             </span>
             <span className="text-[11px] font-semibold text-primary">Tu compra</span>
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Catálogo de insumos */}
+      {/* Catálogo — grid de tarjetas igual que Ventas */}
       {insumos.length === 0 ? (
         <div className="rounded-xl border border-dashed bg-card p-12 text-center text-sm text-muted-foreground">
-          No hay insumos. Agrégalos en Costos.
+          No hay insumos. Agrégalos con el botón "Agregar insumo".
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          {insumos.map((ins) => {
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+          {insumos.map((ins, idx) => {
             const cantActual = enCarrito(ins.id);
             const agotado = ins.stock <= 0;
-            const bajo = ins.stock < ins.stock_minimo;
+            const bajo = ins.stock < ins.stock_minimo && !agotado;
             return (
-              <div
+              <button
                 key={ins.id}
-                className="flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10"
+                type="button"
+                onClick={() => agregar(ins)}
+                className="group flex flex-col overflow-hidden rounded-lg bg-card text-left ring-1 ring-foreground/10 transition-shadow hover:shadow-[0_14px_34px_rgba(75,45,30,0.08)]"
               >
-                {/* Info */}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {ins.nombre}
-                    </p>
+                {/* Visual / imagen */}
+                <div
+                  className="relative h-20 bg-cover bg-center sm:h-24"
+                  style={ins.imagen_url ? undefined : { background: VISUALS[idx % VISUALS.length] }}
+                >
+                  {ins.imagen_url && (
+                    <Image
+                      src={ins.imagen_url}
+                      alt={ins.nombre}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 50vw, 33vw"
+                    />
+                  )}
+                  {/* Badges top-left */}
+                  <div className="absolute left-2 top-2 flex flex-wrap gap-1">
                     {ins.en_lista && (
-                      <span className="shrink-0 rounded-full bg-terracotta/15 px-1.5 py-0.5 text-[10px] font-semibold text-terracotta">
+                      <span className="rounded-full bg-terracotta/90 px-1.5 py-0.5 text-[10px] font-semibold text-white">
                         En lista
                       </span>
                     )}
+                    {agotado && (
+                      <span className="rounded-full bg-danger/90 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                        Agotado
+                      </span>
+                    )}
+                    {bajo && (
+                      <span className="rounded-full bg-gold/90 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                        Stock bajo
+                      </span>
+                    )}
                   </div>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {ins.stock} {ins.unidad} · {formatMoneda(ins.costo_unitario)}/{ins.unidad}
-                    {agotado ? (
-                      <span className="ml-1 text-danger">· Agotado</span>
-                    ) : bajo ? (
-                      <span className="ml-1 text-gold">· Stock bajo</span>
-                    ) : null}
-                  </p>
+                  {/* Badge cantidad en carrito (bottom-right) */}
+                  {cantActual > 0 && (
+                    <span className="absolute bottom-2 right-2 flex h-7 min-w-7 items-center justify-center rounded-full bg-terracotta px-1.5 text-[11px] font-bold text-white shadow">
+                      {cantActual}
+                    </span>
+                  )}
                 </div>
-
-                {/* Botón agregar / controles de cantidad */}
-                {cantActual > 0 ? (
-                  <div className="inline-flex items-center rounded-lg border">
-                    <button
-                      type="button"
-                      onClick={() => setCantidad(ins.id, cantActual - 1)}
-                      className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
-                      aria-label="Quitar uno"
+                {/* Info */}
+                <div className="flex flex-1 flex-col p-2.5">
+                  <span className="truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {ins.unidad}
+                  </span>
+                  <h3 className="mt-0.5 line-clamp-2 text-[13px] font-medium leading-snug text-foreground">
+                    {ins.nombre}
+                  </h3>
+                  <div className="mt-1.5 flex items-center justify-between">
+                    <span className="text-sm font-semibold tabular-nums text-foreground">
+                      {formatMoneda(ins.costo_unitario)}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-[11px]",
+                        agotado ? "text-danger" : bajo ? "text-gold" : "text-muted-foreground"
+                      )}
                     >
-                      <Minus className="h-3.5 w-3.5" />
-                    </button>
-                    <input
-                      type="number"
-                      min="1"
-                      value={cantActual}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        if (v === "") return;
-                        const n = parseInt(v, 10);
-                        if (Number.isFinite(n)) setCantidad(ins.id, n);
-                      }}
-                      className="h-8 w-12 border-x bg-transparent text-center text-sm tabular-nums outline-none focus:bg-background/60 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                      aria-label="Cantidad"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setCantidad(ins.id, cantActual + 1)}
-                      className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
-                      aria-label="Agregar uno"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
+                      {ins.stock} {ins.unidad}
+                    </span>
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => agregar(ins)}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
-                    aria-label="Agregar"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
+                </div>
+              </button>
             );
           })}
         </div>
@@ -333,7 +339,6 @@ export function TiendaCompra({
           <div className="flex justify-center pb-2 pt-3 lg:hidden">
             <div className="h-1 w-10 rounded-full bg-foreground/20" />
           </div>
-
           <header className="flex items-center justify-between border-b px-5 py-4">
             <div className="flex items-center gap-2">
               {fase === "confirmar" && (
@@ -347,7 +352,7 @@ export function TiendaCompra({
                 </button>
               )}
               <h2 className="text-lg font-semibold text-foreground">
-                {fase === "compra" ? "Tu compra" : "Confirmar compra"}
+                {fase === "compra" ? "Tu compra" : "Guardar lista"}
               </h2>
               {fase === "compra" && totalUnidades > 0 && (
                 <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-2 text-xs font-bold text-primary-foreground">
@@ -383,7 +388,6 @@ export function TiendaCompra({
                     <p className="truncate text-sm font-medium text-foreground">
                       {i.nombre}
                     </p>
-                    {/* Precio editable inline */}
                     <div className="mt-1 flex items-center gap-1">
                       <span className="text-xs text-muted-foreground">$</span>
                       <input
@@ -481,6 +485,16 @@ export function TiendaCompra({
               </div>
 
               <div className="space-y-1.5">
+                <Label htmlFor="tc-nombre">Nombre de la lista</Label>
+                <Input
+                  id="tc-nombre"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="Ej: Compra semanal, Reposición ingredientes…"
+                />
+              </div>
+
+              <div className="space-y-1.5">
                 <Label htmlFor="tc-prov">Proveedor (opcional)</Label>
                 <Input
                   id="tc-prov"
@@ -515,7 +529,7 @@ export function TiendaCompra({
 
             <footer className="border-t px-5 pb-6 pt-4">
               <div className="mb-4 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total</span>
+                <span className="text-sm text-muted-foreground">Total estimado</span>
                 <span className="text-3xl font-bold tabular-nums text-foreground">
                   {formatMoneda(subtotal)}
                 </span>
