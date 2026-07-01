@@ -49,17 +49,17 @@ export async function AppShell({ children }: { children: ReactNode }) {
     <main className="min-h-screen bg-background p-2 text-foreground md:p-3">
       <div className="mx-auto flex max-w-[1540px] flex-col overflow-hidden rounded-xl border bg-surface shadow-[0_24px_80px_rgba(75,45,30,0.10)] lg:min-h-[calc(100vh-1.5rem)] lg:flex-row">
         <aside className="border-b bg-surface px-5 py-5 lg:flex lg:w-56 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r">
-          <div className="flex items-center justify-between gap-4 lg:mb-8 lg:block">
-            <div className="flex items-center gap-3 lg:flex-col lg:items-center lg:gap-1 lg:text-center">
+          <div className="lg:mb-8 lg:block">
+            <div className="grid grid-cols-3 items-center gap-3 lg:flex lg:flex-col lg:items-center lg:gap-1 lg:text-center">
               <Image
                 src="/logo-oficial.png"
                 alt=""
-                width={140}
-                height={140}
-                className="h-14 w-14 shrink-0 object-contain lg:h-32 lg:w-32"
+                width={160}
+                height={160}
+                className="col-span-1 h-auto w-full max-w-28 shrink-0 justify-self-start object-contain lg:col-span-1 lg:mx-auto lg:h-32 lg:w-32 lg:max-w-none"
               />
-              <div className="lg:mt-2">
-                <p className="font-serif text-[1.35rem] leading-[1.02] text-primary">
+              <div className="col-span-2 text-center lg:col-span-1 lg:mt-2">
+                <p className="font-serif text-xl leading-[1.05] text-primary sm:text-[1.35rem]">
                   Delicias Caseras
                 </p>
                 <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.26em] text-gold">

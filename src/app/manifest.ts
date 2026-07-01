@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    id: "/",
     name: "Delicias Caseras",
     short_name: "Delicias",
     description: "Inventario, stock, pedidos y ventas del taller artesanal",
