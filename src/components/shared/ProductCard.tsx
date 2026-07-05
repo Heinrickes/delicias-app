@@ -150,7 +150,7 @@ export function ProductCard({
     <>
     <div className="group relative overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10 transition-shadow hover:shadow-[0_14px_34px_rgba(75,45,30,0.08)]">
       <div
-        className="relative h-16 bg-cover bg-center"
+        className="relative h-28 bg-cover bg-center sm:h-32"
         style={
           (isEditing ? editImagenUrl : producto.imagen_url)
             ? undefined

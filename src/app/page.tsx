@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { AppShell } from "@/components/shared/AppShell";
 import { MesSelector } from "@/components/shared/MesSelector";
 import { getProductosEnriquecidos } from "@/lib/productos-data";
@@ -188,6 +189,9 @@ export default async function Home({
   const margenPct = acumulado > 0 ? Math.round((margen / acumulado) * 100) : 0;
   const topProducto = topProductos[0];
   const maxUnidades = topProducto?.unidades ?? 0;
+  const topProductoImagen = topProducto
+    ? productos.find((p) => p.nombre === topProducto.nombre)?.imagen_url ?? null
+    : null;
 
   return (
     <AppShell>
@@ -354,6 +358,17 @@ export default async function Home({
             {/* Producto destacado del mes */}
             <div className="relative overflow-hidden rounded-lg border bg-primary p-5 text-primary-foreground shadow-[0_14px_34px_rgba(75,45,30,0.08)]">
               <div className="absolute inset-0 opacity-60 [background:radial-gradient(circle_at_75%_55%,#CDAE86_0_8%,transparent_9%_14%,#7A4A30_15%_28%,transparent_29%),radial-gradient(circle_at_88%_22%,#B8865A_0_7%,transparent_8%),linear-gradient(135deg,#4B2D1E,#7A4A30_55%,#2E1C14)]" />
+              {topProductoImagen ? (
+                <Image
+                  src={topProductoImagen}
+                  alt=""
+                  fill
+                  className="object-cover opacity-30"
+                  sizes="360px"
+                />
+              ) : (
+                <ChartNoAxesCombined className="absolute bottom-4 right-4 h-24 w-24 text-primary-foreground/10" />
+              )}
               <div className="relative max-w-[12rem]">
                 <Sparkles className="h-5 w-5 text-gold" />
                 <p className="mt-8 text-xs font-semibold text-primary-foreground/75">
@@ -368,7 +383,6 @@ export default async function Home({
                     : "El más vendido aparecerá aquí cuando registres ventas."}
                 </p>
               </div>
-              <ChartNoAxesCombined className="absolute bottom-4 right-4 h-24 w-24 text-primary-foreground/10" />
             </div>
           </div>
         </section>
