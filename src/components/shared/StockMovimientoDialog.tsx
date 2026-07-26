@@ -7,7 +7,7 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import { PackagePlus } from "lucide-react";
+import { PackagePlus, Factory, TrendingDown, SlidersHorizontal, AlertTriangle, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   ajustarStock,
@@ -16,6 +16,7 @@ import {
   registrarProduccion,
 } from "@/lib/actions/stock";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { NumericInput } from "@/components/ui/numeric-input";
 import { Label } from "@/components/ui/label";
@@ -33,11 +34,11 @@ import { LABELS } from "@/lib/constants";
 
 type Tipo = "produccion" | "merma" | "ajuste" | "umbral";
 
-const TABS: { tipo: Tipo; label: string }[] = [
-  { tipo: "produccion", label: "Producción" },
-  { tipo: "merma", label: "Merma" },
-  { tipo: "ajuste", label: "Ajuste" },
-  { tipo: "umbral", label: "Umbral" },
+const TABS: { tipo: Tipo; label: string; icon: React.ReactNode }[] = [
+  { tipo: "produccion", label: "Producción", icon: <Factory className="h-4 w-4" /> },
+  { tipo: "merma", label: "Merma", icon: <TrendingDown className="h-4 w-4" /> },
+  { tipo: "ajuste", label: "Ajuste", icon: <SlidersHorizontal className="h-4 w-4" /> },
+  { tipo: "umbral", label: "Umbral", icon: <AlertTriangle className="h-4 w-4" /> },
 ];
 
 const CONFIG: Record<Tipo, { titulo: string; campo: string; placeholder: string }> = {
@@ -142,6 +143,7 @@ export function StockMovimientoDialog({
               <button
                 key={t.tipo}
                 type="button"
+                title={t.label}
                 onClick={() => {
                   setTipo(t.tipo);
                   setValor(
@@ -151,12 +153,13 @@ export function StockMovimientoDialog({
                   );
                 }}
                 className={cn(
-                  "rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
+                  "flex flex-col items-center gap-1 rounded-md px-2 py-1.5 text-[10px] font-medium transition-colors",
                   tipo === t.tipo
                     ? "bg-card text-foreground shadow-sm ring-1 ring-foreground/10"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
+                {t.icon}
                 {t.label}
               </button>
             ))}
@@ -189,9 +192,11 @@ export function StockMovimientoDialog({
           )}
 
           <DialogFooter>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? LABELS.guardando : LABELS.guardar}
-            </Button>
+            <Tooltip content={LABELS.guardar} side="top">
+              <Button type="submit" size="icon-sm" disabled={isPending}>
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              </Button>
+            </Tooltip>
           </DialogFooter>
         </form>
       </DialogContent>

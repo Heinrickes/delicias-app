@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import {
   Banknote,
   BarChart3,
-  Boxes,
   CalendarDays,
   ClipboardList,
   Grid2X2,
@@ -16,6 +15,7 @@ import {
   Receipt,
   ShoppingCart,
   Users,
+  Wheat,
   X,
 } from "lucide-react";
 import { isActive } from "@/components/shared/nav-items";
@@ -30,7 +30,7 @@ const PRIMARY = [
 // Páginas en el drawer (el slot 5 de la barra es el botón "Más")
 const SECONDARY = [
   { href: "/por-cobrar", label: "Por cobrar", icon: Banknote },
-  { href: "/stock", label: "Inventario", icon: Boxes },
+  { href: "/insumos", label: "Insumos", icon: Wheat },
   { href: "/costos", label: "Compras", icon: ShoppingCart },
   { href: "/calendario", label: "Calendario", icon: CalendarDays },
   { href: "/clientes", label: "Clientes", icon: Users },

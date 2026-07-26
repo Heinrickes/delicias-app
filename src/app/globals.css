@@ -186,3 +186,19 @@
       var(--color-background);
   }
 }
+
+.scrollbar-app {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+.scrollbar-app::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-app::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-app::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 9999px;
+}

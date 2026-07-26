@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Check, X, Trash2 } from "lucide-react";
+import { useRef, useState, useTransition } from "react";
+import { Check, X, Trash2, Save, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -21,8 +21,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 import { completarCompra, actualizarPreciosCompra, borrarCompra, type CompraItem } from "@/lib/actions/compras";
-import { formatMoneda } from "@/lib/constants";
+import { formatMoneda, LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export type ListaCompra = {
@@ -48,6 +49,7 @@ export function ListaCompraModal({
 }) {
   const [editItems, setEditItems] = useState<CompraItem[]>([]);
   const [isPending, startTransition] = useTransition();
+  const cerrarRef = useRef<HTMLButtonElement>(null);
 
   if (!lista) return null;
 
@@ -112,9 +114,13 @@ export function ListaCompraModal({
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto sm:max-w-md"
+        initialFocus={cerrarRef}
+        showCloseButton={false}
+      >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 pr-8">
+          <DialogTitle className="flex items-center gap-2">
             <span className="truncate">{titulo}</span>
             <span
               className={cn(
@@ -141,49 +147,75 @@ export function ListaCompraModal({
         </DialogHeader>
 
         {/* Tabla de ítems */}
-        <div className="mt-2 divide-y rounded-lg border">
-          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            <span>Insumo</span>
-            <span className="text-right">Cant.</span>
-            <span className="text-right">Precio</span>
-            <span className="text-right">Total</span>
-          </div>
-          {items.map((item) => (
-            <div
-              key={item.insumo_id}
-              className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-3 px-3 py-2.5"
-            >
-              <span className="truncate text-sm text-foreground">{item.nombre}</span>
-              <span className="text-right text-sm tabular-nums text-muted-foreground">
-                {item.cantidad}
-              </span>
-              {isPlanificada ? (
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  defaultValue={item.precio_unitario || ""}
-                  onBlur={(e) => setPrecio(item.insumo_id, e.target.value)}
-                  placeholder="0"
-                  className="w-20 rounded border border-foreground/15 bg-transparent px-1.5 py-0.5 text-right text-sm tabular-nums outline-none focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                  aria-label="Precio unitario"
-                />
-              ) : (
-                <span className="text-right text-sm tabular-nums text-muted-foreground">
-                  {formatMoneda(item.precio_unitario)}
-                </span>
-              )}
-              <span className="text-right text-sm font-semibold tabular-nums text-foreground">
-                {formatMoneda(item.precio_unitario * item.cantidad)}
-              </span>
-            </div>
-          ))}
-          <div className="flex items-center justify-between px-3 py-3">
-            <span className="text-sm text-muted-foreground">Total</span>
-            <span className="text-lg font-bold tabular-nums text-foreground">
-              {formatMoneda(total)}
-            </span>
-          </div>
+        <div className="overflow-hidden rounded-lg border">
+          <table className="w-full table-fixed border-collapse text-sm">
+            <colgroup>
+              <col />
+              <col className="w-14" />
+              <col className="w-24" />
+              <col className="w-28" />
+            </colgroup>
+            <thead>
+              <tr className="border-b">
+                <th scope="col" className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Insumo
+                </th>
+                <th scope="col" className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Cant.
+                </th>
+                <th scope="col" className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Precio
+                </th>
+                <th scope="col" className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Total
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {items.map((item) => (
+                <tr key={item.insumo_id}>
+                  <td className="px-3 py-2.5">
+                    <span className="block truncate text-sm text-foreground">{item.nombre}</span>
+                  </td>
+                  <td className="px-3 py-2.5 text-right text-sm tabular-nums text-muted-foreground">
+                    {item.cantidad}
+                  </td>
+                  <td className="px-3 py-2.5 text-right">
+                    {isPlanificada ? (
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        defaultValue={item.precio_unitario || ""}
+                        onBlur={(e) => setPrecio(item.insumo_id, e.target.value)}
+                        placeholder="0"
+                        className="h-7 w-20 rounded border border-foreground/15 bg-transparent px-1.5 text-right text-sm tabular-nums outline-none focus:border-primary [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        aria-label="Precio unitario"
+                      />
+                    ) : (
+                      <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
+                        {formatMoneda(item.precio_unitario)}
+                      </span>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-right text-sm font-semibold tabular-nums text-foreground">
+                    {formatMoneda(item.precio_unitario * item.cantidad)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="border-t">
+                <td colSpan={2} className="px-3 py-3 text-sm text-muted-foreground">
+                  Total
+                </td>
+                <td />
+                <td className="whitespace-nowrap px-3 py-3 text-right text-lg font-bold tabular-nums text-foreground">
+                  {formatMoneda(total)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
 
         {lista.notas && (
@@ -191,54 +223,30 @@ export function ListaCompraModal({
         )}
 
         {/* Acciones */}
-        <div className="mt-4 flex flex-col gap-2">
-          {isPlanificada && (
-            <>
-              {editItems.length > 0 && (
-                <Button
-                  variant="outline"
-                  disabled={isPending}
-                  onClick={guardarPrecios}
-                  className="w-full"
-                >
-                  Guardar precios
-                </Button>
-              )}
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={completar}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-success py-3 text-sm font-semibold text-white shadow transition-opacity hover:opacity-90 disabled:opacity-50"
-              >
-                <Check className="h-4 w-4" />
-                Completar compra · stock actualizado
-              </button>
-            </>
-          )}
-
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => handleOpen(false)}
-              className="flex-1"
-            >
-              <X className="mr-1.5 h-4 w-4" />
-              Cerrar
-            </Button>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Tooltip content="Cerrar" side="top">
+              <Button ref={cerrarRef} variant="ghost" size="icon-sm" onClick={() => handleOpen(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </Tooltip>
 
             {isPlanificada && (
               <AlertDialog>
-                <AlertDialogTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      disabled={isPending}
-                      className="text-danger hover:bg-danger/10 hover:text-danger"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  }
-                />
+                <Tooltip content={LABELS.eliminar} side="top">
+                  <AlertDialogTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        disabled={isPending}
+                        className="text-danger hover:bg-danger/10 hover:text-danger"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    }
+                  />
+                </Tooltip>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>¿Eliminar lista?</AlertDialogTitle>
@@ -259,6 +267,35 @@ export function ListaCompraModal({
               </AlertDialog>
             )}
           </div>
+
+          {isPlanificada && (
+            <div className="flex items-center gap-2">
+              <Tooltip content="Guardar precios" side="top">
+                <Button
+                  variant="outline"
+                  disabled={isPending || editItems.length === 0}
+                  onClick={guardarPrecios}
+                  size="icon-sm"
+                >
+                  <Save className="h-4 w-4" />
+                </Button>
+              </Tooltip>
+              <Tooltip content="Completar compra" side="top">
+                <Button
+                  disabled={isPending}
+                  onClick={completar}
+                  size="icon-sm"
+                  className="bg-success text-white hover:bg-success/90"
+                >
+                  {isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                </Button>
+              </Tooltip>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

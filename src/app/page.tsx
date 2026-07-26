@@ -21,6 +21,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { BotanicalAccent } from "@/components/shared/BotanicalAccent";
+import { RotatingPhrase } from "@/components/shared/RotatingPhrase";
+import { obtenerPerfilActual } from "@/lib/actions/perfiles";
 
 type VentaMes = {
   nombre_producto: string;
@@ -167,11 +169,13 @@ export default async function Home({
   const meses = listaMeses(12);
   const mes = meses.some((m) => m.value === mesParam) ? mesParam! : meses[0].value;
 
-  const [productos, mesData, resumen] = await Promise.all([
+  const [productos, mesData, resumen, perfil] = await Promise.all([
     getProductosEnriquecidos(),
     getMesData(mes),
     getResumen(),
+    obtenerPerfilActual(),
   ]);
+  const primerNombre = perfil?.nombre?.trim().split(/\s+/)[0] || null;
   const { ingresoHoy, ingresoAyer, entregasHoy, totalPorCobrar, valorDespensa, gastosMes, porComprar } = resumen;
   const { acumulado, unidades, margen, produccionAcumulada, topProductos } = mesData;
   const simples = productos.filter((p) => p.tipo === "simple");
@@ -201,8 +205,11 @@ export default async function Home({
             Panel
           </p>
           <h2 className="mt-1 font-serif text-3xl leading-tight text-foreground">
-            Resumen de tu taller
+            {primerNombre ? `Hola, ${primerNombre}` : "Resumen de tu taller"}
           </h2>
+          {primerNombre && (
+            <p className="mt-1 text-sm text-muted-foreground">Resumen de tu taller</p>
+          )}
         </header>
 
         <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
@@ -234,7 +241,7 @@ export default async function Home({
               lowStockProducts.length > 0 ? "revisar inventario" : "todo en orden"
             }
             danger={lowStockProducts.length > 0}
-            href="/stock"
+            href="/productos"
             icon={<AlertTriangle className="h-4 w-4" />}
           />
           <MetricCard
@@ -280,24 +287,28 @@ export default async function Home({
               label="Ventas acumuladas"
               value={formatMoneda(acumulado)}
               helper="en el mes"
+              href="/reportes?tab=ventas"
               icon={<TrendingUp className="h-4 w-4" />}
             />
             <MetricCard
               label="Unidades vendidas"
               value={unidades.toString()}
               helper="en el mes"
+              href="/reportes?tab=ventas"
               icon={<Package className="h-4 w-4" />}
             />
             <MetricCard
               label="Margen del mes"
               value={formatMoneda(margen)}
               helper={`${margenPct}% sobre ventas`}
+              href="/reportes?tab=ventas"
               icon={<Percent className="h-4 w-4" />}
             />
             <MetricCard
               label="Producción acumulada"
               value={produccionAcumulada.toString()}
               helper="unidades producidas"
+              href="/reportes?tab=inventario"
               icon={<Factory className="h-4 w-4" />}
             />
           </div>
@@ -394,9 +405,7 @@ export default async function Home({
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-gold">
                 Taller artesanal
               </p>
-              <p className="mt-3 font-serif text-xl leading-8 text-foreground">
-                Cada receta cuenta una historia, cada bocado crea un momento.
-              </p>
+              <RotatingPhrase className="mt-3" />
             </div>
             <p className="font-serif text-lg italic text-muted-foreground">
               Delicias Caseras

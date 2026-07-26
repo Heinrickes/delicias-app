@@ -1,27 +1,12 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
-import Image from "next/image";
-import { Pencil, Trash2, X, Check, PackagePlus, Boxes, ImagePlus, Loader2, Camera } from "lucide-react";
+import { useTransition } from "react";
+import { Pencil, Trash2, PackagePlus, Boxes } from "lucide-react";
 import { toast } from "sonner";
-import { actualizarProducto, eliminarProducto } from "@/lib/actions/productos";
-import { createClient } from "@/lib/supabase/client";
+import { eliminarProducto } from "@/lib/actions/productos";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { NumericInput } from "@/components/ui/numeric-input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -35,6 +20,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { StockMovimientoDialog } from "@/components/shared/StockMovimientoDialog";
+import { ProductFormDialog } from "@/components/shared/ProductFormDialog";
+import { CardPopover } from "@/components/shared/CardPopover";
 import { formatMoneda, LABELS, STOCK_BAJO_UMBRAL } from "@/lib/constants";
 
 type Producto = {
@@ -69,16 +56,6 @@ export function ProductCard({
   categorias?: Categoria[];
   variant?: number;
 }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editNombre, setEditNombre] = useState(producto.nombre);
-  const [editPrecio, setEditPrecio] = useState(producto.precio.toString());
-  const [editCosto, setEditCosto] = useState(producto.costo.toString());
-  const [editCategoria, setEditCategoria] = useState(producto.categoria_id ?? "");
-  const [editImagenUrl, setEditImagenUrl] = useState(producto.imagen_url ?? null);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [imagenDialogOpen, setImagenDialogOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [saving, startSaving] = useTransition();
   const [deleting, startDeleting] = useTransition();
 
   const stock = producto.stock;
@@ -88,43 +65,6 @@ export function ProductCard({
     producto.precio > 0 ? Math.round((margen / producto.precio) * 100) : 0;
   const umbral = producto.stock_minimo ?? STOCK_BAJO_UMBRAL;
   const stockBajo = stock < umbral;
-
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImagenDialogOpen(false);
-    setUploadingImage(true);
-    const supabase = createClient();
-    const ext = file.name.split(".").pop() ?? "jpg";
-    const path = `${producto.id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("productos").upload(path, file, { upsert: true });
-    if (error) {
-      toast.error("Error al subir la imagen");
-      setUploadingImage(false);
-      return;
-    }
-    const { data: { publicUrl } } = supabase.storage.from("productos").getPublicUrl(path);
-    setEditImagenUrl(publicUrl);
-    setUploadingImage(false);
-  };
-
-  const handleGuardarEdicion = () => {
-    startSaving(async () => {
-      const result = await actualizarProducto(producto.id, {
-        nombre: editNombre,
-        precio: parseInt(editPrecio) || 0,
-        costo: esDelicia ? 0 : parseInt(editCosto) || 0,
-        categoria_id: editCategoria || null,
-        imagen_url: editImagenUrl,
-      });
-      if (result.ok) {
-        toast.success("Producto actualizado");
-        setIsEditing(false);
-      } else {
-        toast.error(result.error);
-      }
-    });
-  };
 
   const handleBorrar = () => {
     startDeleting(async () => {
@@ -137,36 +77,17 @@ export function ProductCard({
     });
   };
 
-  const cancelEdit = () => {
-    setIsEditing(false);
-    setEditNombre(producto.nombre);
-    setEditPrecio(producto.precio.toString());
-    setEditCosto(producto.costo.toString());
-    setEditCategoria(producto.categoria_id ?? "");
-    setEditImagenUrl(producto.imagen_url ?? null);
-  };
-
   return (
-    <>
-    <div className="group relative overflow-hidden rounded-lg bg-card ring-1 ring-foreground/10 transition-shadow hover:shadow-[0_14px_34px_rgba(75,45,30,0.08)]">
-      <div
-        className="relative h-28 bg-cover bg-center sm:h-32"
-        style={
-          (isEditing ? editImagenUrl : producto.imagen_url)
-            ? undefined
-            : { background: productVisuals[variant % productVisuals.length] }
-        }
-      >
-        {(isEditing ? editImagenUrl : producto.imagen_url) && (
-          <Image
-            src={(isEditing ? editImagenUrl : producto.imagen_url)!}
-            alt={producto.nombre}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 50vw, 25vw"
-          />
-        )}
-        <div className="absolute left-2.5 top-2.5 flex flex-wrap gap-1">
+    <CardPopover
+      imageUrl={producto.imagen_url ?? null}
+      placeholder={
+        <div
+          className="absolute inset-0"
+          style={{ background: productVisuals[variant % productVisuals.length] }}
+        />
+      }
+      badge={
+        <div className="flex flex-wrap gap-1">
           {esDelicia && (
             <Badge className="bg-primary text-primary-foreground">Delicia</Badge>
           )}
@@ -176,254 +97,102 @@ export function ProductCard({
             </Badge>
           )}
         </div>
-        {/* Overlay de cambio de imagen (solo en edición) */}
-        {isEditing && (
-          <button
-            type="button"
-            onClick={() => setImagenDialogOpen(true)}
-            disabled={uploadingImage}
-            className="absolute inset-0 flex items-center justify-center bg-foreground/30"
-          >
-            {uploadingImage ? (
-              <Loader2 className="h-5 w-5 animate-spin text-white" />
-            ) : (
-              <Camera className="h-5 w-5 text-white drop-shadow" />
-            )}
-          </button>
-        )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={handleImageChange}
-        />
-      </div>
-
-      <div className="p-3">
-        {isEditing ? (
-          <div className="space-y-3">
-            <Input
-              value={editNombre}
-              onChange={(e) => setEditNombre(e.target.value)}
-              placeholder="Nombre del producto"
-            />
-            <div className={`grid gap-2 ${esDelicia ? "grid-cols-1" : "grid-cols-2"}`}>
-              <div className="space-y-1">
-                <span className="text-xs text-muted-foreground">
-                  {LABELS.precio}
-                </span>
-                <NumericInput
-                  value={editPrecio}
-                  onChange={setEditPrecio}
-                  placeholder="Precio"
-                />
-              </div>
-              {!esDelicia && (
-                <div className="space-y-1">
-                  <span className="text-xs text-muted-foreground">
-                    {LABELS.costo}
-                  </span>
-                  <NumericInput
-                    value={editCosto}
-                    onChange={setEditCosto}
-                    placeholder="Costo"
-                  />
-                </div>
-              )}
-            </div>
-            <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">Categoría</span>
-              <Select
-                value={editCategoria || "none"}
-                onValueChange={(v) => setEditCategoria(!v || v === "none" ? "" : v)}
-              >
-                <SelectTrigger className="h-9 w-full">
-                  <span className={cn("flex-1 text-left text-sm", !editCategoria && "text-muted-foreground")}>
-                    {editCategoria
-                      ? categorias.find((c) => c.id === editCategoria)?.nombre ?? "Sin categoría"
-                      : "Sin categoría"}
-                  </span>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin categoría</SelectItem>
-                  {categorias.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex gap-2 pt-1">
-              <Button
-                className="flex-1"
-                onClick={handleGuardarEdicion}
-                disabled={saving}
-              >
-                <Check className="h-4 w-4" />
-                {saving ? LABELS.guardando : LABELS.guardar}
-              </Button>
-              <Button variant="outline" size="icon" onClick={cancelEdit}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <h3 className="line-clamp-2 text-sm font-medium leading-snug text-foreground">
-              {producto.nombre}
-            </h3>
-
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-base font-semibold tabular-nums text-foreground">
-                {formatMoneda(producto.precio)}
-              </span>
-              <span
-                className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium ${stockBajo ? "bg-danger/10 text-danger" : "bg-background text-muted-foreground"}`}
-              >
-                <Boxes className="h-3 w-3" />
-                {stock}
-              </span>
-            </div>
-
-            {esDelicia && producto.componentes && producto.componentes.length > 0 && (
-              <p className="mt-1.5 truncate text-[11px] text-muted-foreground">
-                {producto.componentes
-                  .map((c) => `${c.cantidad}× ${c.nombre}`)
-                  .join(", ")}
-              </p>
-            )}
-
-            <div className="mt-1.5 flex items-center justify-between text-[11px]">
-              <span className="text-muted-foreground">
-                {LABELS.costo}: {formatMoneda(producto.costo)}
-              </span>
-              <span className="font-medium text-success">
-                {formatMoneda(margen)} ({margenPct}%)
-              </span>
-            </div>
-
-            <div className="mt-3 flex items-center gap-1.5 border-t pt-2.5">
-              {!esDelicia && (
-                <StockMovimientoDialog
-                  producto={{
-                    id: producto.id,
-                    nombre: producto.nombre,
-                    stock: producto.stock,
-                    stock_minimo: producto.stock_minimo,
-                  }}
-                  trigger={
-                    <Button
-                      variant={stockBajo ? "default" : "outline"}
-                      size="sm"
-                      className="flex-1 gap-1.5"
-                      title={stockBajo ? "Reponer stock urgente" : "Gestionar movimientos de stock"}
-                    >
-                      {stockBajo ? (
-                        <PackagePlus className="h-4 w-4" />
-                      ) : (
-                        <Boxes className="h-4 w-4" />
-                      )}
-                      <span className="sm:hidden lg:inline">
-                        {stockBajo ? "Reponer" : "Stock"}
-                      </span>
-                    </Button>
-                  }
-                />
-              )}
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => setIsEditing((v) => !v)}
-                title={LABELS.editar}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      disabled={deleting}
-                      title={LABELS.eliminar}
-                      className="hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  }
-                />
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Se ocultará &quot;{producto.nombre}&quot; del inventario. El
-                      historial de ventas se conserva.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{LABELS.cancelar}</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleBorrar}>
-                      {LABELS.eliminar}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-
-      {/* Dialog selección de imagen */}
-      <Dialog open={imagenDialogOpen} onOpenChange={setImagenDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Imagen del producto</DialogTitle>
-          </DialogHeader>
-
-          {/* Preview */}
-          <div className="relative mx-auto h-40 w-full overflow-hidden rounded-xl bg-muted">
-            {editImagenUrl ? (
-              <Image
-                src={editImagenUrl}
-                alt={editNombre}
-                fill
-                className="object-cover"
-                sizes="100vw"
-              />
-            ) : (
-              <div
-                className="h-full w-full"
-                style={{ background: productVisuals[variant % productVisuals.length] }}
-              />
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2 pt-1">
-            <Button
-              className="w-full gap-2"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Camera className="h-4 w-4" />
-              {editImagenUrl ? "Cambiar foto" : "Agregar foto"}
-            </Button>
-            {editImagenUrl && (
-              <Button
-                variant="outline"
-                className="w-full gap-2 text-danger hover:bg-danger/10 hover:text-danger"
-                onClick={() => {
-                  setEditImagenUrl(null);
-                  setImagenDialogOpen(false);
+      }
+      title={producto.nombre}
+      keyValue={
+        <span className={cn("flex items-center justify-between", stockBajo && "text-danger")}>
+          <span>{formatMoneda(producto.precio)}</span>
+          <span className="inline-flex items-center gap-1">
+            <Boxes className="h-3 w-3" />
+            {stock}
+          </span>
+        </span>
+      }
+      fields={[
+        { label: "Precio", value: formatMoneda(producto.precio) },
+        { label: LABELS.costo, value: formatMoneda(producto.costo) },
+        { label: "Margen", value: `${formatMoneda(margen)} (${margenPct}%)` },
+        { label: "Stock", value: stock.toString() },
+      ]}
+      actions={
+        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {!esDelicia && (
+              <StockMovimientoDialog
+                producto={{
+                  id: producto.id,
+                  nombre: producto.nombre,
+                  stock: producto.stock,
+                  stock_minimo: producto.stock_minimo,
                 }}
-              >
-                <X className="h-4 w-4" />
-                Quitar imagen
-              </Button>
+                trigger={
+                  <Tooltip content={stockBajo ? "Reponer" : "Stock"}>
+                    <Button variant={stockBajo ? "default" : "outline"} size="icon-sm">
+                      <PackagePlus className="h-4 w-4" />
+                    </Button>
+                  </Tooltip>
+                }
+              />
             )}
+            <ProductFormDialog
+              categorias={categorias}
+              producto={{
+                id: producto.id,
+                nombre: producto.nombre,
+                precio: producto.precio,
+                costo: producto.costo,
+                categoria_id: producto.categoria_id ?? null,
+                imagen_url: producto.imagen_url ?? null,
+                tipo: producto.tipo,
+              }}
+              trigger={
+                <Tooltip content={LABELS.editar}>
+                  <Button variant="outline" size="icon-sm">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                </Tooltip>
+              }
+            />
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          <AlertDialog>
+            <Tooltip content={LABELS.eliminar}>
+              <AlertDialogTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={deleting}
+                    className="hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                }
+              />
+            </Tooltip>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Eliminar producto?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Se ocultará &quot;{producto.nombre}&quot; del inventario. El
+                  historial de ventas se conserva.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{LABELS.cancelar}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleBorrar}>
+                  {LABELS.eliminar}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      }
+    >
+      {esDelicia && producto.componentes && producto.componentes.length > 0 && (
+        <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">
+          {producto.componentes.map((c) => `${c.cantidad}× ${c.nombre}`).join(", ")}
+        </p>
+      )}
+    </CardPopover>
   );
 }

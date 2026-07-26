@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/shared/AppShell";
 import { TabsEstadisticas } from "@/components/shared/TabsEstadisticas";
 import { createClient } from "@/lib/supabase/server";
+import { obtenerMapaPerfiles } from "@/lib/actions/perfiles";
 import { LOCALE } from "@/lib/constants";
 
 export const revalidate = 0;
@@ -24,10 +25,30 @@ type Transaccion = {
   fecha: string;
   pedido_id: string | null;
   clientes: { nombre: string } | null;
+  creado_por: string | null;
+  modo_pago: string | null;
 };
 
 function claveDia(fechaISO: string) {
   return new Date(fechaISO).toLocaleDateString("en-CA");
+}
+
+function claveMes(fechaISO: string) {
+  const d = new Date(fechaISO);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function ultimosMeses(n: number) {
+  const hoy = new Date();
+  const meses: { clave: string; label: string }[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+    meses.push({
+      clave: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      label: d.toLocaleDateString(LOCALE, { month: "short", year: "2-digit" }),
+    });
+  }
+  return meses;
 }
 
 function ultimosDias(n: number) {
@@ -72,37 +93,69 @@ async function getData(rango: RangoKey) {
 
   let comprasQ = supabase
     .from("compras")
-    .select("id, total, estado, proveedor, fecha_completada, fecha_planificada, items")
+    .select("id, nombre, total, estado, proveedor, fecha_completada, fecha_planificada, items, creado_por")
     .in("estado", ["completado", "planificado"])
     .order("creado_en", { ascending: false })
     .limit(50);
   if (desde) comprasQ = comprasQ.gte("creado_en", desde.toISOString());
 
-  const [ventasRes, prodRes, productosRes, hoyRes, mesRes, transRes, insumosRes, comprasRes] =
-    await Promise.all([
-      ventasQ,
-      prodQ,
-      supabase
-        .from("productos")
-        .select("stock, costo")
-        .eq("activo", true)
-        .eq("tipo", "simple"),
-      supabase.from("ventas").select("total").gte("fecha", inicioHoy.toISOString()),
-      supabase.from("ventas").select("total").gte("fecha", inicioMes.toISOString()),
-      supabase
-        .from("ventas")
-        .select(
-          "id, nombre_producto, cantidad, total, costo_total, fecha, pedido_id, clientes(nombre)"
-        )
-        .order("fecha", { ascending: false })
-        .limit(50),
-      supabase
-        .from("insumos")
-        .select("id, nombre, unidad, stock, stock_minimo, costo_unitario")
-        .eq("activo", true)
-        .order("nombre"),
-      comprasQ,
-    ]);
+  // B3: comparativo gasto en compras vs. costo de lo vendido — siempre últimos 6 meses,
+  // independiente del selector de rango por días.
+  const seisMesesAtras = new Date(ahora.getFullYear(), ahora.getMonth() - 5, 1);
+
+  const [
+    ventasRes,
+    prodRes,
+    productosRes,
+    hoyRes,
+    mesRes,
+    transRes,
+    insumosRes,
+    comprasRes,
+    porCobrarRes,
+    pedidosEstadoRes,
+    comprasMensualRes,
+    ventasMensualRes,
+    perfiles,
+  ] = await Promise.all([
+    ventasQ,
+    prodQ,
+    supabase
+      .from("productos")
+      .select("stock, costo, stock_minimo")
+      .eq("activo", true)
+      .eq("tipo", "simple"),
+    supabase.from("ventas").select("total").gte("fecha", inicioHoy.toISOString()),
+    supabase.from("ventas").select("total").gte("fecha", inicioMes.toISOString()),
+    supabase
+      .from("ventas")
+      .select(
+        "id, nombre_producto, cantidad, total, costo_total, fecha, pedido_id, clientes(nombre), creado_por, modo_pago"
+      )
+      .order("fecha", { ascending: false })
+      .limit(50),
+    supabase
+      .from("insumos")
+      .select("id, nombre, unidad, stock, stock_minimo, costo_unitario")
+      .eq("activo", true)
+      .order("nombre"),
+    comprasQ,
+    supabase
+      .from("pedidos")
+      .select("total, fecha_estimada_pago")
+      .eq("estado", "por_cobrar"),
+    supabase.from("pedidos").select("estado"),
+    supabase
+      .from("compras")
+      .select("total, fecha_completada")
+      .eq("estado", "completado")
+      .gte("fecha_completada", seisMesesAtras.toISOString().slice(0, 10)),
+    supabase
+      .from("ventas")
+      .select("total, costo_total, fecha")
+      .gte("fecha", seisMesesAtras.toISOString()),
+    obtenerMapaPerfiles(),
+  ]);
 
   const ventas = ventasRes.data ?? [];
   const produccion = (prodRes.data ?? []) as {
@@ -111,6 +164,17 @@ async function getData(rango: RangoKey) {
     productos: { nombre: string } | null;
   }[];
   const productos = productosRes.data ?? [];
+  const porCobrar = porCobrarRes.data ?? [];
+  const pedidosEstados = pedidosEstadoRes.data ?? [];
+  const pedidosPendientes = pedidosEstados.filter((p) => p.estado === "pendiente").length;
+  const pedidosPagados = pedidosEstados.filter((p) => p.estado === "entregado").length;
+  const finHoy = new Date();
+  finHoy.setHours(23, 59, 59, 999);
+  const porCobrarVencidos = porCobrar.filter(
+    (p) =>
+      p.fecha_estimada_pago !== null &&
+      new Date(p.fecha_estimada_pago + "T23:59:59") < finHoy
+  );
 
   const nDias = cfg.dias > 0 ? Math.min(cfg.dias, 30) : 30;
   const dias = ultimosDias(nDias);
@@ -158,13 +222,40 @@ async function getData(rango: RangoKey) {
 
   const compras = (comprasRes.data ?? []) as {
     id: string;
+    nombre: string | null;
     total: number;
     estado: string;
     proveedor: string | null;
     fecha_completada: string | null;
     fecha_planificada: string | null;
     items: { nombre: string; cantidad: number; precio_unitario: number }[];
+    creado_por: string | null;
   }[];
+
+  // B3: gasto en compras vs. costo de lo vendido, por mes (últimos 6 meses).
+  const meses = ultimosMeses(6);
+  const gastoPorMes = new Map<string, number>();
+  for (const c of comprasMensualRes.data ?? []) {
+    if (!c.fecha_completada) continue;
+    const k = c.fecha_completada.slice(0, 7);
+    gastoPorMes.set(k, (gastoPorMes.get(k) ?? 0) + c.total);
+  }
+  const costoVendidoPorMes = new Map<string, number>();
+  const ventasTotalPorMes = new Map<string, number>();
+  for (const v of ventasMensualRes.data ?? []) {
+    const k = claveMes(v.fecha);
+    costoVendidoPorMes.set(k, (costoVendidoPorMes.get(k) ?? 0) + v.costo_total);
+    ventasTotalPorMes.set(k, (ventasTotalPorMes.get(k) ?? 0) + v.total);
+  }
+  const compraVsVenta = meses.map((m) => ({
+    mes: m.label,
+    gastoCompras: gastoPorMes.get(m.clave) ?? 0,
+    costoVendido: costoVendidoPorMes.get(m.clave) ?? 0,
+  }));
+  const gastoCompras6m = compraVsVenta.reduce((s, m) => s + m.gastoCompras, 0);
+  const costoVendido6m = compraVsVenta.reduce((s, m) => s + m.costoVendido, 0);
+  const ventasTotal6m = [...ventasTotalPorMes.values()].reduce((s, v) => s + v, 0);
+  const margenBruto6m = ventasTotal6m - costoVendido6m;
 
   return {
     transacciones: (transRes.data ?? []) as Transaccion[],
@@ -174,6 +265,7 @@ async function getData(rango: RangoKey) {
     topProducidos,
     insumos: insumosRes.data ?? [],
     compras,
+    compraVsVenta,
     metrics: {
       totalRango: ventas.reduce((s, v) => s + v.total, 0),
       margenRango: ventas.reduce((s, v) => s + (v.total - v.costo_total), 0),
@@ -182,20 +274,35 @@ async function getData(rango: RangoKey) {
       ventasMes: (mesRes.data ?? []).reduce((s, v) => s + v.total, 0),
       stockTotal: productos.reduce((s, p) => s + p.stock, 0),
       valorStock: productos.reduce((s, p) => s + p.stock * p.costo, 0),
+      productosStockBajo: productos.filter((p) => p.stock < p.stock_minimo).length,
+      porCobrarTotal: porCobrar.reduce((s, p) => s + p.total, 0),
+      porCobrarCount: porCobrar.length,
+      porCobrarVencidoTotal: porCobrarVencidos.reduce((s, p) => s + p.total, 0),
+      porCobrarVencidoCount: porCobrarVencidos.length,
+      pedidosPendientes,
+      pedidosPagados,
+      gastoCompras6m,
+      costoVendido6m,
+      margenBruto6m,
     },
     nDias,
+    perfiles,
   };
 }
 
 export default async function ReportesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ rango?: string }>;
+  searchParams: Promise<{ rango?: string; tab?: string }>;
 }) {
-  const { rango: rangoParam } = await searchParams;
+  const { rango: rangoParam, tab: tabParam } = await searchParams;
   const rango: RangoKey = RANGOS.some((r) => r.key === rangoParam)
     ? (rangoParam as RangoKey)
     : "30d";
+  const initialTab =
+    tabParam === "ventas" || tabParam === "inventario" || tabParam === "costos"
+      ? tabParam
+      : undefined;
 
   const data = await getData(rango);
 
@@ -232,7 +339,7 @@ export default async function ReportesPage({
           </div>
         </header>
 
-        <TabsEstadisticas {...data} />
+        <TabsEstadisticas {...data} initialTab={initialTab} />
       </div>
     </AppShell>
   );

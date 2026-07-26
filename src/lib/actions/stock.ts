@@ -14,7 +14,7 @@ async function requireUser() {
 }
 
 function revalidateStock() {
-  revalidatePath("/stock");
+  revalidatePath("/productos");
   revalidatePath("/");
 }
 

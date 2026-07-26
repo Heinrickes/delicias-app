@@ -1,7 +1,9 @@
 import { AppShell } from "@/components/shared/AppShell";
 import { ClienteFormDialog } from "@/components/shared/ClienteFormDialog";
 import { ClientesListado } from "@/components/shared/ClientesListado";
+import { ActionButton } from "@/components/shared/ActionButton";
 import { createClient } from "@/lib/supabase/server";
+import { obtenerMapaPerfiles } from "@/lib/actions/perfiles";
 import { UserPlus, Users } from "lucide-react";
 
 export const revalidate = 0;
@@ -18,13 +20,17 @@ type Cliente = {
 async function getData() {
   const supabase = await createClient();
 
-  const [clientesRes, pedidosRes, ventasRes] = await Promise.all([
+  const [clientesRes, pedidosRes, ventasRes, perfiles] = await Promise.all([
     supabase
       .from("clientes")
       .select("id, nombre, telefono, email, direccion, notas")
       .order("nombre"),
     supabase.from("pedidos").select("cliente_id"),
-    supabase.from("ventas").select("cliente_id, total"),
+    supabase
+      .from("ventas")
+      .select("cliente_id, total, nombre_producto, cantidad, fecha, creado_por, modo_pago")
+      .order("fecha", { ascending: false }),
+    obtenerMapaPerfiles(),
   ]);
 
   const pedidosPorCliente: Record<string, number> = {};
@@ -34,20 +40,42 @@ async function getData() {
   }
 
   const ventasPorCliente: Record<string, number> = {};
+  const historialPorCliente: Record<
+    string,
+    {
+      fecha: string;
+      total: number;
+      nombre_producto: string;
+      cantidad: number;
+      creado_por: string | null;
+      modo_pago: string | null;
+    }[]
+  > = {};
   for (const v of ventasRes.data ?? []) {
-    if (v.cliente_id)
-      ventasPorCliente[v.cliente_id] = (ventasPorCliente[v.cliente_id] ?? 0) + v.total;
+    if (!v.cliente_id) continue;
+    ventasPorCliente[v.cliente_id] = (ventasPorCliente[v.cliente_id] ?? 0) + v.total;
+    (historialPorCliente[v.cliente_id] ??= []).push({
+      fecha: v.fecha,
+      total: v.total,
+      nombre_producto: v.nombre_producto,
+      cantidad: v.cantidad,
+      creado_por: v.creado_por,
+      modo_pago: v.modo_pago,
+    });
   }
 
   return {
     clientes: (clientesRes.data ?? []) as Cliente[],
     pedidosPorCliente,
     ventasPorCliente,
+    historialPorCliente,
+    perfiles,
   };
 }
 
 export default async function ClientesPage() {
-  const { clientes, pedidosPorCliente, ventasPorCliente } = await getData();
+  const { clientes, pedidosPorCliente, ventasPorCliente, historialPorCliente, perfiles } =
+    await getData();
 
   return (
     <AppShell>
@@ -67,12 +95,7 @@ export default async function ClientesPage() {
           <div className="flex justify-end">
             <ClienteFormDialog
               trigger={
-                <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-                    <UserPlus className="h-6 w-6" />
-                  </span>
-                  <span className="text-[11px] font-semibold text-primary">Nuevo cliente</span>
-                </button>
+                <ActionButton icon={<UserPlus className="h-6 w-6" />} label="Nuevo cliente" color="primary" />
               }
             />
           </div>
@@ -93,6 +116,8 @@ export default async function ClientesPage() {
             clientes={clientes}
             pedidosPorCliente={pedidosPorCliente}
             ventasPorCliente={ventasPorCliente}
+            historialPorCliente={historialPorCliente}
+            perfiles={perfiles}
           />
         )}
       </div>

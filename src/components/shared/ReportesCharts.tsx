@@ -113,6 +113,31 @@ export function TopProductosChart({
   );
 }
 
+export function CompraVsVentaChart({
+  data,
+}: {
+  data: { mes: string; gastoCompras: number; costoVendido: number }[];
+}) {
+  return (
+    <ResponsiveContainer width="100%" height={260}>
+      <BarChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+        <XAxis dataKey="mes" tick={ejeStyle} tickLine={false} axisLine={false} />
+        <YAxis tick={ejeStyle} tickLine={false} axisLine={false} width={48} />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          formatter={(value, name) => [
+            formatMoneda(Number(value)),
+            name === "gastoCompras" ? "Gasto en compras" : "Costo de lo vendido",
+          ]}
+        />
+        <Bar dataKey="gastoCompras" fill="var(--chart-4)" radius={[6, 6, 0, 0]} />
+        <Bar dataKey="costoVendido" fill="var(--chart-1)" radius={[6, 6, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
 export function ProduccionChart({
   data,
 }: {

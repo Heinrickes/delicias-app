@@ -5,6 +5,7 @@ import { ShoppingBag } from "lucide-react";
 import { TiendaVenta } from "@/components/shared/TiendaVenta";
 import type { ProductoTienda } from "@/components/shared/TiendaVenta";
 import type { ClienteOpt } from "@/components/shared/TiendaVenta";
+import { ActionButton } from "@/components/shared/ActionButton";
 
 export function VentasView({
   productos,
@@ -30,16 +31,12 @@ export function VentasView({
           </p>
         </div>
         <div className="flex justify-end gap-1">
-          <button
-            type="button"
+          <ActionButton
+            icon={<ShoppingBag className="h-6 w-6" />}
+            label="Tu bolsa"
+            color="primary"
             onClick={() => setDrawerOpen(true)}
-            className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10"
-          >
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-              <ShoppingBag className="h-6 w-6" />
-            </span>
-            <span className="text-[11px] font-semibold text-primary">Tu bolsa</span>
-          </button>
+          />
         </div>
       </header>
 

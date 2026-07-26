@@ -9,6 +9,7 @@ import { AgendarProduccionDialog } from "@/components/shared/AgendarProduccionDi
 import Image from "next/image";
 import { NotificacionesBell } from "@/components/shared/NotificacionesBell";
 import { getAvisos } from "@/lib/notificaciones-data";
+import { obtenerPerfilActual } from "@/lib/actions/perfiles";
 
 async function getUserEmail() {
   const supabase = await createClient();
@@ -31,10 +32,11 @@ async function getProductosSimples() {
 }
 
 export async function AppShell({ children }: { children: ReactNode }) {
-  const [email, avisos, productos] = await Promise.all([
+  const [email, avisos, productos, perfil] = await Promise.all([
     getUserEmail(),
     getAvisos(),
     getProductosSimples(),
+    obtenerPerfilActual(),
   ]);
 
   const badgeCounts = avisos.reduce(
@@ -109,7 +111,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
                 Ajustes
               </span>
             </Link>
-            <UserNav email={email} />
+            <UserNav email={email} nombre={perfil?.nombre ?? null} rol={perfil?.rol ?? null} />
           </div>
 
           {children}

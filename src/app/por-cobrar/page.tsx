@@ -1,8 +1,11 @@
 import { AppShell } from "@/components/shared/AppShell";
 import { PedidoCard } from "@/components/shared/PedidoCard";
+import { HistorialTimeline } from "@/components/shared/HistorialTimeline";
+import { agruparPorPeriodo, inicialesDe } from "@/lib/historial";
+import { obtenerMapaPerfiles } from "@/lib/actions/perfiles";
 import { createClient } from "@/lib/supabase/server";
-import { formatMoneda } from "@/lib/constants";
-import { Coins, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { formatMoneda, LOCALE } from "@/lib/constants";
+import { CheckCircle2 } from "lucide-react";
 
 export const revalidate = 0;
 
@@ -21,16 +24,39 @@ type PedidoRow = {
   }[];
 };
 
+type CobroRow = {
+  id: string;
+  fecha_entrega: string | null;
+  total: number;
+  clientes: { nombre: string } | null;
+  actualizado_por: string | null;
+};
+
 async function getData() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("pedidos")
-    .select(
-      "id, fecha_entrega, fecha_estimada_pago, estado, total, notas, clientes(nombre), pedido_items(nombre_producto, cantidad, subtotal)"
-    )
-    .eq("estado", "por_cobrar")
-    .order("fecha_estimada_pago", { ascending: true, nullsFirst: false });
-  return (data ?? []) as PedidoRow[];
+  const [pendientesRes, cobradosRes, perfiles] = await Promise.all([
+    supabase
+      .from("pedidos")
+      .select(
+        "id, fecha_entrega, fecha_estimada_pago, estado, total, notas, clientes(nombre), pedido_items(nombre_producto, cantidad, subtotal)"
+      )
+      .eq("estado", "por_cobrar")
+      .order("fecha_estimada_pago", { ascending: true, nullsFirst: false }),
+    // Historial: pedidos que pasaron por "por cobrar" y ya se pagaron.
+    supabase
+      .from("pedidos")
+      .select("id, fecha_entrega, total, clientes(nombre), actualizado_por")
+      .eq("estado", "entregado")
+      .not("fecha_estimada_pago", "is", null)
+      .order("fecha_entrega", { ascending: false })
+      .limit(50),
+    obtenerMapaPerfiles(),
+  ]);
+  return {
+    pendientes: (pendientesRes.data ?? []) as PedidoRow[],
+    cobrados: (cobradosRes.data ?? []) as CobroRow[],
+    perfiles,
+  };
 }
 
 function toCardProps(p: PedidoRow) {
@@ -47,17 +73,26 @@ function toCardProps(p: PedidoRow) {
 }
 
 export default async function PorCobrarPage() {
-  const pedidos = await getData();
+  const { pendientes, cobrados, perfiles } = await getData();
 
-  const total = pedidos.reduce((s, p) => s + p.total, 0);
-  const hoy = new Date();
-  hoy.setHours(23, 59, 59, 999);
-  const vencidos = pedidos.filter(
-    (p) =>
-      p.fecha_estimada_pago !== null &&
-      new Date(p.fecha_estimada_pago + "T23:59:59") < hoy
-  );
-  const totalVencido = vencidos.reduce((s, p) => s + p.total, 0);
+  const chips = agruparPorPeriodo(
+    cobrados
+      .filter((c) => c.fecha_entrega !== null)
+      .map((c) => ({ ...c, fecha: c.fecha_entrega as string }))
+  ).map((b) => ({
+    key: b.key,
+    label: b.label,
+    count: b.items.length,
+    amountLabel: formatMoneda(b.items.reduce((s, c) => s + c.total, 0)),
+    eventos: b.items.map((c) => ({
+      id: c.id,
+      descripcion: c.clientes?.nombre ?? "Sin cliente",
+      when: new Date(c.fecha).toLocaleDateString(LOCALE, { day: "2-digit", month: "short" }),
+      amount: formatMoneda(c.total),
+      amountTone: "pos" as const,
+      author: inicialesDe(c.actualizado_por ? perfiles[c.actualizado_por] : null),
+    })),
+  }));
 
   return (
     <AppShell>
@@ -75,27 +110,7 @@ export default async function PorCobrarPage() {
           </p>
         </header>
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Metric
-            label="Total por cobrar"
-            value={formatMoneda(total)}
-            icon={<Coins className="h-4 w-4" />}
-          />
-          <Metric
-            label="Pedidos pendientes"
-            value={pedidos.length.toString()}
-            icon={<CheckCircle2 className="h-4 w-4" />}
-          />
-          <Metric
-            label="Vencido"
-            value={formatMoneda(totalVencido)}
-            danger={totalVencido > 0}
-            icon={<AlertTriangle className="h-4 w-4" />}
-            helper={`${vencidos.length} ${vencidos.length === 1 ? "pedido" : "pedidos"}`}
-          />
-        </section>
-
-        {pedidos.length === 0 ? (
+        {pendientes.length === 0 ? (
           <div className="rounded-xl border border-dashed bg-card p-12 text-center">
             <CheckCircle2 className="mx-auto h-10 w-10 text-success" />
             <p className="mt-4 text-sm text-muted-foreground">
@@ -106,52 +121,22 @@ export default async function PorCobrarPage() {
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2">
-            {pedidos.map((p) => (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {pendientes.map((p) => (
               <PedidoCard key={p.id} pedido={toCardProps(p)} />
             ))}
           </div>
         )}
+
+        {chips.length > 0 && (
+          <section>
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Historial de cobros
+            </h3>
+            <HistorialTimeline chips={chips} />
+          </section>
+        )}
       </div>
     </AppShell>
-  );
-}
-
-function Metric({
-  label,
-  value,
-  icon,
-  helper,
-  danger = false,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  helper?: string;
-  danger?: boolean;
-}) {
-  return (
-    <div className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
-      <div className="flex items-center gap-2">
-        <span
-          className={`flex h-7 w-7 items-center justify-center rounded-md ${
-            danger ? "bg-danger/10 text-danger" : "bg-background text-gold"
-          }`}
-        >
-          {icon}
-        </span>
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {label}
-        </p>
-      </div>
-      <p
-        className={`mt-3 text-2xl font-semibold tabular-nums ${
-          danger ? "text-danger" : "text-foreground"
-        }`}
-      >
-        {value}
-      </p>
-      {helper && <p className="mt-1 text-xs text-muted-foreground">{helper}</p>}
-    </div>
   );
 }

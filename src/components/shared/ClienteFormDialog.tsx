@@ -7,6 +7,7 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
+import { Check, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   actualizarCliente,
@@ -14,6 +15,7 @@ import {
   type ClienteInput,
 } from "@/lib/actions/clientes";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -99,7 +101,7 @@ export function ClienteFormDialog({
             onClick: () => setOpen(true),
           })
         : trigger}
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>
             {esEdicion ? "Editar cliente" : "Nuevo cliente"}
@@ -166,12 +168,21 @@ export function ClienteFormDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? LABELS.guardando : LABELS.guardar}
-            </Button>
+            <Tooltip content={LABELS.cancelar} side="top">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </Tooltip>
+            <Tooltip content={LABELS.guardar} side="top">
+              <Button type="submit" size="icon-sm" disabled={isPending}>
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              </Button>
+            </Tooltip>
           </DialogFooter>
         </form>
       </DialogContent>

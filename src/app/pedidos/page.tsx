@@ -1,8 +1,13 @@
+import Link from "next/link";
 import { AppShell } from "@/components/shared/AppShell";
 import { PedidoCard } from "@/components/shared/PedidoCard";
 import { PedidoFormDialog } from "@/components/shared/PedidoFormDialog";
+import { ActionButton } from "@/components/shared/ActionButton";
+import { HistorialTimeline } from "@/components/shared/HistorialTimeline";
+import { agruparPorPeriodo, inicialesDe } from "@/lib/historial";
+import { obtenerMapaPerfiles } from "@/lib/actions/perfiles";
 import { createClient } from "@/lib/supabase/server";
-import { formatMoneda } from "@/lib/constants";
+import { ESTADOS_PEDIDO, formatMoneda, LOCALE, type EstadoPedido } from "@/lib/constants";
 import { ClipboardList } from "lucide-react";
 
 export const revalidate = 0;
@@ -20,6 +25,7 @@ type PedidoRow = {
     cantidad: number;
     subtotal: number;
   }[];
+  creado_por: string | null;
 };
 
 const ACTIVOS = ["pendiente", "por_cobrar"];
@@ -27,11 +33,11 @@ const ACTIVOS = ["pendiente", "por_cobrar"];
 async function getData() {
   const supabase = await createClient();
 
-  const [pedidosRes, clientesRes, productosRes] = await Promise.all([
+  const [pedidosRes, clientesRes, productosRes, perfiles] = await Promise.all([
     supabase
       .from("pedidos")
       .select(
-        "id, fecha_entrega, fecha_estimada_pago, estado, total, notas, clientes(nombre), pedido_items(nombre_producto, cantidad, subtotal)"
+        "id, fecha_entrega, fecha_estimada_pago, estado, total, notas, clientes(nombre), pedido_items(nombre_producto, cantidad, subtotal), creado_por"
       )
       .order("fecha_entrega", { ascending: true, nullsFirst: false }),
     supabase.from("clientes").select("id, nombre").order("nombre"),
@@ -40,12 +46,14 @@ async function getData() {
       .select("id, nombre, precio")
       .eq("activo", true)
       .order("nombre"),
+    obtenerMapaPerfiles(),
   ]);
 
   return {
     pedidos: (pedidosRes.data ?? []) as PedidoRow[],
     clientes: clientesRes.data ?? [],
     productos: productosRes.data ?? [],
+    perfiles,
   };
 }
 
@@ -63,16 +71,29 @@ function toCardProps(p: PedidoRow) {
 }
 
 export default async function PedidosPage() {
-  const { pedidos, clientes, productos } = await getData();
+  const { pedidos, clientes, productos, perfiles } = await getData();
 
   const activos = pedidos.filter((p) => ACTIVOS.includes(p.estado));
   const historial = pedidos.filter((p) => !ACTIVOS.includes(p.estado));
 
-  const cuenta = (estado: string) =>
-    pedidos.filter((p) => p.estado === estado).length;
-  const totalPorCobrar = pedidos
-    .filter((p) => p.estado === "por_cobrar")
-    .reduce((s, p) => s + p.total, 0);
+  const chipsHistorial = agruparPorPeriodo(
+    historial
+      .filter((p) => p.fecha_entrega !== null)
+      .map((p) => ({ ...p, fecha: p.fecha_entrega as string }))
+  ).map((b) => ({
+    key: b.key,
+    label: b.label,
+    count: b.items.length,
+    amountLabel: formatMoneda(b.items.reduce((s, p) => s + p.total, 0)),
+    eventos: b.items.map((p) => ({
+      id: p.id,
+      descripcion: `${p.clientes?.nombre ?? "Sin cliente"} · ${ESTADOS_PEDIDO[p.estado as EstadoPedido] ?? p.estado}`,
+      when: new Date(p.fecha).toLocaleDateString(LOCALE, { day: "2-digit", month: "short" }),
+      amount: formatMoneda(p.total),
+      amountTone: p.estado === "cancelado" ? ("neutral" as const) : ("pos" as const),
+      author: inicialesDe(p.creado_por ? perfiles[p.creado_por] : null),
+    })),
+  }));
 
   return (
     <AppShell>
@@ -88,7 +109,11 @@ export default async function PedidosPage() {
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
               Pedidos por fecha de entrega. Al entregar se genera la venta y se
               descuenta el stock; puedes entregar cobrando o dejar el pago
-              pendiente.
+              pendiente. Los totales y conteos están en{" "}
+              <Link href="/reportes?tab=ventas" className="text-primary hover:underline">
+                Estadísticas
+              </Link>
+              .
             </p>
           </div>
           <div className="flex justify-end">
@@ -96,23 +121,11 @@ export default async function PedidosPage() {
               clientes={clientes}
               productos={productos}
               trigger={
-                <button type="button" className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-                    <ClipboardList className="h-6 w-6" />
-                  </span>
-                  <span className="text-[11px] font-semibold text-primary">Nuevo pedido</span>
-                </button>
+                <ActionButton icon={<ClipboardList className="h-6 w-6" />} label="Nuevo pedido" color="primary" />
               }
             />
           </div>
         </header>
-
-        <section className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-          <Metric label="Pendientes" value={cuenta("pendiente")} />
-          <Metric label="Por cobrar" value={cuenta("por_cobrar")} />
-          <Metric label="Total por cobrar" value={formatMoneda(totalPorCobrar)} />
-          <Metric label="Pagados" value={cuenta("entregado")} />
-        </section>
 
         <section>
           <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
@@ -129,7 +142,7 @@ export default async function PedidosPage() {
               </p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {activos.map((p) => (
                 <PedidoCard key={p.id} pedido={toCardProps(p)} />
               ))}
@@ -137,36 +150,15 @@ export default async function PedidosPage() {
           )}
         </section>
 
-        {historial.length > 0 && (
+        {chipsHistorial.length > 0 && (
           <section>
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Historial ({historial.length})
             </h3>
-            <div className="flex flex-col gap-2">
-              {historial.map((p) => (
-                <PedidoCard key={p.id} pedido={toCardProps(p)} />
-              ))}
-            </div>
+            <HistorialTimeline chips={chipsHistorial} />
           </section>
         )}
       </div>
     </AppShell>
-  );
-}
-
-function Metric({
-  label,
-  value,
-}: {
-  label: string;
-  value: number | string;
-}) {
-  return (
-    <div className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
-      <p className="text-xs font-semibold text-muted-foreground">{label}</p>
-      <p className="mt-3 text-2xl font-semibold tabular-nums text-foreground">
-        {value}
-      </p>
-    </div>
   );
 }

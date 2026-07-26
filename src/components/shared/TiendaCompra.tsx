@@ -18,6 +18,7 @@ import {
   planificarCompra,
   type CompraItem,
 } from "@/lib/actions/compras";
+import { ActionButton } from "@/components/shared/ActionButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -203,21 +204,13 @@ export function TiendaCompra({
           <p className="text-sm text-muted-foreground">
             {insumos.length} {insumos.length === 1 ? "insumo" : "insumos"}
           </p>
-          <button
-            type="button"
+          <ActionButton
+            icon={<ShoppingCart className="h-6 w-6" />}
+            label="Tu compra"
+            color="primary"
+            badge={totalUnidades}
             onClick={() => setDrawerOpen(true)}
-            className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10"
-          >
-            <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-              <ShoppingCart className="h-6 w-6" />
-              {totalUnidades > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">
-                  {totalUnidades}
-                </span>
-              )}
-            </span>
-            <span className="text-[11px] font-semibold text-primary">Tu compra</span>
-          </button>
+          />
         </div>
       )}
 
@@ -383,12 +376,12 @@ export function TiendaCompra({
           <>
             <div className="flex-1 divide-y overflow-y-auto overscroll-contain touch-pan-y px-5">
               {items.map((i) => (
-                <div key={i.insumo_id} className="flex gap-3 py-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {i.nombre}
-                    </p>
-                    <div className="mt-1 flex items-center gap-1">
+                <div key={i.insumo_id} className="py-4">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {i.nombre}
+                  </p>
+                  <div className="mt-2 grid grid-cols-[auto_auto_1fr_auto] items-center gap-x-3 gap-y-1">
+                    <div className="flex items-center gap-1">
                       <span className="text-xs text-muted-foreground">$</span>
                       <input
                         type="number"
@@ -401,7 +394,7 @@ export function TiendaCompra({
                         aria-label="Precio unitario"
                       />
                     </div>
-                    <div className="mt-2 inline-flex items-center rounded-lg border">
+                    <div className="inline-flex items-center rounded-lg border">
                       <button
                         type="button"
                         onClick={() => setCantidad(i.insumo_id, i.cantidad - 1)}
@@ -432,19 +425,20 @@ export function TiendaCompra({
                         <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setCantidad(i.insumo_id, 0)}
-                      className="text-muted-foreground hover:text-destructive"
-                      aria-label="Eliminar"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                    <span className="text-sm font-semibold tabular-nums text-foreground">
-                      {formatMoneda(i.precio_unitario * i.cantidad)}
-                    </span>
+                    <span />
+                    <div className="flex items-center gap-2 justify-self-end">
+                      <span className="text-sm font-semibold tabular-nums text-foreground">
+                        {formatMoneda(i.precio_unitario * i.cantidad)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setCantidad(i.insumo_id, 0)}
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label="Eliminar"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -535,32 +529,20 @@ export function TiendaCompra({
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
+                <ActionButton
+                  icon={<Check className="h-6 w-6" />}
+                  label="Comprar ahora"
+                  color="success"
                   disabled={isPending}
                   onClick={comprarAhora}
-                  className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-success/10 disabled:opacity-50"
-                >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-success text-white shadow">
-                    <Check className="h-6 w-6" />
-                  </span>
-                  <span className="text-center text-[11px] font-semibold leading-tight text-success">
-                    Comprar ahora
-                  </span>
-                </button>
-                <button
-                  type="button"
+                />
+                <ActionButton
+                  icon={<CalendarDays className="h-6 w-6" />}
+                  label={showDatePicker ? "Confirmar fecha" : "Planificar"}
+                  color="primary"
                   disabled={isPending}
                   onClick={planificar}
-                  className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10 disabled:opacity-50"
-                >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-                    <CalendarDays className="h-6 w-6" />
-                  </span>
-                  <span className="text-center text-[11px] font-semibold leading-tight text-primary">
-                    {showDatePicker ? "Confirmar fecha" : "Planificar"}
-                  </span>
-                </button>
+                />
               </div>
             </footer>
           </>

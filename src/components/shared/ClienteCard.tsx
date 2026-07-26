@@ -1,14 +1,14 @@
 "use client";
 
 import { useTransition } from "react";
-import { User, Trash2, Pencil, ClipboardList } from "lucide-react";
+import { Trash2, Pencil, ClipboardList, History } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { eliminarCliente } from "@/lib/actions/clientes";
 import { ClienteFormDialog } from "@/components/shared/ClienteFormDialog";
-import { CollapsibleCard } from "@/components/ui/collapsible-card";
+import { CardPopover } from "@/components/shared/CardPopover";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Tooltip } from "@/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,10 +35,12 @@ export function ClienteCard({
   cliente,
   pedidos,
   totalVentas,
+  onVerHistorial,
 }: {
   cliente: Cliente;
   pedidos: number;
   totalVentas: number;
+  onVerHistorial: () => void;
 }) {
   const [deleting, startDeleting] = useTransition();
 
@@ -58,21 +60,16 @@ export function ClienteCard({
     .toUpperCase();
 
   return (
-    <CollapsibleCard
-      icon={
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+    <CardPopover
+      layout="row"
+      imageUrl={null}
+      placeholder={
+        <span className="flex h-full w-full items-center justify-center bg-primary/10 text-sm font-semibold text-primary">
           {iniciales || "?"}
         </span>
       }
       title={cliente.nombre}
-      badge={
-        <Badge className="shrink-0 bg-muted text-[10px] text-muted-foreground">
-          {pedidos} {pedidos === 1 ? "pedido" : "pedidos"}
-        </Badge>
-      }
-      subtitle={
-        <span className="font-medium text-success">{formatMoneda(totalVentas)}</span>
-      }
+      keyValue={`${pedidos} ${pedidos === 1 ? "pedido" : "pedidos"} · ${formatMoneda(totalVentas)}`}
       fields={[
         { label: "Teléfono", value: cliente.telefono ?? "—" },
         { label: "Correo", value: cliente.email ?? "—" },
@@ -82,38 +79,47 @@ export function ClienteCard({
         ...(cliente.notas ? [{ label: "Notas", value: cliente.notas }] : []),
       ]}
       actions={
-        <>
-          <ClienteFormDialog
-            cliente={cliente}
-            trigger={
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <Pencil className="h-3.5 w-3.5" />
-                {LABELS.editar}
+        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Tooltip content="Historial">
+              <Button variant="outline" size="icon-sm" onClick={onVerHistorial}>
+                <History className="h-3.5 w-3.5" />
               </Button>
-            }
-          />
-          <Link
-            href="/pedidos"
-            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
-          >
-            <ClipboardList className="h-3.5 w-3.5" />
-            Ver pedidos
-          </Link>
-          <div className="flex-1" />
-          <AlertDialog>
-            <AlertDialogTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  disabled={deleting}
-                  title={LABELS.eliminar}
-                  className="hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+            </Tooltip>
+            <ClienteFormDialog
+              cliente={cliente}
+              trigger={
+                <Tooltip content={LABELS.editar}>
+                  <Button variant="ghost" size="icon-sm">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                </Tooltip>
               }
             />
+            <Tooltip content="Ver pedidos">
+              <Link
+                href="/pedidos"
+                className="inline-flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
+              >
+                <ClipboardList className="h-3.5 w-3.5" />
+              </Link>
+            </Tooltip>
+          </div>
+          <AlertDialog>
+            <Tooltip content={LABELS.eliminar}>
+              <AlertDialogTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={deleting}
+                    className="hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                }
+              />
+            </Tooltip>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
@@ -130,7 +136,7 @@ export function ClienteCard({
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        </>
+        </div>
       }
     />
   );

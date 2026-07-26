@@ -1,6 +1,8 @@
 import { AppShell } from "@/components/shared/AppShell";
 import { AjustesForm } from "@/components/shared/AjustesForm";
+import { UsuariosManager } from "@/components/shared/UsuariosManager";
 import { createClient } from "@/lib/supabase/server";
+import { obtenerPerfilActual, listarPerfiles } from "@/lib/actions/perfiles";
 
 export const revalidate = 0;
 
@@ -15,6 +17,11 @@ export default async function AjustesPage() {
     avisar_produccion: data?.avisar_produccion ?? true,
     dias_anticipacion: data?.dias_anticipacion ?? 1,
   };
+
+  const perfilActual = await obtenerPerfilActual();
+  const esAdmin = perfilActual?.rol === "admin";
+  const perfilesRes = esAdmin ? await listarPerfiles() : null;
+  const perfiles = perfilesRes?.ok ? perfilesRes.data ?? [] : [];
 
   return (
     <AppShell>
@@ -31,8 +38,11 @@ export default async function AjustesPage() {
           </p>
         </header>
 
-        <div className="max-w-2xl">
+        <div className="max-w-2xl space-y-6">
           <AjustesForm inicial={inicial} />
+          {esAdmin && perfilActual && (
+            <UsuariosManager perfiles={perfiles} currentUserId={perfilActual.id} />
+          )}
         </div>
       </div>
     </AppShell>

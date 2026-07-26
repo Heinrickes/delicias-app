@@ -31,6 +31,8 @@ export type CrearVentaInput = {
   /** Desenlace de la venta: entregada y pagada, entregada por cobrar, o encargo pendiente. */
   estado: Extract<EstadoPedido, "pendiente" | "por_cobrar" | "entregado">;
   fecha_estimada_pago?: string | null;
+  /** Modo de pago (solo aplica si estado es "entregado"). */
+  modo_pago?: "efectivo" | "transferencia" | null;
   items: VentaItemInput[];
 };
 
@@ -63,6 +65,7 @@ export async function crearVenta(
         input.estado === "por_cobrar"
           ? input.fecha_estimada_pago ?? null
           : null,
+      p_modo_pago: input.modo_pago ?? null,
     } as unknown as CrearVentaArgs;
 
     const { data, error } = await supabase.rpc("crear_venta", args);
@@ -71,7 +74,7 @@ export async function crearVenta(
     revalidatePath("/ventas");
     revalidatePath("/pedidos");
     revalidatePath("/por-cobrar");
-    revalidatePath("/stock");
+    revalidatePath("/productos");
     revalidatePath("/clientes");
     revalidatePath("/");
     return { ok: true, data: { pedidoId: data as string } };

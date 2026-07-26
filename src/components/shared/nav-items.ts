@@ -1,7 +1,6 @@
 import {
   Banknote,
   BarChart3,
-  Boxes,
   CalendarDays,
   ClipboardList,
   LayoutDashboard,
@@ -9,6 +8,7 @@ import {
   Receipt,
   ShoppingCart,
   Users,
+  Wheat,
   type LucideIcon,
 } from "lucide-react";
 
@@ -19,7 +19,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/ventas", label: "Ventas", icon: Receipt },
   { href: "/productos", label: "Productos", icon: Package },
-  { href: "/stock", label: "Inventario", icon: Boxes },
+  { href: "/insumos", label: "Insumos", icon: Wheat },
   { href: "/costos", label: "Compras", icon: ShoppingCart },
   { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
   { href: "/por-cobrar", label: "Por cobrar", icon: Banknote },

@@ -10,7 +10,7 @@ async function requireUser() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("No autorizado");
-  return supabase;
+  return { supabase, userId: user.id };
 }
 
 export type ClienteInput = {
@@ -36,10 +36,10 @@ export async function crearCliente(
 ): Promise<ActionResult<{ id: string }>> {
   try {
     if (!input.nombre.trim()) return { ok: false, error: "El nombre es obligatorio" };
-    const supabase = await requireUser();
+    const { supabase, userId } = await requireUser();
     const { data, error } = await supabase
       .from("clientes")
-      .insert(normaliza(input))
+      .insert({ ...normaliza(input), creado_por: userId, actualizado_por: userId })
       .select("id")
       .single();
     if (error || !data) return { ok: false, error: error?.message ?? "Error" };
@@ -56,10 +56,10 @@ export async function actualizarCliente(
 ): Promise<ActionResult> {
   try {
     if (!input.nombre.trim()) return { ok: false, error: "El nombre es obligatorio" };
-    const supabase = await requireUser();
+    const { supabase, userId } = await requireUser();
     const { error } = await supabase
       .from("clientes")
-      .update(normaliza(input))
+      .update({ ...normaliza(input), actualizado_por: userId })
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
     revalidatePath("/clientes");
@@ -71,7 +71,7 @@ export async function actualizarCliente(
 
 export async function eliminarCliente(id: string): Promise<ActionResult> {
   try {
-    const supabase = await requireUser();
+    const { supabase } = await requireUser();
     // Los pedidos/ventas asociados conservan su historial (FK ON DELETE SET NULL).
     const { error } = await supabase.from("clientes").delete().eq("id", id);
     if (error) return { ok: false, error: error.message };

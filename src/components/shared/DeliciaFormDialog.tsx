@@ -7,10 +7,11 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { crearDelicia } from "@/lib/actions/delicias";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { NumericInput } from "@/components/ui/numeric-input";
 import { Label } from "@/components/ui/label";
@@ -147,12 +148,14 @@ export function DeliciaFormDialog({
         if (!o) reset();
       }}
     >
-      {isValidElement(trigger)
-        ? cloneElement(trigger as React.ReactElement<{ onClick?: () => void }>, {
-            onClick: () => setOpen(true),
-          })
-        : trigger}
-      <DialogContent className="sm:max-w-lg">
+      <span className="contents" onClick={() => setOpen(true)}>
+        {isValidElement(trigger)
+          ? cloneElement(trigger as React.ReactElement<{ onClick?: () => void }>, {
+              onClick: () => setOpen(true),
+            })
+          : trigger}
+      </span>
+      <DialogContent className="sm:max-w-lg" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>Nueva delicia</DialogTitle>
           <DialogDescription>
@@ -303,12 +306,21 @@ export function DeliciaFormDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? LABELS.guardando : "Crear delicia"}
-            </Button>
+            <Tooltip content={LABELS.cancelar} side="top">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </Tooltip>
+            <Tooltip content="Crear delicia" side="top">
+              <Button type="submit" size="icon-sm" disabled={isPending}>
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              </Button>
+            </Tooltip>
           </DialogFooter>
         </form>
       </DialogContent>

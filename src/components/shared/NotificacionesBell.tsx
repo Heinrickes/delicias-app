@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Bell, Boxes, Coins, Factory, Settings, Truck, X } from "lucide-react";
 import type { Aviso } from "@/lib/notificaciones-data";
 import { cn } from "@/lib/utils";
+import { Tooltip } from "@/components/ui/tooltip";
 
 const ICON = {
   entrega: Truck,
@@ -78,27 +79,26 @@ export function NotificacionesBell({ avisos }: { avisos: Aviso[] }) {
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="group relative flex h-9 w-9 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-foreground"
-        aria-label="Notificaciones"
-      >
-        <Bell className="h-4 w-4" />
-        {total > 0 && (
-          <span
-            className={cn(
-              "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white",
-              urgentes > 0 ? "bg-danger" : "bg-primary"
-            )}
-          >
-            {total}
-          </span>
-        )}
-        <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[100] -translate-x-1/2 whitespace-nowrap rounded-lg border bg-card px-2.5 py-1 text-[11px] font-semibold tracking-wide text-foreground shadow-lg opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-          Notificaciones
-        </span>
-      </button>
+      <Tooltip content="Notificaciones">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="relative flex h-9 w-9 items-center justify-center rounded-full border bg-card text-muted-foreground transition-colors hover:text-foreground"
+          aria-label="Notificaciones"
+        >
+          <Bell className="h-4 w-4" />
+          {total > 0 && (
+            <span
+              className={cn(
+                "absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white",
+                urgentes > 0 ? "bg-danger" : "bg-primary"
+              )}
+            >
+              {total}
+            </span>
+          )}
+        </button>
+      </Tooltip>
 
       {open && (
         <div className="fixed inset-x-4 top-[7rem] z-50 overflow-hidden rounded-xl border bg-card shadow-2xl lg:absolute lg:inset-x-auto lg:right-0 lg:top-auto lg:mt-2 lg:w-80">

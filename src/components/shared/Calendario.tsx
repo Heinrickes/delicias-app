@@ -23,6 +23,7 @@ import {
   eliminarCompra,
 } from "@/lib/actions/compras";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { LABELS, LOCALE } from "@/lib/constants";
 
@@ -90,7 +91,7 @@ export function Calendario({
   const [filtros, setFiltros] = useState<Set<TipoEvento>>(
     new Set(["entrega", "cobro", "produccion", "compra"])
   );
-  const [mostrarCompletados, setMostrarCompletados] = useState(false);
+  const [mostrarCompletados, setMostrarCompletados] = useState(true);
 
   const [isPending, startTransition] = useTransition();
 
@@ -318,9 +319,11 @@ export function Calendario({
                             <Check className="h-4 w-4" />
                             Confirmar
                           </Button>
-                          <Button size="sm" variant="ghost" disabled={isPending} onClick={() => handleEliminar(e.refId)} title={LABELS.eliminar}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <Tooltip content={LABELS.eliminar}>
+                            <Button size="sm" variant="ghost" disabled={isPending} onClick={() => handleEliminar(e.refId)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </Tooltip>
                         </>
                       )}
                       {e.tipo === "compra" && (
@@ -329,9 +332,11 @@ export function Calendario({
                             <Check className="h-4 w-4" />
                             Realizada
                           </Button>
-                          <Button size="sm" variant="ghost" disabled={isPending} onClick={() => handleEliminarCompra(e.refId)} title={LABELS.eliminar}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <Tooltip content={LABELS.eliminar}>
+                            <Button size="sm" variant="ghost" disabled={isPending} onClick={() => handleEliminarCompra(e.refId)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </Tooltip>
                         </>
                       )}
                       {(e.tipo === "entrega" || e.tipo === "cobro") && (

@@ -70,7 +70,9 @@ export type Database = {
       }
       clientes: {
         Row: {
+          actualizado_por: string | null
           creado_en: string
+          creado_por: string | null
           direccion: string | null
           email: string | null
           id: string
@@ -79,7 +81,9 @@ export type Database = {
           telefono: string | null
         }
         Insert: {
+          actualizado_por?: string | null
           creado_en?: string
+          creado_por?: string | null
           direccion?: string | null
           email?: string | null
           id?: string
@@ -88,7 +92,9 @@ export type Database = {
           telefono?: string | null
         }
         Update: {
+          actualizado_por?: string | null
           creado_en?: string
+          creado_por?: string | null
           direccion?: string | null
           email?: string | null
           id?: string
@@ -100,7 +106,9 @@ export type Database = {
       }
       compras: {
         Row: {
+          actualizado_por: string | null
           creado_en: string | null
+          creado_por: string | null
           estado: string
           fecha_completada: string | null
           fecha_planificada: string | null
@@ -112,7 +120,9 @@ export type Database = {
           total: number
         }
         Insert: {
+          actualizado_por?: string | null
           creado_en?: string | null
+          creado_por?: string | null
           estado?: string
           fecha_completada?: string | null
           fecha_planificada?: string | null
@@ -124,7 +134,9 @@ export type Database = {
           total?: number
         }
         Update: {
+          actualizado_por?: string | null
           creado_en?: string | null
+          creado_por?: string | null
           estado?: string
           fecha_completada?: string | null
           fecha_planificada?: string | null
@@ -170,8 +182,10 @@ export type Database = {
       insumos: {
         Row: {
           activo: boolean
+          actualizado_por: string | null
           costo_unitario: number
           creado_en: string
+          creado_por: string | null
           en_lista: boolean
           id: string
           imagen_url: string | null
@@ -183,8 +197,10 @@ export type Database = {
         }
         Insert: {
           activo?: boolean
+          actualizado_por?: string | null
           costo_unitario?: number
           creado_en?: string
+          creado_por?: string | null
           en_lista?: boolean
           id?: string
           imagen_url?: string | null
@@ -196,8 +212,10 @@ export type Database = {
         }
         Update: {
           activo?: boolean
+          actualizado_por?: string | null
           costo_unitario?: number
           creado_en?: string
+          creado_por?: string | null
           en_lista?: boolean
           id?: string
           imagen_url?: string | null
@@ -212,6 +230,7 @@ export type Database = {
       movimientos_stock: {
         Row: {
           cantidad: number
+          creado_por: string | null
           fecha: string
           id: string
           nota: string | null
@@ -220,6 +239,7 @@ export type Database = {
         }
         Insert: {
           cantidad: number
+          creado_por?: string | null
           fecha?: string
           id?: string
           nota?: string | null
@@ -228,6 +248,7 @@ export type Database = {
         }
         Update: {
           cantidad?: number
+          creado_por?: string | null
           fecha?: string
           id?: string
           nota?: string | null
@@ -327,8 +348,10 @@ export type Database = {
       }
       pedidos: {
         Row: {
+          actualizado_por: string | null
           cliente_id: string | null
           creado_en: string
+          creado_por: string | null
           estado: string
           fecha_entrega: string | null
           fecha_estimada_pago: string | null
@@ -338,8 +361,10 @@ export type Database = {
           total: number
         }
         Insert: {
+          actualizado_por?: string | null
           cliente_id?: string | null
           creado_en?: string
+          creado_por?: string | null
           estado?: string
           fecha_entrega?: string | null
           fecha_estimada_pago?: string | null
@@ -349,8 +374,10 @@ export type Database = {
           total?: number
         }
         Update: {
+          actualizado_por?: string | null
           cliente_id?: string | null
           creado_en?: string
+          creado_por?: string | null
           estado?: string
           fecha_entrega?: string | null
           fecha_estimada_pago?: string | null
@@ -410,10 +437,12 @@ export type Database = {
       productos: {
         Row: {
           activo: boolean | null
+          actualizado_por: string | null
           categoria: string | null
           categoria_id: string | null
           costo: number
           creado_en: string
+          creado_por: string | null
           id: string
           imagen_url: string | null
           nombre: string
@@ -425,10 +454,12 @@ export type Database = {
         }
         Insert: {
           activo?: boolean | null
+          actualizado_por?: string | null
           categoria?: string | null
           categoria_id?: string | null
           costo?: number
           creado_en?: string
+          creado_por?: string | null
           id?: string
           imagen_url?: string | null
           nombre: string
@@ -440,10 +471,12 @@ export type Database = {
         }
         Update: {
           activo?: boolean | null
+          actualizado_por?: string | null
           categoria?: string | null
           categoria_id?: string | null
           costo?: number
           creado_en?: string
+          creado_por?: string | null
           id?: string
           imagen_url?: string | null
           nombre?: string
@@ -462,6 +495,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          creado_en: string
+          id: string
+          nombre: string
+          rol: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          creado_en?: string
+          id: string
+          nombre?: string
+          rol?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          creado_en?: string
+          id?: string
+          nombre?: string
+          rol?: string
+        }
+        Relationships: []
       }
       push_subscriptions: {
         Row: {
@@ -492,8 +549,10 @@ export type Database = {
           cantidad: number
           cliente_id: string | null
           costo_total: number
+          creado_por: string | null
           fecha: string
           id: string
+          modo_pago: string | null
           nombre_producto: string
           pedido_id: string | null
           producto_id: string | null
@@ -503,8 +562,10 @@ export type Database = {
           cantidad?: number
           cliente_id?: string | null
           costo_total?: number
+          creado_por?: string | null
           fecha?: string
           id?: string
+          modo_pago?: string | null
           nombre_producto: string
           pedido_id?: string | null
           producto_id?: string | null
@@ -514,8 +575,10 @@ export type Database = {
           cantidad?: number
           cliente_id?: string | null
           costo_total?: number
+          creado_por?: string | null
           fecha?: string
           id?: string
+          modo_pago?: string | null
           nombre_producto?: string
           pedido_id?: string | null
           producto_id?: string | null
@@ -559,9 +622,15 @@ export type Database = {
         Returns: undefined
       }
       cambiar_estado_pedido: {
-        Args: { p_estado: string; p_fecha_pago: string; p_id: string }
+        Args: {
+          p_estado: string
+          p_fecha_pago: string
+          p_id: string
+          p_modo_pago?: string | null
+        }
         Returns: undefined
       }
+      completar_compra: { Args: { p_id: string }; Returns: undefined }
       confirmar_produccion: { Args: { p_id: string }; Returns: undefined }
       crear_venta: {
         Args: {
@@ -571,10 +640,12 @@ export type Database = {
           p_fecha_pago: string
           p_items: Json
           p_notas: string
+          p_modo_pago?: string | null
         }
         Returns: string
       }
       eliminar_pedido: { Args: { p_id: string }; Returns: undefined }
+      is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

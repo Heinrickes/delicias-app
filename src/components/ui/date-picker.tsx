@@ -98,23 +98,23 @@ export function DatePicker({
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent showCloseButton={false} className="max-w-[320px] p-5">
+        <DialogContent showCloseButton={false} className="max-w-[320px] p-5 lg:max-w-md lg:p-6">
           {/* Navegación mes/año */}
           <div className="mb-4 flex items-center justify-between">
             <button
               type="button"
               onClick={mesAnterior}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground lg:h-9 lg:w-9"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="text-sm font-semibold text-foreground">
+            <span className="text-sm font-semibold text-foreground lg:text-base">
               {MESES[month].charAt(0).toUpperCase() + MESES[month].slice(1)} de {year}
             </span>
             <button
               type="button"
               onClick={mesSiguiente}
-              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground lg:h-9 lg:w-9"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -125,7 +125,7 @@ export function DatePicker({
             {DIAS.map((d) => (
               <div
                 key={d}
-                className="flex h-8 items-center justify-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+                className="flex h-8 items-center justify-center text-[11px] font-semibold uppercase tracking-wide text-muted-foreground lg:h-9"
               >
                 {d}
               </div>
@@ -141,7 +141,7 @@ export function DatePicker({
                     type="button"
                     onClick={() => elegirDia(dia)}
                     className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors",
+                      "flex h-8 w-8 items-center justify-center rounded-full text-sm transition-colors lg:h-10 lg:w-10 lg:text-base",
                       esSeleccionado(dia)
                         ? "bg-primary font-semibold text-primary-foreground"
                         : esHoy(dia)

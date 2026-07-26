@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { crearVenta, type VentaItemInput } from "@/lib/actions/ventas";
 import { crearCliente } from "@/lib/actions/clientes";
+import { ActionButton } from "@/components/shared/ActionButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,6 +90,7 @@ export function TiendaVenta({
   const [fechaEntrega, setFechaEntrega] = useState("");
   const [fechaPago, setFechaPago] = useState(fechaPagoSugerida());
   const [notas, setNotas] = useState("");
+  const [modoPago, setModoPago] = useState<"efectivo" | "transferencia">("efectivo");
   const [isPending, startTransition] = useTransition();
 
   // Swipe-to-dismiss del bottom sheet
@@ -171,6 +173,7 @@ export function TiendaVenta({
     setFechaEntrega("");
     setFechaPago(fechaPagoSugerida());
     setNotas("");
+    setModoPago("efectivo");
   };
 
   const agregar = (prod: ProductoTienda) => {
@@ -243,6 +246,7 @@ export function TiendaVenta({
         notas,
         estado,
         fecha_estimada_pago: estado === "por_cobrar" ? fechaPago : null,
+        modo_pago: estado === "entregado" ? modoPago : null,
         items,
       });
 
@@ -269,21 +273,13 @@ export function TiendaVenta({
           {productos.length} {productos.length === 1 ? "producto" : "productos"}
         </p>
         {!isControlled && (
-          <button
-            type="button"
+          <ActionButton
+            icon={<ShoppingBag className="h-6 w-6" />}
+            label="Tu bolsa"
+            color="primary"
+            badge={totalUnidades}
             onClick={() => setDrawerOpen(true)}
-            className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10"
-          >
-            <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-              <ShoppingBag className="h-6 w-6" />
-              {totalUnidades > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">
-                  {totalUnidades}
-                </span>
-              )}
-            </span>
-            <span className="text-[11px] font-semibold text-primary">Tu bolsa</span>
-          </button>
+          />
         )}
       </div>
 
@@ -619,6 +615,25 @@ export function TiendaVenta({
               </div>
 
               <div className="space-y-1.5">
+                <Label>Modo de pago</Label>
+                <Select
+                  value={modoPago}
+                  onValueChange={(v) => setModoPago((v as "efectivo" | "transferencia") ?? "efectivo")}
+                >
+                  <SelectTrigger className="h-9 w-full">
+                    <span className="flex-1 text-left text-sm capitalize">{modoPago}</span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="efectivo">Efectivo</SelectItem>
+                    <SelectItem value="transferencia">Transferencia</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Solo se guarda si la venta queda pagada de inmediato.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
                 <Label htmlFor="t-notas">{LABELS.notas}</Label>
                 <Textarea
                   id="t-notas"
@@ -647,45 +662,27 @@ export function TiendaVenta({
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <button
-                  type="button"
+                <ActionButton
+                  icon={<Check className="h-6 w-6" />}
+                  label="Pagado"
+                  color="success"
                   disabled={isPending}
                   onClick={() => confirmar("entregado")}
-                  className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-success/10 disabled:opacity-50"
-                >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-success text-white shadow">
-                    <Check className="h-6 w-6" />
-                  </span>
-                  <span className="text-center text-[11px] font-semibold leading-tight text-success">
-                    Pagado
-                  </span>
-                </button>
-                <button
-                  type="button"
+                />
+                <ActionButton
+                  icon={<Coins className="h-6 w-6" />}
+                  label="Por cobrar"
+                  color="gold"
                   disabled={isPending}
                   onClick={() => confirmar("por_cobrar")}
-                  className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-gold/10 disabled:opacity-50"
-                >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gold text-white shadow">
-                    <Coins className="h-6 w-6" />
-                  </span>
-                  <span className="text-center text-[11px] font-semibold leading-tight text-gold">
-                    Por cobrar
-                  </span>
-                </button>
-                <button
-                  type="button"
+                />
+                <ActionButton
+                  icon={<ClipboardList className="h-6 w-6" />}
+                  label="Pedido"
+                  color="primary"
                   disabled={isPending}
                   onClick={() => confirmar("pendiente")}
-                  className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10 disabled:opacity-50"
-                >
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-                    <ClipboardList className="h-6 w-6" />
-                  </span>
-                  <span className="text-center text-[11px] font-semibold leading-tight text-primary">
-                    Pedido
-                  </span>
-                </button>
+                />
               </div>
             </footer>
           </>

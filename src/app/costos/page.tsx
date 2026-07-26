@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/shared/AppShell";
 import { createClient } from "@/lib/supabase/server";
+import { obtenerMapaPerfiles } from "@/lib/actions/perfiles";
 import { ComprasView } from "./ComprasView";
 
 export const revalidate = 0;
@@ -7,7 +8,7 @@ export const revalidate = 0;
 export default async function CostosPage() {
   const supabase = await createClient();
 
-  const [insumosRes, listasRes] = await Promise.all([
+  const [insumosRes, listasRes, completadasRes, perfiles] = await Promise.all([
     supabase
       .from("insumos")
       .select("id, nombre, unidad, stock, stock_minimo, costo_unitario, en_lista, imagen_url")
@@ -19,6 +20,13 @@ export default async function CostosPage() {
       .eq("estado", "planificado")
       .order("creado_en", { ascending: false })
       .limit(30),
+    supabase
+      .from("compras")
+      .select("id, nombre, total, proveedor, fecha_completada, items, creado_por")
+      .eq("estado", "completado")
+      .order("fecha_completada", { ascending: false })
+      .limit(50),
+    obtenerMapaPerfiles(),
   ]);
 
   const insumosParaTienda = (insumosRes.data ?? []).map((i) => ({
@@ -44,9 +52,24 @@ export default async function CostosPage() {
     items: { insumo_id: string; nombre: string; cantidad: number; precio_unitario: number }[];
   }[];
 
+  const completadas = (completadasRes.data ?? []) as {
+    id: string;
+    nombre: string | null;
+    total: number;
+    proveedor: string | null;
+    fecha_completada: string | null;
+    items: { insumo_id: string; nombre: string; cantidad: number; precio_unitario: number }[];
+    creado_por: string | null;
+  }[];
+
   return (
     <AppShell>
-      <ComprasView insumosParaTienda={insumosParaTienda} listas={listas} />
+      <ComprasView
+        insumosParaTienda={insumosParaTienda}
+        listas={listas}
+        completadas={completadas}
+        perfiles={perfiles}
+      />
     </AppShell>
   );
 }

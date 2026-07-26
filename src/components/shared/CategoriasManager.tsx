@@ -7,7 +7,7 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import { Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Check, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   crearCategoria,
@@ -15,6 +15,7 @@ import {
   eliminarCategoria,
 } from "@/lib/actions/categorias";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -96,10 +97,15 @@ export function CategoriasManager({
               }
             }}
           />
-          <Button onClick={agregar} disabled={isPending || !nueva.trim()}>
-            <Plus className="h-4 w-4" />
-            Agregar
-          </Button>
+          <Tooltip content="Agregar">
+            <Button
+              onClick={agregar}
+              disabled={isPending || !nueva.trim()}
+              size="icon-sm"
+            >
+              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            </Button>
+          </Tooltip>
         </div>
 
         {categorias.length === 0 ? (
@@ -122,20 +128,24 @@ export function CategoriasManager({
                       autoFocus
                     />
                     <div className="flex shrink-0 gap-1">
-                      <Button
-                        size="icon-sm"
-                        onClick={() => guardar(c.id)}
-                        disabled={isPending}
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        onClick={() => setEditId(null)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      <Tooltip content={LABELS.guardar}>
+                        <Button
+                          size="icon-sm"
+                          onClick={() => guardar(c.id)}
+                          disabled={isPending}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip content={LABELS.cancelar}>
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          onClick={() => setEditId(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </Tooltip>
                     </div>
                   </>
                 ) : (
@@ -144,27 +154,29 @@ export function CategoriasManager({
                       {c.nombre}
                     </span>
                     <div className="flex shrink-0 gap-1">
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        title={LABELS.editar}
-                        onClick={() => {
-                          setEditId(c.id);
-                          setEditNombre(c.nombre);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        title={LABELS.eliminar}
-                        className="hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => borrar(c.id)}
-                        disabled={isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Tooltip content={LABELS.editar}>
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditId(c.id);
+                            setEditNombre(c.nombre);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </Tooltip>
+                      <Tooltip content={LABELS.eliminar}>
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          className="hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => borrar(c.id)}
+                          disabled={isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </Tooltip>
                     </div>
                   </>
                 )}

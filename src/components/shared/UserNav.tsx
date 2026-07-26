@@ -4,7 +4,21 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 
-export function UserNav({ email }: { email: string | undefined }) {
+const ROL_LABEL: Record<string, string> = {
+  admin: "Administrador",
+  dueña: "Dueña",
+  colaborador: "Colaborador",
+};
+
+export function UserNav({
+  email,
+  nombre,
+  rol,
+}: {
+  email: string | undefined;
+  nombre?: string | null;
+  rol?: string | null;
+}) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -17,10 +31,10 @@ export function UserNav({ email }: { email: string | undefined }) {
     <div className="flex items-center gap-2">
       <div className="hidden flex-col items-end sm:flex">
         <p className="max-w-32 truncate text-xs font-medium text-foreground">
-          {email}
+          {nombre || email}
         </p>
         <p className="text-[9px] uppercase tracking-widest text-muted-foreground">
-          Administrador
+          {(rol && ROL_LABEL[rol]) || "Usuario"}
         </p>
       </div>
       <button

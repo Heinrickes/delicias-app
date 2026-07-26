@@ -49,7 +49,7 @@ export async function confirmarProduccion(id: string): Promise<ActionResult> {
     if (error) return { ok: false, error: error.message };
 
     revalidatePath("/calendario");
-    revalidatePath("/stock");
+    revalidatePath("/productos");
     revalidatePath("/");
     return { ok: true };
   } catch (e) {

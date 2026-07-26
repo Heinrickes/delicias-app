@@ -11,10 +11,10 @@ async function requireUser() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("No autorizado");
-  return supabase;
+  return { supabase, userId: user.id };
 }
 
-type DB = Awaited<ReturnType<typeof requireUser>>;
+type DB = Awaited<ReturnType<typeof createClient>>;
 
 /** Resuelve el nombre de una categoría para guardarlo denormalizado. */
 async function nombreCategoria(
@@ -37,9 +37,10 @@ export async function crearProducto(input: {
   stock: number;
   categoria_id?: string | null;
   unidad?: string;
+  imagen_url?: string | null;
 }): Promise<ActionResult> {
   try {
-    const supabase = await requireUser();
+    const { supabase, userId } = await requireUser();
     const categoria = await nombreCategoria(supabase, input.categoria_id);
 
     const { data: producto, error } = await supabase
@@ -52,6 +53,9 @@ export async function crearProducto(input: {
         categoria_id: input.categoria_id || null,
         categoria,
         unidad: input.unidad?.trim() || "unidad",
+        ...(input.imagen_url !== undefined && { imagen_url: input.imagen_url }),
+        creado_por: userId,
+        actualizado_por: userId,
       })
       .select("id")
       .single();
@@ -87,7 +91,7 @@ export async function actualizarProducto(
   }
 ): Promise<ActionResult> {
   try {
-    const supabase = await requireUser();
+    const { supabase, userId } = await requireUser();
     const categoria = await nombreCategoria(supabase, input.categoria_id);
     const { error } = await supabase
       .from("productos")
@@ -98,6 +102,7 @@ export async function actualizarProducto(
         categoria_id: input.categoria_id || null,
         categoria,
         ...(input.imagen_url !== undefined && { imagen_url: input.imagen_url }),
+        actualizado_por: userId,
       })
       .eq("id", id);
 
@@ -112,7 +117,7 @@ export async function actualizarProducto(
 
 export async function eliminarProducto(id: string): Promise<ActionResult> {
   try {
-    const supabase = await requireUser();
+    const { supabase } = await requireUser();
     // Borrado lógico: conserva el historial de ventas.
     const { error } = await supabase
       .from("productos")

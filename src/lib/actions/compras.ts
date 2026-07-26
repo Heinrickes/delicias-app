@@ -9,7 +9,7 @@ async function requireUser() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("No autorizado");
-  return supabase;
+  return { supabase, userId: user.id };
 }
 
 export type CompraItem = {
@@ -35,7 +35,7 @@ export async function crearCompra(
 ): Promise<ActionResult<{ id: string }>> {
   try {
     if (!items.length) return { ok: false, error: "Agrega al menos un insumo" };
-    const supabase = await requireUser();
+    const { supabase, userId } = await requireUser();
 
     const hoy = new Date().toISOString().slice(0, 10);
     const { data, error } = await supabase
@@ -48,6 +48,8 @@ export async function crearCompra(
         notas: notas?.trim() || null,
         estado: "completado",
         fecha_completada: hoy,
+        creado_por: userId,
+        actualizado_por: userId,
       })
       .select("id")
       .single();
@@ -79,7 +81,7 @@ export async function planificarCompra(
   try {
     if (!items.length) return { ok: false, error: "Agrega al menos un insumo" };
     if (!fechaPlanificada) return { ok: false, error: "Selecciona una fecha" };
-    const supabase = await requireUser();
+    const { supabase, userId } = await requireUser();
 
     const { data, error } = await supabase
       .from("compras")
@@ -91,6 +93,7 @@ export async function planificarCompra(
         notas: notas?.trim() || null,
         estado: "planificado",
         fecha_planificada: fechaPlanificada,
+        creado_por: userId,
       })
       .select("id")
       .single();
@@ -104,31 +107,12 @@ export async function planificarCompra(
   }
 }
 
-/** Completa una compra planificada: sube stock y registra la fecha real. */
+/** Completa una compra planificada: sube stock y registra la fecha real (atómico vía RPC). */
 export async function completarCompra(id: string): Promise<ActionResult> {
   try {
-    const supabase = await requireUser();
+    const { supabase } = await requireUser();
 
-    const { data, error: fetchErr } = await supabase
-      .from("compras")
-      .select("items")
-      .eq("id", id)
-      .single();
-
-    if (fetchErr || !data) return { ok: false, error: "Compra no encontrada" };
-
-    const items = data.items as CompraItem[];
-    for (const item of items) {
-      const r = await incrementarStockInsumo(item.insumo_id, item.cantidad);
-      if (!r.ok) return { ok: false, error: `Error al actualizar stock de ${item.nombre}: ${r.error}` };
-    }
-
-    const hoy = new Date().toISOString().slice(0, 10);
-    const { error } = await supabase
-      .from("compras")
-      .update({ estado: "completado", fecha_completada: hoy })
-      .eq("id", id);
-
+    const { error } = await supabase.rpc("completar_compra", { p_id: id });
     if (error) return { ok: false, error: error.message };
 
     revalidarCompras();
@@ -144,11 +128,11 @@ export async function actualizarPreciosCompra(
   items: CompraItem[]
 ): Promise<ActionResult> {
   try {
-    const supabase = await requireUser();
+    const { supabase, userId } = await requireUser();
     const total = items.reduce((s, i) => s + i.precio_unitario * i.cantidad, 0);
     const { error } = await supabase
       .from("compras")
-      .update({ items, total })
+      .update({ items, total, actualizado_por: userId })
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
     revalidarCompras();
@@ -161,7 +145,7 @@ export async function actualizarPreciosCompra(
 /** Elimina definitivamente una compra (solo planificadas, no toca stock). */
 export async function borrarCompra(id: string): Promise<ActionResult> {
   try {
-    const supabase = await requireUser();
+    const { supabase } = await requireUser();
     const { error } = await supabase.from("compras").delete().eq("id", id);
     if (error) return { ok: false, error: error.message };
     revalidarCompras();
@@ -174,10 +158,10 @@ export async function borrarCompra(id: string): Promise<ActionResult> {
 /** Cancela una compra planificada (no modifica stock). */
 export async function cancelarCompra(id: string): Promise<ActionResult> {
   try {
-    const supabase = await requireUser();
+    const { supabase, userId } = await requireUser();
     const { error } = await supabase
       .from("compras")
-      .update({ estado: "cancelado" })
+      .update({ estado: "cancelado", actualizado_por: userId })
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
     revalidarCompras();

@@ -1,9 +1,11 @@
 "use client";
 
 import { cloneElement, isValidElement, useState, useTransition } from "react";
+import { Check, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { agendarProduccion } from "@/lib/actions/producciones";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 import { NumericInput } from "@/components/ui/numeric-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -81,7 +83,7 @@ export function AgendarProduccionDialog({
         : trigger}
 
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
-        <DialogContent>
+        <DialogContent showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Agendar producción</DialogTitle>
             <DialogDescription>
@@ -135,12 +137,25 @@ export function AgendarProduccionDialog({
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={isPending || !prodSel || !cant}>
-                {isPending ? LABELS.guardando : "Agendar"}
-              </Button>
+              <Tooltip content={LABELS.cancelar} side="top">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </Tooltip>
+              <Tooltip content="Agendar" side="top">
+                <Button
+                  type="submit"
+                  size="icon-sm"
+                  disabled={isPending || !prodSel || !cant}
+                >
+                  {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                </Button>
+              </Tooltip>
             </DialogFooter>
           </form>
         </DialogContent>

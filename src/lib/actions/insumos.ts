@@ -10,7 +10,7 @@ async function requireUser() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("No autorizado");
-  return supabase;
+  return { supabase, userId: user.id };
 }
 
 export type InsumoInput = {
@@ -20,12 +20,13 @@ export type InsumoInput = {
   stock_minimo?: number;
   costo_unitario?: number;
   proveedor?: string;
+  imagen_url?: string | null;
 };
 
 export async function crearInsumo(input: InsumoInput): Promise<ActionResult> {
   try {
     if (!input.nombre.trim()) return { ok: false, error: "El nombre es obligatorio" };
-    const supabase = await requireUser();
+    const { supabase, userId } = await requireUser();
     const { error } = await supabase.from("insumos").insert({
       nombre: input.nombre.trim(),
       unidad: input.unidad?.trim() || "unidad",
@@ -33,9 +34,12 @@ export async function crearInsumo(input: InsumoInput): Promise<ActionResult> {
       stock_minimo: input.stock_minimo ?? 0,
       costo_unitario: input.costo_unitario ?? 0,
       proveedor: input.proveedor?.trim() || null,
+      creado_por: userId,
+      actualizado_por: userId,
     });
     if (error) return { ok: false, error: error.message };
     revalidatePath("/costos");
+    revalidatePath("/insumos");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error" };
@@ -48,7 +52,7 @@ export async function actualizarInsumo(
 ): Promise<ActionResult> {
   try {
     if (!input.nombre.trim()) return { ok: false, error: "El nombre es obligatorio" };
-    const supabase = await requireUser();
+    const { supabase, userId } = await requireUser();
     const { error } = await supabase
       .from("insumos")
       .update({
@@ -57,10 +61,13 @@ export async function actualizarInsumo(
         stock_minimo: input.stock_minimo ?? 0,
         costo_unitario: input.costo_unitario ?? 0,
         proveedor: input.proveedor?.trim() || null,
+        imagen_url: input.imagen_url ?? null,
+        actualizado_por: userId,
       })
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
     revalidatePath("/costos");
+    revalidatePath("/insumos");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error" };
@@ -69,13 +76,14 @@ export async function actualizarInsumo(
 
 export async function eliminarInsumo(id: string): Promise<ActionResult> {
   try {
-    const supabase = await requireUser();
+    const { supabase, userId } = await requireUser();
     const { error } = await supabase
       .from("insumos")
-      .update({ activo: false })
+      .update({ activo: false, actualizado_por: userId })
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
     revalidatePath("/costos");
+    revalidatePath("/insumos");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error" };
@@ -90,13 +98,14 @@ export async function ajustarStockInsumo(
   try {
     if (!Number.isFinite(nuevoStock) || nuevoStock < 0)
       return { ok: false, error: "Stock inválido" };
-    const supabase = await requireUser();
+    const { supabase, userId } = await requireUser();
     const { error } = await supabase
       .from("insumos")
-      .update({ stock: nuevoStock })
+      .update({ stock: nuevoStock, actualizado_por: userId })
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
     revalidatePath("/costos");
+    revalidatePath("/insumos");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error" };
@@ -111,7 +120,7 @@ export async function incrementarStockInsumo(
   try {
     if (!Number.isFinite(cantidad) || cantidad <= 0)
       return { ok: false, error: "Cantidad inválida" };
-    const supabase = await requireUser();
+    const { supabase } = await requireUser();
     const { data, error: fetchErr } = await supabase
       .from("insumos")
       .select("stock")
@@ -124,7 +133,7 @@ export async function incrementarStockInsumo(
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
     revalidatePath("/costos");
-    revalidatePath("/stock");
+    revalidatePath("/insumos");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error" };
@@ -137,13 +146,14 @@ export async function toggleEnLista(
   enLista: boolean
 ): Promise<ActionResult> {
   try {
-    const supabase = await requireUser();
+    const { supabase } = await requireUser();
     const { error } = await supabase
       .from("insumos")
       .update({ en_lista: enLista })
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
     revalidatePath("/costos");
+    revalidatePath("/insumos");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Error" };

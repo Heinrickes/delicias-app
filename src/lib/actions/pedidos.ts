@@ -77,7 +77,8 @@ export async function crearPedido(input: PedidoInput): Promise<ActionResult> {
 export async function cambiarEstadoPedido(
   id: string,
   estado: EstadoPedido,
-  fechaEstimadaPago?: string | null
+  fechaEstimadaPago?: string | null,
+  modoPago?: "efectivo" | "transferencia" | null
 ): Promise<ActionResult> {
   try {
     const supabase = await requireUser();
@@ -86,6 +87,7 @@ export async function cambiarEstadoPedido(
       p_id: id,
       p_estado: estado,
       p_fecha_pago: estado === "por_cobrar" ? fechaEstimadaPago ?? null : null,
+      p_modo_pago: estado === "entregado" ? modoPago ?? null : null,
     } as unknown as CambiarEstadoArgs;
 
     const { error } = await supabase.rpc("cambiar_estado_pedido", args);
@@ -93,7 +95,7 @@ export async function cambiarEstadoPedido(
 
     revalidatePath("/");
     revalidatePath("/ventas");
-    revalidatePath("/stock");
+    revalidatePath("/productos");
     revalidatePath("/por-cobrar");
     revalidatePath("/pedidos");
     revalidatePath("/clientes");
@@ -112,7 +114,7 @@ export async function eliminarPedido(id: string): Promise<ActionResult> {
 
     revalidatePath("/");
     revalidatePath("/ventas");
-    revalidatePath("/stock");
+    revalidatePath("/productos");
     revalidatePath("/por-cobrar");
     revalidatePath("/pedidos");
     revalidatePath("/clientes");

@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import {
+  CompraVsVentaChart,
   ProduccionChart,
   TopProductosChart,
   VentasChart,
 } from "@/components/shared/ReportesCharts";
 import { SeccionReporte } from "@/components/shared/SeccionReporte";
-import { CollapsibleCard } from "@/components/ui/collapsible-card";
-import { Badge } from "@/components/ui/badge";
+import { HistorialTimeline } from "@/components/shared/HistorialTimeline";
+import { agruparPorPeriodo, inicialesDe } from "@/lib/historial";
 import { formatMoneda, LOCALE } from "@/lib/constants";
 import {
   Receipt,
@@ -17,11 +18,17 @@ import {
   CalendarDays,
   Boxes,
   ShoppingCart,
-  Percent,
   AlertTriangle,
-  Package,
+  Coins,
+  CheckCircle2,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const MODO_PAGO_LABEL: Record<string, string> = {
+  efectivo: "Efectivo",
+  transferencia: "Transferencia",
+};
 
 type Transaccion = {
   id: string;
@@ -32,6 +39,8 @@ type Transaccion = {
   fecha: string;
   pedido_id: string | null;
   clientes: { nombre: string } | null;
+  creado_por: string | null;
+  modo_pago: string | null;
 };
 
 type InsumoStats = {
@@ -45,12 +54,14 @@ type InsumoStats = {
 
 type CompraStats = {
   id: string;
+  nombre: string | null;
   total: number;
   estado: string;
   proveedor: string | null;
   fecha_completada: string | null;
   fecha_planificada: string | null;
   items: { nombre: string; cantidad: number; precio_unitario: number }[];
+  creado_por: string | null;
 };
 
 type Props = {
@@ -61,6 +72,8 @@ type Props = {
   topProducidos: { nombre: string; unidades: number }[];
   insumos: InsumoStats[];
   compras: CompraStats[];
+  compraVsVenta: { mes: string; gastoCompras: number; costoVendido: number }[];
+  perfiles: Record<string, string>;
   metrics: {
     totalRango: number;
     margenRango: number;
@@ -69,8 +82,19 @@ type Props = {
     ventasMes: number;
     stockTotal: number;
     valorStock: number;
+    productosStockBajo: number;
+    porCobrarTotal: number;
+    porCobrarCount: number;
+    porCobrarVencidoTotal: number;
+    porCobrarVencidoCount: number;
+    pedidosPendientes: number;
+    pedidosPagados: number;
+    gastoCompras6m: number;
+    costoVendido6m: number;
+    margenBruto6m: number;
   };
   nDias: number;
+  initialTab?: TabKey;
 };
 
 type TabKey = "ventas" | "inventario" | "costos";
@@ -81,20 +105,6 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "costos", label: "Costos" },
 ];
 
-function fmtDia(fechaISO: string) {
-  return new Date(fechaISO).toLocaleDateString(LOCALE, {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    timeZone: "America/Santiago",
-  });
-}
-
-function fmtDiaKey(fechaISO: string) {
-  return new Date(fechaISO)
-    .toLocaleDateString("sv", { timeZone: "America/Santiago" });
-}
-
 export function TabsEstadisticas({
   transacciones,
   ventasPorDia,
@@ -103,10 +113,13 @@ export function TabsEstadisticas({
   topProducidos,
   insumos,
   compras,
+  compraVsVenta,
   metrics,
   nDias,
+  initialTab,
+  perfiles,
 }: Props) {
-  const [tab, setTab] = useState<TabKey>("ventas");
+  const [tab, setTab] = useState<TabKey>(initialTab ?? "ventas");
 
   const margenPct =
     metrics.totalRango > 0
@@ -127,28 +140,67 @@ export function TabsEstadisticas({
         )
       : 0;
 
-  // Agrupar transacciones por día
-  const txPorDia = transacciones.reduce<Map<string, Transaccion[]>>((acc, v) => {
-    const key = fmtDiaKey(v.fecha);
-    if (!acc.has(key)) acc.set(key, []);
-    acc.get(key)!.push(v);
-    return acc;
-  }, new Map());
-  const diasOrdenados = Array.from(txPorDia.entries()).sort(([a], [b]) =>
-    b.localeCompare(a)
-  );
+  // Historial de transacciones (G4)
+  const chipsTransacciones = agruparPorPeriodo(transacciones).map((b) => ({
+    key: b.key,
+    label: b.label,
+    count: b.items.length,
+    amountLabel: formatMoneda(b.items.reduce((s, v) => s + v.total, 0)),
+    eventos: b.items.map((v) => ({
+      id: v.id,
+      descripcion:
+        `${v.clientes?.nombre ?? "Venta directa"} · ${v.cantidad}× ${v.nombre_producto}` +
+        (v.modo_pago ? ` · ${MODO_PAGO_LABEL[v.modo_pago] ?? v.modo_pago}` : ""),
+      when: new Date(v.fecha).toLocaleDateString(LOCALE, {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      amount: formatMoneda(v.total),
+      amountTone: "pos" as const,
+      author: inicialesDe(v.creado_por ? perfiles[v.creado_por] : null),
+    })),
+  }));
+
+  // Historial de compras del período (C8)
+  const chipsCompras = agruparPorPeriodo(
+    compras
+      .map((c) => ({ ...c, fecha: c.estado === "completado" ? c.fecha_completada : c.fecha_planificada }))
+      .filter((c) => c.fecha !== null) as (CompraStats & { fecha: string })[]
+  ).map((b) => ({
+    key: b.key,
+    label: b.label,
+    count: b.items.length,
+    amountLabel: formatMoneda(b.items.reduce((s, c) => s + c.total, 0)),
+    eventos: b.items.map((c) => ({
+      id: c.id,
+      descripcion:
+        (c.nombre ||
+          c.items
+            .slice(0, 3)
+            .map((i) => i.nombre)
+            .join(", ") ||
+          "Compra de insumos") +
+        (c.estado === "planificado" ? " · Planificada" : ""),
+      when: new Date(c.fecha).toLocaleDateString(LOCALE, { day: "2-digit", month: "short" }),
+      amount: formatMoneda(c.total),
+      amountTone: c.estado === "completado" ? ("neutral" as const) : ("neg" as const),
+      author: inicialesDe(c.creado_por ? perfiles[c.creado_por] : null),
+    })),
+  }));
 
   return (
     <div className="space-y-6">
-      {/* Selector de tabs */}
-      <div className="flex gap-1 rounded-xl bg-muted p-1">
+      {/* Selector de tabs — compacto en desktop, ancho completo en móvil */}
+      <div className="flex gap-1 rounded-xl bg-muted p-1 lg:inline-flex">
         {TABS.map((t) => (
           <button
             key={t.key}
             type="button"
             onClick={() => setTab(t.key)}
             className={cn(
-              "flex-1 rounded-lg py-2 text-sm font-semibold transition-colors",
+              "flex-1 rounded-lg py-2 text-sm font-semibold transition-colors lg:flex-none lg:px-6",
               tab === t.key
                 ? "bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -187,6 +239,51 @@ export function TabsEstadisticas({
             />
           </div>
 
+          <div>
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Pedidos
+            </h3>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2">
+              <Metric
+                label="Pendientes"
+                value={metrics.pedidosPendientes.toString()}
+                helper="sin entregar"
+                icon={<ClipboardList className="h-4 w-4" />}
+              />
+              <Metric
+                label="Pagados"
+                value={metrics.pedidosPagados.toString()}
+                helper="entregados y cobrados"
+                icon={<CheckCircle2 className="h-4 w-4" />}
+              />
+            </div>
+          </div>
+
+          <div>
+            <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Por cobrar
+            </h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Metric
+                label="Total por cobrar"
+                value={formatMoneda(metrics.porCobrarTotal)}
+                icon={<Coins className="h-4 w-4" />}
+              />
+              <Metric
+                label="Pedidos pendientes"
+                value={metrics.porCobrarCount.toString()}
+                icon={<CheckCircle2 className="h-4 w-4" />}
+              />
+              <Metric
+                label="Vencido"
+                value={formatMoneda(metrics.porCobrarVencidoTotal)}
+                danger={metrics.porCobrarVencidoTotal > 0}
+                helper={`${metrics.porCobrarVencidoCount} ${metrics.porCobrarVencidoCount === 1 ? "pedido" : "pedidos"}`}
+                icon={<AlertTriangle className="h-4 w-4" />}
+              />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             <SeccionReporte
               titulo="Ingresos vs costos"
@@ -208,7 +305,7 @@ export function TabsEstadisticas({
             />
           </div>
 
-          {/* Feed de transacciones agrupado por día */}
+          {/* Historial de transacciones (G4) */}
           <section>
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Historial de transacciones ({transacciones.length})
@@ -221,52 +318,7 @@ export function TabsEstadisticas({
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {diasOrdenados.map(([key, items]) => (
-                  <div key={key}>
-                    <p className="mb-1.5 text-xs font-semibold capitalize text-muted-foreground">
-                      {fmtDia(key)}
-                    </p>
-                    <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-                      {items.map((v, idx) => {
-                        const margen = v.total - v.costo_total;
-                        return (
-                          <div
-                            key={v.id}
-                            className={cn(
-                              "flex items-center gap-3 px-4 py-3",
-                              idx !== 0 && "border-t"
-                            )}
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className="truncate text-sm font-semibold text-foreground">
-                                  {v.nombre_producto}
-                                </span>
-                                {v.pedido_id && (
-                                  <Badge className="shrink-0 bg-primary/10 text-[10px] text-primary">
-                                    Pedido
-                                  </Badge>
-                                )}
-                              </div>
-                              <p className="truncate text-[11px] text-muted-foreground">
-                                {v.clientes?.nombre ?? "Venta directa"}
-                                {" · "}
-                                {v.cantidad} u
-                                {" · "}
-                                <span className="text-success">+{formatMoneda(margen)}</span>
-                              </p>
-                            </div>
-                            <span className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
-                              {formatMoneda(v.total)}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <HistorialTimeline chips={chipsTransacciones} />
             )}
           </section>
         </div>
@@ -275,7 +327,7 @@ export function TabsEstadisticas({
       {/* ── Tab Inventario ── */}
       {tab === "inventario" && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
             <Metric
               label="Stock total"
               value={`${metrics.stockTotal} u`}
@@ -293,6 +345,13 @@ export function TabsEstadisticas({
               value={produccionPorDia.reduce((s, d) => s + d.cantidad, 0).toString()}
               helper="en el período"
               icon={<TrendingUp className="h-4 w-4" />}
+            />
+            <Metric
+              label="Productos bajo stock"
+              value={metrics.productosStockBajo.toString()}
+              helper={metrics.productosStockBajo > 0 ? "revisar en Productos" : "todo en orden"}
+              danger={metrics.productosStockBajo > 0}
+              icon={<AlertTriangle className="h-4 w-4" />}
             />
             <Metric
               label="Insumos bajo mínimo"
@@ -332,6 +391,19 @@ export function TabsEstadisticas({
               lista={<ListaRanking data={topProducidos} sufijo="producidas" />}
             />
           </div>
+
+          <SeccionReporte
+            titulo="Más rotación"
+            subtitulo="Unidades vendidas en el período"
+            chart={
+              topVendidos.length ? (
+                <TopProductosChart data={topVendidos} />
+              ) : (
+                <Vacio />
+              )
+            }
+            lista={<ListaRanking data={topVendidos} sufijo="vendidas" />}
+          />
         </div>
       )}
 
@@ -373,7 +445,50 @@ export function TabsEstadisticas({
             />
           </div>
 
-          {/* Feed de compras del período */}
+          {/* Compra vs. venta — B3 */}
+          <section>
+            <h3 className="mb-1 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Gasto en compras vs. costo de lo vendido
+            </h3>
+            <p className="mb-3 max-w-2xl text-xs text-muted-foreground">
+              Son dos cosas distintas: el <strong>gasto en compras</strong> es lo que
+              salió de la billetera cada mes; el <strong>costo de lo vendido</strong> es
+              el consumo de insumos asociado a lo que realmente vendiste ese mes.
+              Comparar solo totales de compra vs. venta engaña cuando compras stock un
+              mes y lo vendes en otro — el margen bruto es el indicador honesto.
+            </p>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Metric
+                label="Gasto en compras (6 meses)"
+                value={formatMoneda(metrics.gastoCompras6m)}
+                helper="compras completadas"
+                icon={<ShoppingCart className="h-4 w-4" />}
+              />
+              <Metric
+                label="Costo de lo vendido (6 meses)"
+                value={formatMoneda(metrics.costoVendido6m)}
+                helper="insumos consumidos en ventas"
+                icon={<Receipt className="h-4 w-4" />}
+              />
+              <Metric
+                label="Margen bruto (6 meses)"
+                value={formatMoneda(metrics.margenBruto6m)}
+                helper="ventas − costo de lo vendido"
+                icon={<TrendingUp className="h-4 w-4" />}
+              />
+            </div>
+            <div className="mt-4 rounded-xl bg-card p-5 ring-1 ring-foreground/10">
+              <div className="mb-4">
+                <h4 className="text-base font-semibold text-foreground">
+                  Comparativo mensual
+                </h4>
+                <p className="text-xs text-muted-foreground">Últimos 6 meses</p>
+              </div>
+              <CompraVsVentaChart data={compraVsVenta} />
+            </div>
+          </section>
+
+          {/* Historial de compras del período (G4) */}
           <section>
             <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Compras del período ({compras.length})
@@ -383,121 +498,10 @@ export function TabsEstadisticas({
                 Sin compras registradas. Inicia una compra desde Compras.
               </div>
             ) : (
-              <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-                {compras.map((c, idx) => {
-                  const nombres = (c.items ?? [])
-                    .slice(0, 3)
-                    .map((i) => i.nombre)
-                    .join(", ");
-                  const fecha = c.estado === "completado"
-                    ? c.fecha_completada
-                    : c.fecha_planificada;
-                  return (
-                    <div
-                      key={c.id}
-                      className={cn("flex items-center gap-3 px-4 py-3", idx !== 0 && "border-t")}
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {nombres || "Compra de insumos"}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {c.proveedor ? `${c.proveedor} · ` : ""}
-                          {fecha
-                            ? new Date(fecha + "T00:00:00").toLocaleDateString(LOCALE, { day: "2-digit", month: "short" })
-                            : ""}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          className={
-                            c.estado === "completado"
-                              ? "bg-success/15 text-[10px] text-success"
-                              : "bg-gold/15 text-[10px] text-gold"
-                          }
-                        >
-                          {c.estado === "completado" ? "Completada" : "Planificada"}
-                        </Badge>
-                        <span className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
-                          {formatMoneda(c.total)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <HistorialTimeline chips={chipsCompras} />
             )}
           </section>
 
-          {insumos.length === 0 ? (
-            <div className="rounded-xl border border-dashed bg-card p-12 text-center">
-              <ShoppingCart className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="mt-4 text-sm text-muted-foreground">
-                No hay insumos registrados
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Agrega insumos en la sección Costos para ver el análisis aquí.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="flex flex-col gap-2">
-                {[...insumos]
-                  .sort((a, b) => b.costo_unitario * b.stock - a.costo_unitario * a.stock)
-                  .map((i) => {
-                    const agotado = i.stock <= 0;
-                    const bajo = !agotado && i.stock < i.stock_minimo;
-                    const valor = i.costo_unitario * i.stock;
-                    const pct = Math.min(100, Math.round((i.stock / Math.max(i.stock_minimo, 1)) * 100));
-                    return (
-                      <CollapsibleCard
-                        key={i.id}
-                        icon={<Package className="h-4 w-4" />}
-                        title={i.nombre}
-                        badge={
-                          agotado ? (
-                            <Badge className="shrink-0 bg-danger/15 text-[10px] text-danger">Agotado</Badge>
-                          ) : bajo ? (
-                            <Badge className="shrink-0 bg-gold/15 text-[10px] text-gold">Bajo</Badge>
-                          ) : (
-                            <Badge className="shrink-0 bg-success/15 text-[10px] text-success">OK</Badge>
-                          )
-                        }
-                        subtitle={
-                          <span>
-                            {i.stock} {i.unidad} · <span className="font-semibold text-foreground">{formatMoneda(valor)}</span>
-                          </span>
-                        }
-                        fields={[
-                          { label: "Stock actual", value: `${i.stock} ${i.unidad}` },
-                          { label: "Stock mínimo", value: `${i.stock_minimo} ${i.unidad}` },
-                          { label: "Costo unitario", value: formatMoneda(i.costo_unitario) },
-                          { label: "Valor en stock", value: formatMoneda(valor) },
-                        ]}
-                      >
-                        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                          <div
-                            className={cn(
-                              "h-full rounded-full transition-all",
-                              agotado ? "bg-danger" : bajo ? "bg-gold" : "bg-success"
-                            )}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      </CollapsibleCard>
-                    );
-                  })}
-              </div>
-              <div className="flex items-center justify-between rounded-xl bg-card px-5 py-3 ring-1 ring-foreground/10">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Total despensa
-                </span>
-                <span className="text-sm font-bold tabular-nums text-foreground">
-                  {formatMoneda(valorDespensa)}
-                </span>
-              </div>
-            </>
-          )}
         </div>
       )}
     </div>

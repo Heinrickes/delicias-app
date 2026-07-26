@@ -1,21 +1,63 @@
 "use client";
 
 import { useState } from "react";
-import { ShoppingCart, Plus, ClipboardList } from "lucide-react";
+import Link from "next/link";
+import { ShoppingCart, ClipboardList } from "lucide-react";
 import { TiendaCompra, type InsumoTienda } from "@/components/shared/TiendaCompra";
-import { InsumoFormDialog } from "@/components/shared/CostosManager";
 import { ListaCompraModal, type ListaCompra } from "@/components/shared/ListaCompraModal";
-import { formatMoneda } from "@/lib/constants";
+import { ActionButton } from "@/components/shared/ActionButton";
+import { HistorialTimeline } from "@/components/shared/HistorialTimeline";
+import { agruparPorPeriodo, inicialesDe } from "@/lib/historial";
+import { formatMoneda, LOCALE } from "@/lib/constants";
+
+type CompraCompletada = {
+  id: string;
+  nombre: string | null;
+  total: number;
+  proveedor: string | null;
+  fecha_completada: string | null;
+  items: { insumo_id: string; nombre: string; cantidad: number; precio_unitario: number }[];
+  creado_por: string | null;
+};
 
 export function ComprasView({
   insumosParaTienda,
   listas,
+  completadas = [],
+  perfiles = {},
 }: {
   insumosParaTienda: InsumoTienda[];
   listas: ListaCompra[];
+  completadas?: CompraCompletada[];
+  perfiles?: Record<string, string>;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [listaAbierta, setListaAbierta] = useState<ListaCompra | null>(null);
+
+  const chipsHistorial = agruparPorPeriodo(
+    completadas
+      .filter((c) => c.fecha_completada !== null)
+      .map((c) => ({ ...c, fecha: c.fecha_completada as string }))
+  ).map((b) => ({
+    key: b.key,
+    label: b.label,
+    count: b.items.length,
+    amountLabel: formatMoneda(b.items.reduce((s, c) => s + c.total, 0)),
+    eventos: b.items.map((c) => ({
+      id: c.id,
+      descripcion:
+        c.nombre ||
+        c.items
+          .slice(0, 3)
+          .map((i) => i.nombre)
+          .join(", ") ||
+        "Compra de insumos",
+      when: new Date(c.fecha).toLocaleDateString(LOCALE, { day: "2-digit", month: "short" }),
+      amount: formatMoneda(c.total),
+      amountTone: "neutral" as const,
+      author: inicialesDe(c.creado_por ? perfiles[c.creado_por] : null),
+    })),
+  }));
 
   return (
     <div className="space-y-8">
@@ -28,32 +70,20 @@ export function ComprasView({
             Compras
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Tu despensa: compra insumos y controla tu stock.
+            Tu despensa: compra insumos y controla tu stock. Para crear o editar
+            insumos, ve a{" "}
+            <Link href="/insumos" className="text-primary hover:underline">
+              Insumos
+            </Link>
+            .
           </p>
         </div>
         <div className="flex justify-end gap-1">
-          <button
-            type="button"
+          <ActionButton
+            icon={<ShoppingCart className="h-6 w-6" />}
+            label="Tu compra"
+            color="terracota"
             onClick={() => setDrawerOpen(true)}
-            className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-terracotta/10"
-          >
-            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-terracotta text-white shadow">
-              <ShoppingCart className="h-6 w-6" />
-            </span>
-            <span className="text-[11px] font-semibold text-terracotta">Tu compra</span>
-          </button>
-          <InsumoFormDialog
-            trigger={
-              <button
-                type="button"
-                className="flex flex-col items-center gap-1.5 rounded-xl p-3 transition-colors hover:bg-primary/10"
-              >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow">
-                  <Plus className="h-6 w-6" />
-                </span>
-                <span className="text-[11px] font-semibold text-primary">Agregar insumo</span>
-              </button>
-            }
           />
         </div>
       </header>
@@ -129,6 +159,14 @@ export function ComprasView({
         open={!!listaAbierta}
         onOpenChange={(v) => { if (!v) setListaAbierta(null); }}
       />
+
+      {/* Historial de compras completadas */}
+      {chipsHistorial.length > 0 && (
+        <section className="space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Historial de compras</h3>
+          <HistorialTimeline chips={chipsHistorial} />
+        </section>
+      )}
     </div>
   );
 }

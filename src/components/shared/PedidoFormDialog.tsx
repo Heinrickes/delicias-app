@@ -7,10 +7,11 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Check, Loader2, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { crearPedido, type PedidoItemInput } from "@/lib/actions/pedidos";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 import { NumericInput } from "@/components/ui/numeric-input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -132,12 +133,14 @@ export function PedidoFormDialog({
         if (!o) reset();
       }}
     >
-      {isValidElement(trigger)
-        ? cloneElement(trigger as React.ReactElement<{ onClick?: () => void }>, {
-            onClick: () => setOpen(true),
-          })
-        : trigger}
-      <DialogContent className="sm:max-w-lg">
+      <span className="contents" onClick={() => setOpen(true)}>
+        {isValidElement(trigger)
+          ? cloneElement(trigger as React.ReactElement<{ onClick?: () => void }>, {
+              onClick: () => setOpen(true),
+            })
+          : trigger}
+      </span>
+      <DialogContent className="sm:max-w-lg" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>Nuevo pedido</DialogTitle>
           <DialogDescription>
@@ -181,13 +184,13 @@ export function PedidoFormDialog({
           {/* Constructor de items */}
           <div className="space-y-2 rounded-lg border bg-background/40 p-3">
             <div className="flex items-end gap-2">
-              <div className="flex-1 space-y-1.5">
-                <Label>Producto</Label>
+              <div className="flex-1">
+                <Label className="mb-1.5">Producto</Label>
                 <Select
                   value={prodSel || "none"}
                   onValueChange={(v) => setProdSel(!v || v === "none" ? "" : v)}
                 >
-                  <SelectTrigger className="h-9 w-full">
+                  <SelectTrigger className="h-8 w-full">
                     <span className={cn("flex-1 text-left text-sm", !prodSel && "text-muted-foreground")}>
                       {prodSel
                         ? (() => { const p = productos.find(x => x.id === prodSel); return p ? `${p.nombre} (${formatMoneda(p.precio)})` : "Elige…"; })()
@@ -268,12 +271,21 @@ export function PedidoFormDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? LABELS.guardando : "Crear pedido"}
-            </Button>
+            <Tooltip content={LABELS.cancelar} side="top">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </Tooltip>
+            <Tooltip content="Crear pedido" side="top">
+              <Button type="submit" size="icon-sm" disabled={isPending}>
+                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              </Button>
+            </Tooltip>
           </DialogFooter>
         </form>
       </DialogContent>
