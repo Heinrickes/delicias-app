@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition } from "react";
 import Image from "next/image";
 import {
   ShoppingCart,
@@ -24,6 +24,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
+import {
+  Drawer,
+  DrawerPortal,
+  DrawerBackdrop,
+  DrawerViewport,
+  DrawerContent,
+} from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 import { formatMoneda, LABELS } from "@/lib/constants";
 
@@ -32,7 +39,6 @@ export type InsumoTienda = {
   nombre: string;
   unidad: string;
   costo_unitario: number;
-  en_lista: boolean;
   stock: number;
   stock_minimo: number;
   imagen_url: string | null;
@@ -64,18 +70,7 @@ export function TiendaCompra({
 }) {
   const isControlled = openProp !== undefined;
 
-  const getItemsIniciales = (): ItemCarrito[] =>
-    insumos
-      .filter((i) => i.en_lista)
-      .map((i) => ({
-        insumo_id: i.id,
-        nombre: i.nombre,
-        cantidad: 1,
-        precio_unitario: i.costo_unitario,
-        precio_str: i.costo_unitario > 0 ? i.costo_unitario.toString() : "",
-      }));
-
-  const [items, setItems] = useState<ItemCarrito[]>(getItemsIniciales);
+  const [items, setItems] = useState<ItemCarrito[]>([]);
   const [_drawerOpen, _setDrawerOpen] = useState(false);
   const drawerOpen = isControlled ? openProp! : _drawerOpen;
   const setDrawerOpen = isControlled ? onOpenChange! : _setDrawerOpen;
@@ -87,27 +82,13 @@ export function TiendaCompra({
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const touchStartY = useRef(0);
-  const [dragOffset, setDragOffset] = useState(0);
-  const onDragStart = (e: React.TouchEvent) => {
-    touchStartY.current = e.touches[0].clientY;
-  };
-  const onDragMove = (e: React.TouchEvent) => {
-    const delta = e.touches[0].clientY - touchStartY.current;
-    if (delta > 0) setDragOffset(delta);
-  };
-  const onDragEnd = () => {
-    if (dragOffset > 80) setDrawerOpen(false);
-    setDragOffset(0);
-  };
-
   const totalUnidades = items.reduce((s, i) => s + i.cantidad, 0);
   const subtotal = items.reduce((s, i) => s + i.precio_unitario * i.cantidad, 0);
 
   const enCarrito = (id: string) => items.find((i) => i.insumo_id === id)?.cantidad ?? 0;
 
   const reset = () => {
-    setItems(getItemsIniciales());
+    setItems([]);
     setFase("compra");
     setNombre("");
     setProveedor("");
@@ -196,6 +177,225 @@ export function TiendaCompra({
     });
   };
 
+  const sheetBody = (
+    <>
+      <header className="flex items-center justify-between border-b px-5 py-4">
+        <div className="flex items-center gap-2">
+          {fase === "confirmar" && (
+            <button
+              type="button"
+              onClick={() => setFase("compra")}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Volver"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          )}
+          <h2 className="text-lg font-semibold text-foreground">
+            {fase === "compra" ? "Tu compra" : "Guardar lista"}
+          </h2>
+          {fase === "compra" && totalUnidades > 0 && (
+            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-2 text-xs font-bold text-primary-foreground">
+              {totalUnidades}
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(false)}
+          className="text-muted-foreground hover:text-foreground"
+          aria-label="Cerrar"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </header>
+
+      {items.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+          <ShoppingCart className="h-10 w-10 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">La lista está vacía</p>
+          <Button variant="outline" onClick={() => setDrawerOpen(false)}>
+            Agregar insumos
+          </Button>
+        </div>
+      ) : fase === "compra" ? (
+        <>
+          <div className="flex-1 divide-y overflow-y-auto overscroll-contain touch-pan-y px-5">
+            {items.map((i) => (
+              <div key={i.insumo_id} className="py-4">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {i.nombre}
+                </p>
+                <div className="mt-2 grid grid-cols-[auto_auto_1fr_auto] items-center gap-x-3 gap-y-1">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground">$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={i.precio_str}
+                      onChange={(e) => setPrecio(i.insumo_id, e.target.value)}
+                      placeholder="0"
+                      className="w-20 rounded border border-foreground/15 bg-transparent px-1.5 py-0.5 text-sm tabular-nums text-muted-foreground outline-none focus:border-primary focus:text-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      aria-label="Precio unitario"
+                    />
+                  </div>
+                  <div className="inline-flex items-center rounded-lg border">
+                    <button
+                      type="button"
+                      onClick={() => setCantidad(i.insumo_id, i.cantidad - 1)}
+                      className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
+                      aria-label="Quitar uno"
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      value={i.cantidad}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "") return;
+                        const n = parseInt(v, 10);
+                        if (Number.isFinite(n)) setCantidad(i.insumo_id, n);
+                      }}
+                      className="h-8 w-12 border-x bg-transparent text-center text-sm tabular-nums outline-none focus:bg-background/60 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      aria-label="Cantidad"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCantidad(i.insumo_id, i.cantidad + 1)}
+                      className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
+                      aria-label="Agregar uno"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <span />
+                  <div className="flex items-center gap-2 justify-self-end">
+                    <span className="text-sm font-semibold tabular-nums text-foreground">
+                      {formatMoneda(i.precio_unitario * i.cantidad)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCantidad(i.insumo_id, 0)}
+                      className="text-muted-foreground hover:text-destructive"
+                      aria-label="Eliminar"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <footer className="border-t px-5 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">{LABELS.total}</p>
+                <p className="text-xl font-semibold tabular-nums text-foreground">
+                  {formatMoneda(subtotal)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFase("confirmar")}
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105"
+                aria-label="Confirmar compra"
+              >
+                <ArrowRight className="h-5 w-5" />
+              </button>
+            </div>
+          </footer>
+        </>
+      ) : (
+        /* Fase confirmar */
+        <>
+          <div className="flex-1 space-y-5 overflow-y-auto overscroll-contain touch-pan-y px-5 py-4">
+            <div className="rounded-lg bg-background/50 px-4 py-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  {items.length} {items.length === 1 ? "insumo" : "insumos"} · {totalUnidades} unidades
+                </span>
+                <span className="font-semibold tabular-nums text-foreground">
+                  {formatMoneda(subtotal)}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="tc-nombre">Nombre de la lista</Label>
+              <Input
+                id="tc-nombre"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Ej: Compra semanal, Reposición ingredientes…"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="tc-prov">Proveedor (opcional)</Label>
+              <Input
+                id="tc-prov"
+                value={proveedor}
+                onChange={(e) => setProveedor(e.target.value)}
+                placeholder="Nombre del local o proveedor"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="tc-notas">{LABELS.notas}</Label>
+              <Textarea
+                id="tc-notas"
+                value={notas}
+                onChange={(e) => setNotas(e.target.value)}
+                placeholder="Marcas específicas, detalles..."
+                rows={2}
+              />
+            </div>
+
+            {showDatePicker && (
+              <div className="space-y-1.5">
+                <Label>Fecha planificada</Label>
+                <DatePicker
+                  value={planDate}
+                  onChange={setPlanDate}
+                  placeholder="Seleccionar fecha"
+                />
+              </div>
+            )}
+          </div>
+
+          <footer className="border-t px-5 pb-6 pt-4">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Total estimado</span>
+              <span className="text-3xl font-bold tabular-nums text-foreground">
+                {formatMoneda(subtotal)}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <ActionButton
+                icon={<Check className="h-6 w-6" />}
+                label="Comprar ahora"
+                color="success"
+                disabled={isPending}
+                onClick={comprarAhora}
+              />
+              <ActionButton
+                icon={<CalendarDays className="h-6 w-6" />}
+                label={showDatePicker ? "Confirmar fecha" : "Planificar"}
+                color="primary"
+                disabled={isPending}
+                onClick={planificar}
+              />
+            </div>
+          </footer>
+        </>
+      )}
+    </>
+  );
+
   return (
     <>
       {/* Barra sticky (solo cuando no hay control externo) */}
@@ -248,11 +448,6 @@ export function TiendaCompra({
                   )}
                   {/* Badges top-left */}
                   <div className="absolute left-2 top-2 flex flex-wrap gap-1">
-                    {ins.en_lista && (
-                      <span className="rounded-full bg-terracotta/90 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                        En lista
-                      </span>
-                    )}
                     {agotado && (
                       <span className="rounded-full bg-danger/90 px-1.5 py-0.5 text-[10px] font-semibold text-white">
                         Agotado
@@ -299,254 +494,24 @@ export function TiendaCompra({
         </div>
       )}
 
-      {/* Backdrop */}
-      <div
-        onClick={() => setDrawerOpen(false)}
-        className={cn(
-          "fixed inset-0 z-40 bg-foreground/20 transition-opacity lg:bg-foreground/40 lg:hidden",
-          drawerOpen ? "opacity-100" : "pointer-events-none opacity-0"
-        )}
-      />
+      {/* Móvil: sheet inferior (Base UI Drawer) — deslizar hacia abajo para cerrar */}
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerPortal>
+          <DrawerBackdrop className="lg:hidden" />
+          <DrawerViewport className="lg:hidden">
+            <DrawerContent>{sheetBody}</DrawerContent>
+          </DrawerViewport>
+        </DrawerPortal>
+      </Drawer>
 
-      {/* Drawer: Tu compra */}
+      {/* Desktop: panel lateral fijo */}
       <aside
         className={cn(
-          "fixed z-50 flex flex-col bg-card shadow-2xl duration-300",
-          dragOffset === 0 && "transition-[transform,height]",
-          "bottom-[3.75rem] left-0 right-0 rounded-t-2xl",
-          fase === "confirmar" ? "h-[calc(100vh-3.75rem)]" : "h-[62vh]",
-          "lg:bottom-auto lg:inset-y-0 lg:left-auto lg:h-auto lg:max-h-none lg:w-full lg:max-w-md lg:rounded-none",
-          drawerOpen
-            ? "translate-y-0 lg:translate-x-0"
-            : "translate-y-full lg:translate-y-0 lg:translate-x-full"
+          "fixed inset-y-0 right-0 z-50 hidden w-full max-w-md flex-col bg-card shadow-2xl transition-transform duration-300 lg:flex",
+          drawerOpen ? "translate-x-0" : "translate-x-full"
         )}
-        style={dragOffset > 0 ? { transform: `translateY(${dragOffset}px)` } : undefined}
       >
-        {/* Zona de arrastre */}
-        <div
-          className="touch-none select-none"
-          onTouchStart={onDragStart}
-          onTouchMove={onDragMove}
-          onTouchEnd={onDragEnd}
-        >
-          <div className="flex justify-center pb-2 pt-3 lg:hidden">
-            <div className="h-1 w-10 rounded-full bg-foreground/20" />
-          </div>
-          <header className="flex items-center justify-between border-b px-5 py-4">
-            <div className="flex items-center gap-2">
-              {fase === "confirmar" && (
-                <button
-                  type="button"
-                  onClick={() => setFase("compra")}
-                  className="text-muted-foreground hover:text-foreground"
-                  aria-label="Volver"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </button>
-              )}
-              <h2 className="text-lg font-semibold text-foreground">
-                {fase === "compra" ? "Tu compra" : "Guardar lista"}
-              </h2>
-              {fase === "compra" && totalUnidades > 0 && (
-                <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-2 text-xs font-bold text-primary-foreground">
-                  {totalUnidades}
-                </span>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => setDrawerOpen(false)}
-              className="text-muted-foreground hover:text-foreground"
-              aria-label="Cerrar"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </header>
-        </div>
-
-        {items.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-            <ShoppingCart className="h-10 w-10 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">La lista está vacía</p>
-            <Button variant="outline" onClick={() => setDrawerOpen(false)}>
-              Agregar insumos
-            </Button>
-          </div>
-        ) : fase === "compra" ? (
-          <>
-            <div className="flex-1 divide-y overflow-y-auto overscroll-contain touch-pan-y px-5">
-              {items.map((i) => (
-                <div key={i.insumo_id} className="py-4">
-                  <p className="truncate text-sm font-medium text-foreground">
-                    {i.nombre}
-                  </p>
-                  <div className="mt-2 grid grid-cols-[auto_auto_1fr_auto] items-center gap-x-3 gap-y-1">
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted-foreground">$</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="any"
-                        value={i.precio_str}
-                        onChange={(e) => setPrecio(i.insumo_id, e.target.value)}
-                        placeholder="0"
-                        className="w-20 rounded border border-foreground/15 bg-transparent px-1.5 py-0.5 text-sm tabular-nums text-muted-foreground outline-none focus:border-primary focus:text-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        aria-label="Precio unitario"
-                      />
-                    </div>
-                    <div className="inline-flex items-center rounded-lg border">
-                      <button
-                        type="button"
-                        onClick={() => setCantidad(i.insumo_id, i.cantidad - 1)}
-                        className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
-                        aria-label="Quitar uno"
-                      >
-                        <Minus className="h-3.5 w-3.5" />
-                      </button>
-                      <input
-                        type="number"
-                        min="1"
-                        value={i.cantidad}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "") return;
-                          const n = parseInt(v, 10);
-                          if (Number.isFinite(n)) setCantidad(i.insumo_id, n);
-                        }}
-                        className="h-8 w-12 border-x bg-transparent text-center text-sm tabular-nums outline-none focus:bg-background/60 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        aria-label="Cantidad"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setCantidad(i.insumo_id, i.cantidad + 1)}
-                        className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
-                        aria-label="Agregar uno"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                    <span />
-                    <div className="flex items-center gap-2 justify-self-end">
-                      <span className="text-sm font-semibold tabular-nums text-foreground">
-                        {formatMoneda(i.precio_unitario * i.cantidad)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setCantidad(i.insumo_id, 0)}
-                        className="text-muted-foreground hover:text-destructive"
-                        aria-label="Eliminar"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <footer className="border-t px-5 py-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">{LABELS.total}</p>
-                  <p className="text-xl font-semibold tabular-nums text-foreground">
-                    {formatMoneda(subtotal)}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setFase("confirmar")}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105"
-                  aria-label="Confirmar compra"
-                >
-                  <ArrowRight className="h-5 w-5" />
-                </button>
-              </div>
-            </footer>
-          </>
-        ) : (
-          /* Fase confirmar */
-          <>
-            <div className="flex-1 space-y-5 overflow-y-auto overscroll-contain touch-pan-y px-5 py-4">
-              <div className="rounded-lg bg-background/50 px-4 py-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {items.length} {items.length === 1 ? "insumo" : "insumos"} · {totalUnidades} unidades
-                  </span>
-                  <span className="font-semibold tabular-nums text-foreground">
-                    {formatMoneda(subtotal)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="tc-nombre">Nombre de la lista</Label>
-                <Input
-                  id="tc-nombre"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Ej: Compra semanal, Reposición ingredientes…"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="tc-prov">Proveedor (opcional)</Label>
-                <Input
-                  id="tc-prov"
-                  value={proveedor}
-                  onChange={(e) => setProveedor(e.target.value)}
-                  placeholder="Nombre del local o proveedor"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="tc-notas">{LABELS.notas}</Label>
-                <Textarea
-                  id="tc-notas"
-                  value={notas}
-                  onChange={(e) => setNotas(e.target.value)}
-                  placeholder="Marcas específicas, detalles..."
-                  rows={2}
-                />
-              </div>
-
-              {showDatePicker && (
-                <div className="space-y-1.5">
-                  <Label>Fecha planificada</Label>
-                  <DatePicker
-                    value={planDate}
-                    onChange={setPlanDate}
-                    placeholder="Seleccionar fecha"
-                  />
-                </div>
-              )}
-            </div>
-
-            <footer className="border-t px-5 pb-6 pt-4">
-              <div className="mb-4 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total estimado</span>
-                <span className="text-3xl font-bold tabular-nums text-foreground">
-                  {formatMoneda(subtotal)}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <ActionButton
-                  icon={<Check className="h-6 w-6" />}
-                  label="Comprar ahora"
-                  color="success"
-                  disabled={isPending}
-                  onClick={comprarAhora}
-                />
-                <ActionButton
-                  icon={<CalendarDays className="h-6 w-6" />}
-                  label={showDatePicker ? "Confirmar fecha" : "Planificar"}
-                  color="primary"
-                  disabled={isPending}
-                  onClick={planificar}
-                />
-              </div>
-            </footer>
-          </>
-        )}
+        {sheetBody}
       </aside>
     </>
   );

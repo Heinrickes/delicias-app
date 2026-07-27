@@ -11,7 +11,7 @@ export default async function CostosPage() {
   const [insumosRes, listasRes, completadasRes, perfiles] = await Promise.all([
     supabase
       .from("insumos")
-      .select("id, nombre, unidad, stock, stock_minimo, costo_unitario, en_lista, imagen_url")
+      .select("id, nombre, unidad, stock, stock_minimo, costo_unitario, imagen_url")
       .eq("activo", true)
       .order("nombre"),
     supabase
@@ -34,7 +34,6 @@ export default async function CostosPage() {
     nombre: i.nombre,
     unidad: i.unidad,
     costo_unitario: i.costo_unitario,
-    en_lista: i.en_lista,
     stock: i.stock,
     stock_minimo: i.stock_minimo,
     imagen_url: i.imagen_url ?? null,

@@ -7,7 +7,7 @@ import {
   useTransition,
   type ReactNode,
 } from "react";
-import { PackagePlus, Factory, TrendingDown, SlidersHorizontal, AlertTriangle, Check, Loader2 } from "lucide-react";
+import { PackagePlus, Factory, TrendingDown, SlidersHorizontal, AlertTriangle, Check, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   ajustarStock,
@@ -129,7 +129,7 @@ export function StockMovimientoDialog({
           Movimiento
         </Button>
       )}
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>{producto.nombre}</DialogTitle>
           <DialogDescription>
@@ -192,6 +192,16 @@ export function StockMovimientoDialog({
           )}
 
           <DialogFooter>
+            <Tooltip content={LABELS.cancelar} side="top">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </Tooltip>
             <Tooltip content={LABELS.guardar} side="top">
               <Button type="submit" size="icon-sm" disabled={isPending}>
                 {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}

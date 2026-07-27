@@ -116,7 +116,7 @@ async function getResumen() {
       .in("estado", ["pendiente", "por_cobrar"]),
     supabase
       .from("insumos")
-      .select("costo_unitario, stock, stock_minimo, en_lista")
+      .select("costo_unitario, stock, stock_minimo")
       .eq("activo", true),
     supabase
       .from("compras")
@@ -153,9 +153,7 @@ async function getResumen() {
     (s, c) => s + c.total,
     0
   );
-  const porComprar = insumos.filter(
-    (i) => i.stock < i.stock_minimo || i.en_lista
-  ).length;
+  const porComprar = insumos.filter((i) => i.stock < i.stock_minimo).length;
 
   return { ingresoHoy, ingresoAyer, entregasHoy, totalPorCobrar, valorDespensa, gastosMes, porComprar };
 }

@@ -256,7 +256,7 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
 
       {/* Diálogo por cobrar */}
       <Dialog open={cobrarOpen} onOpenChange={setCobrarOpen}>
-        <DialogContent>
+        <DialogContent showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Entregar por cobrar</DialogTitle>
             <DialogDescription>
@@ -273,6 +273,16 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
             />
           </div>
           <DialogFooter>
+            <Tooltip content={LABELS.cancelar}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setCobrarOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </Tooltip>
             <Tooltip content="Confirmar entrega">
               <Button
                 size="icon-sm"
@@ -288,7 +298,7 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
 
       {/* Diálogo de confirmación de pago */}
       <Dialog open={pagoOpen} onOpenChange={setPagoOpen}>
-        <DialogContent>
+        <DialogContent showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>Confirmar pago</DialogTitle>
             <DialogDescription>
@@ -313,6 +323,16 @@ export function PedidoCard({ pedido }: { pedido: Pedido }) {
             </Select>
           </div>
           <DialogFooter>
+            <Tooltip content={LABELS.cancelar}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setPagoOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </Tooltip>
             <Tooltip content="Confirmar pago">
               <Button
                 size="icon-sm"

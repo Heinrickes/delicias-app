@@ -21,6 +21,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -77,7 +78,7 @@ export function CategoriasManager({
             onClick: () => setOpen(true),
           })
         : trigger}
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>Categorías</DialogTitle>
           <DialogDescription>
@@ -184,6 +185,19 @@ export function CategoriasManager({
             ))}
           </ul>
         )}
+
+        <DialogFooter>
+          <Tooltip content="Cerrar">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </Tooltip>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

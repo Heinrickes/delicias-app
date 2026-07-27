@@ -4,17 +4,25 @@ import { useEffect, useRef, useState } from "react";
 import { Check, X, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const VIEW = 260;
-const OUTPUT = 640;
+/** Alto fijo del visor, igual al botón "Foto" (`h-28`) donde se muestra la imagen ya subida. */
+const HEIGHT = 112;
+const OUTPUT_W = 960;
 
 function clamp(v: number, max: number) {
   return Math.min(max, Math.max(-max, v));
 }
 
+function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
 /**
- * Editor de encuadre: permite arrastrar (pan) y hacer zoom sobre la imagen
- * seleccionada antes de subirla. Al confirmar, renderiza el recorte visible
- * a un canvas cuadrado fijo y devuelve el resultado como Blob.
+ * Editor de encuadre: permite arrastrar (pan) y hacer zoom —con la barra o
+ * pellizcando con 2 dedos— sobre la imagen seleccionada antes de subirla.
+ * El visor usa el mismo alto/ancho (`h-28 w-full`) que el botón "Foto" donde
+ * la imagen se muestra después, para que el encuadre elegido acá sea
+ * exactamente lo que se ve ahí (antes recortaba siempre a un cuadrado fijo,
+ * distinto del espacio real donde se despliega la foto).
  */
 export function ImageCropEditor({
   file,
@@ -29,8 +37,12 @@ export function ImageCropEditor({
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const [viewWidth, setViewWidth] = useState(320);
+  const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const panRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+  const pinchRef = useRef<{ dist: number; scale: number } | null>(null);
 
   useEffect(() => {
     const url = URL.createObjectURL(file);
@@ -41,55 +53,98 @@ export function ImageCropEditor({
     return () => URL.revokeObjectURL(url);
   }, [file]);
 
-  const containScale = natural ? Math.min(VIEW / natural.w, VIEW / natural.h) : 1;
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (w) setViewWidth(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const containScale = natural ? Math.min(viewWidth / natural.w, HEIGHT / natural.h) : 1;
   const displayScale = containScale * scale;
-  const maxOffsetX = natural ? Math.max(0, (natural.w * displayScale - VIEW) / 2) : 0;
-  const maxOffsetY = natural ? Math.max(0, (natural.h * displayScale - VIEW) / 2) : 0;
+  const maxOffsetX = natural ? Math.max(0, (natural.w * displayScale - viewWidth) / 2) : 0;
+  const maxOffsetY = natural ? Math.max(0, (natural.h * displayScale - HEIGHT) / 2) : 0;
   const aspectSpread = natural ? Math.max(natural.w, natural.h) / Math.min(natural.w, natural.h) : 1;
   const maxScale = Math.max(3, aspectSpread * 2);
 
+  const panFrom = (x: number, y: number) => {
+    panRef.current = { startX: x, startY: y, origX: offset.x, origY: offset.y };
+  };
+
   const onPointerDown = (e: React.PointerEvent) => {
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    dragRef.current = { startX: e.clientX, startY: e.clientY, origX: offset.x, origY: offset.y };
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointersRef.current.size === 1) {
+      panFrom(e.clientX, e.clientY);
+    } else if (pointersRef.current.size === 2) {
+      panRef.current = null;
+      const [a, b] = Array.from(pointersRef.current.values());
+      pinchRef.current = { dist: distance(a, b), scale };
+    }
   };
+
   const onPointerMove = (e: React.PointerEvent) => {
-    if (!dragRef.current) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
-    setOffset({
-      x: clamp(dragRef.current.origX + dx, maxOffsetX),
-      y: clamp(dragRef.current.origY + dy, maxOffsetY),
-    });
+    if (!pointersRef.current.has(e.pointerId)) return;
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointersRef.current.size >= 2 && pinchRef.current) {
+      const [a, b] = Array.from(pointersRef.current.values());
+      const factor = distance(a, b) / pinchRef.current.dist;
+      handleScale(Math.min(maxScale, Math.max(1, pinchRef.current.scale * factor)));
+      return;
+    }
+
+    if (pointersRef.current.size === 1 && panRef.current) {
+      const dx = e.clientX - panRef.current.startX;
+      const dy = e.clientY - panRef.current.startY;
+      setOffset({
+        x: clamp(panRef.current.origX + dx, maxOffsetX),
+        y: clamp(panRef.current.origY + dy, maxOffsetY),
+      });
+    }
   };
-  const onPointerUp = () => {
-    dragRef.current = null;
+
+  const onPointerUp = (e: React.PointerEvent) => {
+    pointersRef.current.delete(e.pointerId);
+    pinchRef.current = null;
+    if (pointersRef.current.size === 1) {
+      const [pt] = Array.from(pointersRef.current.values());
+      panFrom(pt.x, pt.y);
+    } else {
+      panRef.current = null;
+    }
   };
 
   const handleScale = (next: number) => {
     setScale(next);
     if (!natural) return;
     const nextDisplayScale = containScale * next;
-    const nextMaxX = Math.max(0, (natural.w * nextDisplayScale - VIEW) / 2);
-    const nextMaxY = Math.max(0, (natural.h * nextDisplayScale - VIEW) / 2);
+    const nextMaxX = Math.max(0, (natural.w * nextDisplayScale - viewWidth) / 2);
+    const nextMaxY = Math.max(0, (natural.h * nextDisplayScale - HEIGHT) / 2);
     setOffset((o) => ({ x: clamp(o.x, nextMaxX), y: clamp(o.y, nextMaxY) }));
   };
 
   const handleConfirm = () => {
     if (!natural || !imgRef.current) return;
+    const outputH = Math.round(OUTPUT_W * (HEIGHT / viewWidth));
     const canvas = document.createElement("canvas");
-    canvas.width = OUTPUT;
-    canvas.height = OUTPUT;
+    canvas.width = OUTPUT_W;
+    canvas.height = outputH;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, OUTPUT, OUTPUT);
-    const imgLeft = VIEW / 2 - (natural.w * displayScale) / 2 + offset.x;
-    const imgTop = VIEW / 2 - (natural.h * displayScale) / 2 + offset.y;
+    ctx.fillRect(0, 0, OUTPUT_W, outputH);
+    const imgLeft = viewWidth / 2 - (natural.w * displayScale) / 2 + offset.x;
+    const imgTop = HEIGHT / 2 - (natural.h * displayScale) / 2 + offset.y;
     const srcX = -imgLeft / displayScale;
     const srcY = -imgTop / displayScale;
-    const srcW = VIEW / displayScale;
-    const srcH = VIEW / displayScale;
-    ctx.drawImage(imgRef.current, srcX, srcY, srcW, srcH, 0, 0, OUTPUT, OUTPUT);
+    const srcW = viewWidth / displayScale;
+    const srcH = HEIGHT / displayScale;
+    ctx.drawImage(imgRef.current, srcX, srcY, srcW, srcH, 0, 0, OUTPUT_W, outputH);
     canvas.toBlob(
       (blob) => {
         if (blob) onConfirm(blob);
@@ -104,8 +159,8 @@ export function ImageCropEditor({
   return (
     <div className="space-y-3">
       <div
-        className="relative mx-auto touch-none select-none overflow-hidden rounded-xl bg-muted"
-        style={{ width: VIEW, height: VIEW }}
+        ref={containerRef}
+        className="relative h-28 w-full touch-none select-none overflow-hidden rounded-xl bg-muted"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

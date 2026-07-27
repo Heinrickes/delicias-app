@@ -7,7 +7,6 @@ import {
   Pencil,
   Trash2,
   Check,
-  ShoppingCart,
   Camera,
   Loader2,
   Boxes,
@@ -23,7 +22,6 @@ import {
   actualizarInsumo,
   eliminarInsumo,
   ajustarStockInsumo,
-  toggleEnLista,
 } from "@/lib/actions/insumos";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -61,7 +59,6 @@ export type Insumo = {
   stock_minimo: number;
   costo_unitario: number;
   proveedor: string | null;
-  en_lista: boolean;
   imagen_url?: string | null;
 };
 
@@ -299,12 +296,6 @@ function InsumoCard({
     .join("")
     .toUpperCase();
 
-  const toggle = () =>
-    start(async () => {
-      const r = await toggleEnLista(insumo.id, !insumo.en_lista);
-      if (!r.ok) toast.error(r.error);
-    });
-
   const borrar = () =>
     start(async () => {
       const r = await eliminarInsumo(insumo.id);
@@ -326,8 +317,6 @@ function InsumoCard({
             <Badge className="shrink-0 bg-danger/15 text-[10px] text-danger">Agotado</Badge>
           ) : bajo ? (
             <Badge className="shrink-0 bg-gold/15 text-[10px] text-gold">Bajo</Badge>
-          ) : insumo.en_lista ? (
-            <Badge className="shrink-0 bg-gold/15 text-[10px] text-gold">En lista</Badge>
           ) : (
             <Badge className="shrink-0 bg-success/15 text-[10px] text-success">OK</Badge>
           )
@@ -352,17 +341,6 @@ function InsumoCard({
         actions={
           <div className="flex w-full flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <Tooltip content={insumo.en_lista ? "Quitar de lista" : "Agregar a lista"}>
-                <Button
-                  type="button"
-                  variant={insumo.en_lista ? "default" : "outline"}
-                  size="icon-sm"
-                  onClick={toggle}
-                  disabled={pending}
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                </Button>
-              </Tooltip>
               <Tooltip content="Gestionar">
                 <Button
                   type="button"

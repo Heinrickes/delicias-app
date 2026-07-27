@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Drawer, DrawerPortal, DrawerBackdrop, DrawerViewport, DrawerContent } from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 
 export type CardPopoverField = { label: string; value: ReactNode };
@@ -176,19 +177,15 @@ export function CardPopover({
         </PopoverContent>
       </Popover>
 
-      {/* Móvil: sheet inferior — visibilidad controlada solo por mobileOpen */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-[60] lg:hidden">
-          <div
-            className="absolute inset-0 bg-foreground/30"
-            onClick={() => setMobileOpen(false)}
-          />
-          <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto overscroll-contain rounded-t-2xl bg-popover pb-[calc(env(safe-area-inset-bottom)+4.5rem)] shadow-2xl">
-            <div className="mx-auto mt-2 h-1 w-9 rounded-full bg-foreground/15" />
-            {expandedBody}
-          </div>
-        </div>
-      )}
+      {/* Móvil: sheet inferior (Base UI Drawer) — deslizar hacia abajo para cerrar */}
+      <Drawer open={mobileOpen} onOpenChange={setMobileOpen}>
+        <DrawerPortal>
+          <DrawerBackdrop className="lg:hidden" />
+          <DrawerViewport className="lg:hidden">
+            <DrawerContent>{expandedBody}</DrawerContent>
+          </DrawerViewport>
+        </DrawerPortal>
+      </Drawer>
     </>
   );
 }

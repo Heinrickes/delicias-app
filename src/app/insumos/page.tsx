@@ -11,7 +11,7 @@ async function getData() {
   const { data } = await supabase
     .from("insumos")
     .select(
-      "id, nombre, unidad, stock, stock_minimo, costo_unitario, proveedor, en_lista, imagen_url"
+      "id, nombre, unidad, stock, stock_minimo, costo_unitario, proveedor, imagen_url"
     )
     .eq("activo", true)
     .order("nombre");

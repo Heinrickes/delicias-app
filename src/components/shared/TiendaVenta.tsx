@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition } from "react";
 import Image from "next/image";
 import {
   ShoppingBag,
@@ -30,6 +30,13 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { DatePicker } from "@/components/ui/date-picker";
+import {
+  Drawer,
+  DrawerPortal,
+  DrawerBackdrop,
+  DrawerViewport,
+  DrawerContent,
+} from "@/components/ui/drawer";
 import { cn } from "@/lib/utils";
 import { formatMoneda, LABELS } from "@/lib/constants";
 
@@ -92,21 +99,6 @@ export function TiendaVenta({
   const [notas, setNotas] = useState("");
   const [modoPago, setModoPago] = useState<"efectivo" | "transferencia">("efectivo");
   const [isPending, startTransition] = useTransition();
-
-  // Swipe-to-dismiss del bottom sheet
-  const touchStartY = useRef(0);
-  const [dragOffset, setDragOffset] = useState(0);
-  const onDragStart = (e: React.TouchEvent) => {
-    touchStartY.current = e.touches[0].clientY;
-  };
-  const onDragMove = (e: React.TouchEvent) => {
-    const delta = e.touches[0].clientY - touchStartY.current;
-    if (delta > 0) setDragOffset(delta);
-  };
-  const onDragEnd = () => {
-    if (dragOffset > 80) setDrawerOpen(false);
-    setDragOffset(0);
-  };
 
   const prodById = (id: string) => productos.find((p) => p.id === id);
   const enCarrito = (id: string) =>
@@ -265,6 +257,288 @@ export function TiendaVenta({
     });
   };
 
+  const sheetBody = (
+    <>
+      <header className="flex items-center justify-between border-b px-5 py-4">
+        <div className="flex items-center gap-2">
+          {fase === "pago" && (
+            <button
+              type="button"
+              onClick={() => setFase("bolsa")}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Volver a la bolsa"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          )}
+          <h2 className="text-lg font-semibold text-foreground">
+            {fase === "bolsa" ? "Tu bolsa" : "Cerrar venta"}
+          </h2>
+          {fase === "bolsa" && totalUnidades > 0 && (
+            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-2 text-xs font-bold text-primary-foreground">
+              {totalUnidades}
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(false)}
+          className="text-muted-foreground hover:text-foreground"
+          aria-label="Cerrar"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      </header>
+
+      {items.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+          <ShoppingBag className="h-10 w-10 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">Tu bolsa está vacía</p>
+          <Button variant="outline" onClick={() => setDrawerOpen(false)}>
+            Seguir agregando
+          </Button>
+        </div>
+      ) : fase === "bolsa" ? (
+        <>
+          <div className="flex-1 divide-y overflow-y-auto overscroll-contain touch-pan-y px-5">
+            {items.map((i) => (
+              <div key={i.producto_id} className="flex gap-3 py-4">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {i.nombre_producto}
+                  </p>
+                  <p className="mt-0.5 text-sm tabular-nums text-muted-foreground">
+                    {formatMoneda(i.precio_unitario)}
+                  </p>
+                  <div className="mt-2 inline-flex items-center rounded-lg border">
+                    <button
+                      type="button"
+                      onClick={() => setCantidad(i.producto_id!, i.cantidad - 1)}
+                      className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
+                      aria-label="Quitar uno"
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      value={i.cantidad}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "") return;
+                        const n = parseInt(v, 10);
+                        if (Number.isFinite(n))
+                          setCantidad(i.producto_id!, n);
+                      }}
+                      className="h-8 w-12 border-x bg-transparent text-center text-sm tabular-nums outline-none focus:bg-background/60 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      aria-label="Cantidad"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCantidad(i.producto_id!, i.cantidad + 1)}
+                      className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
+                      aria-label="Agregar uno"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setCantidad(i.producto_id!, 0)}
+                    className="text-muted-foreground hover:text-destructive"
+                    aria-label="Eliminar"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                  <span className="text-sm font-semibold tabular-nums text-foreground">
+                    {formatMoneda(i.precio_unitario * i.cantidad)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <footer className="border-t px-5 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">{LABELS.total}</p>
+                <p className="text-xl font-semibold tabular-nums text-foreground">
+                  {formatMoneda(subtotal)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFase("pago")}
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105"
+                aria-label="Cerrar venta"
+              >
+                <ArrowRight className="h-5 w-5" />
+              </button>
+            </div>
+          </footer>
+        </>
+      ) : (
+        /* Fase de pago / desenlace */
+        <>
+          <div className="flex-1 space-y-5 overflow-y-auto overscroll-contain touch-pan-y px-5 py-4">
+            <div className="rounded-lg bg-background/50 px-4 py-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">
+                  {totalUnidades} {totalUnidades === 1 ? "producto" : "productos"}
+                </span>
+                <span className="font-semibold tabular-nums text-foreground">
+                  {formatMoneda(subtotal)}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label>{LABELS.cliente}</Label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setClienteMode((m) =>
+                      m === "nuevo" ? "existente" : "nuevo"
+                    )
+                  }
+                  className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                >
+                  {clienteMode === "nuevo" ? (
+                    <>
+                      <X className="h-3 w-3" /> Elegir existente
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-3 w-3" /> Nuevo cliente
+                    </>
+                  )}
+                </button>
+              </div>
+              {clienteMode === "existente" ? (
+                <Select
+                  value={clienteId || "none"}
+                  onValueChange={(v) => setClienteId(!v || v === "none" ? "" : v)}
+                >
+                  <SelectTrigger className="h-9 w-full">
+                    <span className={cn("flex-1 text-left text-sm", !clienteId && "text-muted-foreground")}>
+                      {clienteId
+                        ? clientes.find((c) => c.id === clienteId)?.nombre ?? "Sin cliente"
+                        : "Sin cliente"}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin cliente</SelectItem>
+                    {clientes.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    value={nuevoNombre}
+                    onChange={(e) => setNuevoNombre(e.target.value)}
+                    placeholder="Nombre del cliente"
+                  />
+                  <Input
+                    value={nuevoTelefono}
+                    onChange={(e) => setNuevoTelefono(e.target.value)}
+                    placeholder="Teléfono (opcional)"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>{LABELS.fechaEntrega} (opcional)</Label>
+              <DatePicker
+                value={fechaEntrega}
+                onChange={setFechaEntrega}
+                placeholder="Seleccionar fecha de entrega"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Modo de pago</Label>
+              <Select
+                value={modoPago}
+                onValueChange={(v) => setModoPago((v as "efectivo" | "transferencia") ?? "efectivo")}
+              >
+                <SelectTrigger className="h-9 w-full">
+                  <span className="flex-1 text-left text-sm capitalize">{modoPago}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="efectivo">Efectivo</SelectItem>
+                  <SelectItem value="transferencia">Transferencia</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Solo se guarda si la venta queda pagada de inmediato.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="t-notas">{LABELS.notas}</Label>
+              <Textarea
+                id="t-notas"
+                value={notas}
+                onChange={(e) => setNotas(e.target.value)}
+                placeholder="Detalles, decoración, etc."
+                rows={2}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Fecha estimada de pago (si queda por cobrar)</Label>
+              <DatePicker
+                value={fechaPago}
+                onChange={setFechaPago}
+                placeholder="Seleccionar fecha de pago"
+              />
+            </div>
+          </div>
+
+          <footer className="border-t px-5 pb-6 pt-4">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Total</span>
+              <span className="text-3xl font-bold tabular-nums text-foreground">
+                {formatMoneda(subtotal)}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <ActionButton
+                icon={<Check className="h-6 w-6" />}
+                label="Pagado"
+                color="success"
+                disabled={isPending}
+                onClick={() => confirmar("entregado")}
+              />
+              <ActionButton
+                icon={<Coins className="h-6 w-6" />}
+                label="Por cobrar"
+                color="gold"
+                disabled={isPending}
+                onClick={() => confirmar("por_cobrar")}
+              />
+              <ActionButton
+                icon={<ClipboardList className="h-6 w-6" />}
+                label="Pedido"
+                color="primary"
+                disabled={isPending}
+                onClick={() => confirmar("pendiente")}
+              />
+            </div>
+          </footer>
+        </>
+      )}
+    </>
+  );
+
   return (
     <>
       {/* Barra de catálogo con acceso a la bolsa */}
@@ -330,10 +604,16 @@ export function TiendaVenta({
                       <Badge className="bg-danger/90 text-white">Agotado</Badge>
                     )}
                   </div>
-                  {!sinMas && (
-                    <span className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
-                      <ShoppingBag className="h-4 w-4" />
+                  {enCarrito(p.id) > 0 ? (
+                    <span className="absolute bottom-2 right-2 flex h-7 min-w-7 items-center justify-center rounded-full bg-terracotta px-1.5 text-[11px] font-bold text-white shadow">
+                      {enCarrito(p.id)}
                     </span>
+                  ) : (
+                    !sinMas && (
+                      <span className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+                        <ShoppingBag className="h-4 w-4" />
+                      </span>
+                    )
                   )}
                 </div>
                 <div className="flex flex-1 flex-col p-2.5">
@@ -369,324 +649,24 @@ export function TiendaVenta({
         </div>
       )}
 
-      {/* Backdrop */}
-      <div
-        onClick={() => setDrawerOpen(false)}
-        className={cn(
-          "fixed inset-0 z-40 bg-foreground/20 transition-opacity lg:bg-foreground/40 lg:hidden",
-          drawerOpen ? "opacity-100" : "pointer-events-none opacity-0"
-        )}
-      />
+      {/* Móvil: sheet inferior (Base UI Drawer) — deslizar hacia abajo para cerrar */}
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerPortal>
+          <DrawerBackdrop className="lg:hidden" />
+          <DrawerViewport className="lg:hidden">
+            <DrawerContent>{sheetBody}</DrawerContent>
+          </DrawerViewport>
+        </DrawerPortal>
+      </Drawer>
 
-      {/* Drawer: Tu bolsa
-          Móvil  → bottom sheet (h-[62vh], sube desde abajo)
-          Desktop → panel lateral derecho (ancho fijo, cubre toda la altura) */}
+      {/* Desktop: panel lateral fijo */}
       <aside
         className={cn(
-          "fixed z-50 flex flex-col bg-card shadow-2xl duration-300",
-          dragOffset === 0 && "transition-[transform,height]",
-          // Mobile: bottom sheet — se expande a pantalla completa en fase pago
-          "bottom-[3.75rem] left-0 right-0 rounded-t-2xl",
-          fase === "pago" ? "h-[calc(100vh-3.75rem)]" : "h-[62vh]",
-          // Desktop: side panel
-          "lg:bottom-auto lg:inset-y-0 lg:left-auto lg:h-auto lg:max-h-none lg:w-full lg:max-w-md lg:rounded-none",
-          // Animación
-          drawerOpen
-            ? "translate-y-0 lg:translate-x-0"
-            : "translate-y-full lg:translate-y-0 lg:translate-x-full"
+          "fixed inset-y-0 right-0 z-50 hidden w-full max-w-md flex-col bg-card shadow-2xl transition-transform duration-300 lg:flex",
+          drawerOpen ? "translate-x-0" : "translate-x-full"
         )}
-        style={dragOffset > 0 ? { transform: `translateY(${dragOffset}px)` } : undefined}
       >
-        {/* Zona de arrastre: touch-none impide que Android intercepte el gesto */}
-        <div
-          className="touch-none select-none"
-          onTouchStart={onDragStart}
-          onTouchMove={onDragMove}
-          onTouchEnd={onDragEnd}
-        >
-          {/* Handle visual: solo en móvil */}
-          <div className="flex justify-center pb-2 pt-3 lg:hidden">
-            <div className="h-1 w-10 rounded-full bg-foreground/20" />
-          </div>
-
-          <header className="flex items-center justify-between border-b px-5 py-4">
-          <div className="flex items-center gap-2">
-            {fase === "pago" && (
-              <button
-                type="button"
-                onClick={() => setFase("bolsa")}
-                className="text-muted-foreground hover:text-foreground"
-                aria-label="Volver a la bolsa"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
-            )}
-            <h2 className="text-lg font-semibold text-foreground">
-              {fase === "bolsa" ? "Tu bolsa" : "Cerrar venta"}
-            </h2>
-            {fase === "bolsa" && totalUnidades > 0 && (
-              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-2 text-xs font-bold text-primary-foreground">
-                {totalUnidades}
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(false)}
-            className="text-muted-foreground hover:text-foreground"
-            aria-label="Cerrar"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </header>
-        </div>{/* fin zona de arrastre */}
-
-        {items.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-            <ShoppingBag className="h-10 w-10 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">Tu bolsa está vacía</p>
-            <Button variant="outline" onClick={() => setDrawerOpen(false)}>
-              Seguir agregando
-            </Button>
-          </div>
-        ) : fase === "bolsa" ? (
-          <>
-            <div className="flex-1 divide-y overflow-y-auto overscroll-contain touch-pan-y px-5">
-              {items.map((i) => (
-                <div key={i.producto_id} className="flex gap-3 py-4">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {i.nombre_producto}
-                    </p>
-                    <p className="mt-0.5 text-sm tabular-nums text-muted-foreground">
-                      {formatMoneda(i.precio_unitario)}
-                    </p>
-                    <div className="mt-2 inline-flex items-center rounded-lg border">
-                      <button
-                        type="button"
-                        onClick={() => setCantidad(i.producto_id!, i.cantidad - 1)}
-                        className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
-                        aria-label="Quitar uno"
-                      >
-                        <Minus className="h-3.5 w-3.5" />
-                      </button>
-                      <input
-                        type="number"
-                        min="1"
-                        value={i.cantidad}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "") return;
-                          const n = parseInt(v, 10);
-                          if (Number.isFinite(n))
-                            setCantidad(i.producto_id!, n);
-                        }}
-                        className="h-8 w-12 border-x bg-transparent text-center text-sm tabular-nums outline-none focus:bg-background/60 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        aria-label="Cantidad"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setCantidad(i.producto_id!, i.cantidad + 1)}
-                        className="flex h-8 w-8 items-center justify-center text-muted-foreground hover:text-foreground"
-                        aria-label="Agregar uno"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setCantidad(i.producto_id!, 0)}
-                      className="text-muted-foreground hover:text-destructive"
-                      aria-label="Eliminar"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                    <span className="text-sm font-semibold tabular-nums text-foreground">
-                      {formatMoneda(i.precio_unitario * i.cantidad)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <footer className="border-t px-5 py-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">{LABELS.total}</p>
-                  <p className="text-xl font-semibold tabular-nums text-foreground">
-                    {formatMoneda(subtotal)}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setFase("pago")}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105"
-                  aria-label="Cerrar venta"
-                >
-                  <ArrowRight className="h-5 w-5" />
-                </button>
-              </div>
-            </footer>
-          </>
-        ) : (
-          /* Fase de pago / desenlace */
-          <>
-            <div className="flex-1 space-y-5 overflow-y-auto overscroll-contain touch-pan-y px-5 py-4">
-              <div className="rounded-lg bg-background/50 px-4 py-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    {totalUnidades} {totalUnidades === 1 ? "producto" : "productos"}
-                  </span>
-                  <span className="font-semibold tabular-nums text-foreground">
-                    {formatMoneda(subtotal)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label>{LABELS.cliente}</Label>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setClienteMode((m) =>
-                        m === "nuevo" ? "existente" : "nuevo"
-                      )
-                    }
-                    className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                  >
-                    {clienteMode === "nuevo" ? (
-                      <>
-                        <X className="h-3 w-3" /> Elegir existente
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="h-3 w-3" /> Nuevo cliente
-                      </>
-                    )}
-                  </button>
-                </div>
-                {clienteMode === "existente" ? (
-                  <Select
-                    value={clienteId || "none"}
-                    onValueChange={(v) => setClienteId(!v || v === "none" ? "" : v)}
-                  >
-                    <SelectTrigger className="h-9 w-full">
-                      <span className={cn("flex-1 text-left text-sm", !clienteId && "text-muted-foreground")}>
-                        {clienteId
-                          ? clientes.find((c) => c.id === clienteId)?.nombre ?? "Sin cliente"
-                          : "Sin cliente"}
-                      </span>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Sin cliente</SelectItem>
-                      {clientes.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <div className="space-y-2">
-                    <Input
-                      value={nuevoNombre}
-                      onChange={(e) => setNuevoNombre(e.target.value)}
-                      placeholder="Nombre del cliente"
-                    />
-                    <Input
-                      value={nuevoTelefono}
-                      onChange={(e) => setNuevoTelefono(e.target.value)}
-                      placeholder="Teléfono (opcional)"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>{LABELS.fechaEntrega} (opcional)</Label>
-                <DatePicker
-                  value={fechaEntrega}
-                  onChange={setFechaEntrega}
-                  placeholder="Seleccionar fecha de entrega"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Modo de pago</Label>
-                <Select
-                  value={modoPago}
-                  onValueChange={(v) => setModoPago((v as "efectivo" | "transferencia") ?? "efectivo")}
-                >
-                  <SelectTrigger className="h-9 w-full">
-                    <span className="flex-1 text-left text-sm capitalize">{modoPago}</span>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="efectivo">Efectivo</SelectItem>
-                    <SelectItem value="transferencia">Transferencia</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Solo se guarda si la venta queda pagada de inmediato.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="t-notas">{LABELS.notas}</Label>
-                <Textarea
-                  id="t-notas"
-                  value={notas}
-                  onChange={(e) => setNotas(e.target.value)}
-                  placeholder="Detalles, decoración, etc."
-                  rows={2}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label>Fecha estimada de pago (si queda por cobrar)</Label>
-                <DatePicker
-                  value={fechaPago}
-                  onChange={setFechaPago}
-                  placeholder="Seleccionar fecha de pago"
-                />
-              </div>
-            </div>
-
-            <footer className="border-t px-5 pb-6 pt-4">
-              <div className="mb-4 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Total</span>
-                <span className="text-3xl font-bold tabular-nums text-foreground">
-                  {formatMoneda(subtotal)}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <ActionButton
-                  icon={<Check className="h-6 w-6" />}
-                  label="Pagado"
-                  color="success"
-                  disabled={isPending}
-                  onClick={() => confirmar("entregado")}
-                />
-                <ActionButton
-                  icon={<Coins className="h-6 w-6" />}
-                  label="Por cobrar"
-                  color="gold"
-                  disabled={isPending}
-                  onClick={() => confirmar("por_cobrar")}
-                />
-                <ActionButton
-                  icon={<ClipboardList className="h-6 w-6" />}
-                  label="Pedido"
-                  color="primary"
-                  disabled={isPending}
-                  onClick={() => confirmar("pendiente")}
-                />
-              </div>
-            </footer>
-          </>
-        )}
+        {sheetBody}
       </aside>
     </>
   );

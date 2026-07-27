@@ -139,23 +139,3 @@ export async function incrementarStockInsumo(
     return { ok: false, error: e instanceof Error ? e.message : "Error" };
   }
 }
-
-/** Marca/desmarca manualmente un insumo en la lista de compras. */
-export async function toggleEnLista(
-  id: string,
-  enLista: boolean
-): Promise<ActionResult> {
-  try {
-    const { supabase } = await requireUser();
-    const { error } = await supabase
-      .from("insumos")
-      .update({ en_lista: enLista })
-      .eq("id", id);
-    if (error) return { ok: false, error: error.message };
-    revalidatePath("/costos");
-    revalidatePath("/insumos");
-    return { ok: true };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Error" };
-  }
-}
