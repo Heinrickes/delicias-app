@@ -41,7 +41,7 @@ function DrawerContent({ className, children, ...props }: DrawerPrimitive.Popup.
     <DrawerPrimitive.Popup
       data-slot="drawer-content"
       className={cn(
-        "mx-auto flex max-h-[85vh] w-full flex-col overflow-y-auto overscroll-contain rounded-t-2xl bg-popover pb-[calc(env(safe-area-inset-bottom)+4.5rem)] shadow-2xl outline-none duration-150 will-change-transform transform-gpu data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:slide-out-to-bottom",
+        "mx-auto flex max-h-[85vh] w-full flex-col overflow-y-auto overscroll-contain rounded-t-2xl bg-popover pb-[calc(env(safe-area-inset-bottom)+4.5rem)] shadow-2xl outline-none duration-150 will-change-transform transform-gpu data-open:animate-in data-open:slide-in-from-bottom",
         className
       )}
       {...props}
