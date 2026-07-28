@@ -18,7 +18,7 @@ function DrawerBackdrop({ className, ...props }: DrawerPrimitive.Backdrop.Props)
     <DrawerPrimitive.Backdrop
       data-slot="drawer-backdrop"
       className={cn(
-        "fixed inset-0 z-[60] bg-foreground/30",
+        "fixed inset-0 z-[60] bg-foreground/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className
       )}
       {...props}
@@ -41,7 +41,7 @@ function DrawerContent({ className, children, ...props }: DrawerPrimitive.Popup.
     <DrawerPrimitive.Popup
       data-slot="drawer-content"
       className={cn(
-        "mx-auto flex max-h-[85vh] w-full flex-col overflow-y-auto overscroll-contain rounded-t-2xl bg-popover pb-[calc(env(safe-area-inset-bottom)+4.5rem)] shadow-2xl outline-none duration-150 will-change-transform transform-gpu data-open:animate-in data-open:slide-in-from-bottom",
+        "mx-auto flex max-h-[85vh] w-full flex-col overflow-y-auto overscroll-contain rounded-t-2xl bg-popover pb-[calc(env(safe-area-inset-bottom)+4.5rem)] shadow-2xl outline-none will-change-transform transform-gpu duration-150 data-open:animate-in data-open:slide-in-from-bottom data-closed:animate-out data-closed:fade-out-0 data-closed:duration-100",
         className
       )}
       {...props}
