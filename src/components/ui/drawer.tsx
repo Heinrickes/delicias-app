@@ -18,7 +18,7 @@ function DrawerBackdrop({ className, ...props }: DrawerPrimitive.Backdrop.Props)
     <DrawerPrimitive.Backdrop
       data-slot="drawer-backdrop"
       className={cn(
-        "fixed inset-0 z-[60] bg-foreground/30 duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 z-[60] bg-foreground/30 data-open:animate-in data-open:fade-in-0 data-open:duration-100 data-closed:opacity-0 data-closed:transition-opacity data-closed:duration-200 data-closed:ease-out",
         className
       )}
       {...props}
