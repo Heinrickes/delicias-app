@@ -1,10 +1,12 @@
 "use client";
 
 import { useTransition } from "react";
-import { Users, ShieldCheck } from "lucide-react";
+import { Users, ShieldCheck, UserPlus } from "lucide-react";
 import { Tooltip } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { actualizarPerfil, type Perfil, type Rol } from "@/lib/actions/perfiles";
+import { UsuarioFormDialog } from "@/components/shared/UsuarioFormDialog";
 import {
   Select,
   SelectContent,
@@ -75,9 +77,20 @@ export function UsuariosManager({
 }) {
   return (
     <section className="rounded-xl bg-card p-5 ring-1 ring-foreground/10">
-      <div className="mb-2 flex items-center gap-2">
-        <Users className="h-4 w-4 text-gold" />
-        <h3 className="text-base font-semibold text-foreground">Usuarios</h3>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-gold" />
+          <h3 className="text-base font-semibold text-foreground">Usuarios</h3>
+        </div>
+        <UsuarioFormDialog
+          trigger={
+            <Tooltip content="Nuevo usuario" side="top">
+              <Button type="button" variant="outline" size="icon-sm">
+                <UserPlus className="h-4 w-4" />
+              </Button>
+            </Tooltip>
+          }
+        />
       </div>
       <p className="mb-2 flex items-start gap-1.5 text-sm text-muted-foreground">
         <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { ActionResult } from "@/lib/actions/types";
 
 export type Rol = "admin" | "dueña" | "colaborador";
@@ -89,6 +90,50 @@ export async function actualizarPerfil(
       })
       .eq("id", id);
     if (error) return { ok: false, error: error.message };
+    revalidatePath("/ajustes");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Error" };
+  }
+}
+
+/**
+ * Crea una cuenta nueva (auth + perfil) — solo admin. No existe registro
+ * público: esta es la única forma de dar de alta un usuario.
+ */
+export async function crearUsuario(input: {
+  email: string;
+  password: string;
+  nombre: string;
+  rol: Rol;
+}): Promise<ActionResult> {
+  try {
+    const { supabase } = await requireAdmin();
+
+    if (input.password.length < 8) {
+      return { ok: false, error: "La contraseña debe tener al menos 8 caracteres" };
+    }
+
+    const admin = createAdminClient();
+    const { data, error } = await admin.auth.admin.createUser({
+      email: input.email.trim(),
+      password: input.password,
+      email_confirm: true,
+      user_metadata: { nombre: input.nombre.trim() },
+    });
+    if (error) return { ok: false, error: error.message };
+    if (!data.user) return { ok: false, error: "No se pudo crear el usuario" };
+
+    // El trigger handle_new_user ya crea el perfil con rol "colaborador";
+    // si se pidió otro rol, se ajusta acá.
+    if (input.rol !== "colaborador") {
+      const { error: rolError } = await supabase
+        .from("profiles")
+        .update({ rol: input.rol })
+        .eq("id", data.user.id);
+      if (rolError) return { ok: false, error: rolError.message };
+    }
+
     revalidatePath("/ajustes");
     return { ok: true };
   } catch (e) {
