@@ -109,12 +109,11 @@ export function ProductosGrid({
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-        {filtrados.map((producto, index) => (
+        {filtrados.map((producto) => (
           <ProductCard
             key={producto.id}
             producto={producto}
             categorias={categorias}
-            variant={index % 4}
           />
         ))}
       </div>

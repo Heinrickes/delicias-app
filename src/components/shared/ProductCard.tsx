@@ -40,21 +40,12 @@ type Producto = {
 
 type Categoria = { id: string; nombre: string };
 
-const productVisuals = [
-  "radial-gradient(circle at 35% 45%, #F3D9B8 0 10%, transparent 11%), radial-gradient(circle at 55% 50%, #F3D9B8 0 11%, transparent 12%), radial-gradient(circle at 72% 45%, #F3D9B8 0 10%, transparent 11%), linear-gradient(135deg, #D5B38D, #F2E5D1)",
-  "radial-gradient(circle at 42% 48%, #3C2117 0 12%, #8A5A3C 13% 16%, transparent 17%), radial-gradient(circle at 60% 44%, #3C2117 0 10%, #8A5A3C 11% 15%, transparent 16%), linear-gradient(135deg, #E7D6C4, #B98C65)",
-  "linear-gradient(90deg, transparent 0 12%, #E8D5B9 13% 22%, #4B2D1E 23% 31%, transparent 32% 36%, #E8D5B9 37% 47%, #4B2D1E 48% 58%, transparent 59%), linear-gradient(135deg, #D2B894, #F7E7CF)",
-  "radial-gradient(circle at 35% 40%, #6D4029 0 9%, transparent 10%), radial-gradient(circle at 55% 52%, #3B2118 0 11%, transparent 12%), radial-gradient(circle at 72% 42%, #8A5A3C 0 9%, transparent 10%), linear-gradient(135deg, #EFE1D2, #B58A68)",
-];
-
 export function ProductCard({
   producto,
   categorias = [],
-  variant = 0,
 }: {
   producto: Producto;
   categorias?: Categoria[];
-  variant?: number;
 }) {
   const [deleting, startDeleting] = useTransition();
 
@@ -81,13 +72,10 @@ export function ProductCard({
     <CardPopover
       imageUrl={producto.imagen_url ?? null}
       placeholder={
-        <div
-          className="absolute inset-0 flex items-center justify-center p-2"
-          style={{ background: productVisuals[variant % productVisuals.length] }}
-        >
-          {/* Sin foto la tarjeta queda como un rectángulo de color anónimo:
-              el nombre encima permite distinguir un producto de otro. */}
-          <span className="line-clamp-3 text-center text-[11px] font-semibold leading-tight text-foreground/80">
+        <div className="absolute inset-0 flex items-center justify-center bg-muted p-2">
+          {/* Sin foto: color liso y el nombre, para distinguir un producto
+              de otro sin competir visualmente con las tarjetas que sí la tienen. */}
+          <span className="line-clamp-3 text-center text-[11px] font-semibold leading-tight text-muted-foreground">
             {producto.nombre}
           </span>
         </div>
