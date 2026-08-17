@@ -82,9 +82,15 @@ export function ProductCard({
       imageUrl={producto.imagen_url ?? null}
       placeholder={
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 flex items-center justify-center p-2"
           style={{ background: productVisuals[variant % productVisuals.length] }}
-        />
+        >
+          {/* Sin foto la tarjeta queda como un rectángulo de color anónimo:
+              el nombre encima permite distinguir un producto de otro. */}
+          <span className="line-clamp-3 text-center text-[11px] font-semibold leading-tight text-foreground/80">
+            {producto.nombre}
+          </span>
+        </div>
       }
       badge={
         <div className="flex flex-wrap gap-1">
