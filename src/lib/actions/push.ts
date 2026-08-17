@@ -3,11 +3,22 @@
 import webpush from "web-push";
 import { createClient } from "@/lib/supabase/server";
 
-webpush.setVapidDetails(
-  `mailto:${process.env.VAPID_EMAIL}`,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+let vapidConfigured = false;
+
+/** Configura las claves VAPID recién al enviar, para no tirar abajo cada
+ * página que importe este módulo si todavía no están seteadas en el entorno. */
+function ensureVapidConfigured() {
+  if (vapidConfigured) return true;
+  const { NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_EMAIL } = process.env;
+  if (!NEXT_PUBLIC_VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !VAPID_EMAIL) return false;
+  webpush.setVapidDetails(
+    `mailto:${VAPID_EMAIL}`,
+    NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    VAPID_PRIVATE_KEY
+  );
+  vapidConfigured = true;
+  return true;
+}
 
 type PushSubscriptionInput = {
   endpoint: string;
@@ -31,6 +42,10 @@ export async function eliminarSuscripcionPush(endpoint: string) {
 }
 
 export async function enviarPushATodos(title: string, body: string, url = "/") {
+  if (!ensureVapidConfigured()) {
+    return { ok: false as const, error: "Notificaciones push no configuradas" };
+  }
+
   const supabase = await createClient();
   const { data: subs } = await supabase
     .from("push_subscriptions")
